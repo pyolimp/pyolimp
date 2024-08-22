@@ -7,10 +7,18 @@ from skimage import color
 import colour
 
 
-def ms_ssim(pred, target):
+def ms_ssim(pred: Tensor, target: Tensor) -> Tensor:
     _ms_ssim = MultiScaleSSIMLoss()
     loss = _ms_ssim(pred, target)
     return loss
+
+
+def L1_KLD(pred: Tensor, target: Tensor, mu: Tensor, logvar: Tensor) -> Tensor:
+    # L1 loss for reconstruction
+    L1 = torch.nn.functional.l1_loss(pred, target, reduction="sum")
+    # KL divergence
+    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    return L1 + KLD
 
 
 def generate_random_neighbors(
@@ -58,7 +66,9 @@ def projective_transformation(points: Tensor, proj_matrix: Tensor) -> Tensor:
 
 
 class ProLab:
-    def __init__(self, illuminant_XYZ: Tensor = torch.tensor([0.95047, 1.0, 1.08883])):
+    def __init__(
+        self, illuminant_XYZ: Tensor = torch.tensor([0.95047, 1.0, 1.08883])
+    ):
         self.illuminant_XYZ = illuminant_XYZ
         self.Q = torch.tensor(
             [
@@ -265,9 +275,13 @@ if __name__ == "__main__":
     from skimage.io import imread
 
     img1_path = "/home/vkokhan/projects/dichrome/dichrome/trunk/rankendall_test/test_data/farup_simple/04.png"
-    img1 = preprocess_img(torch.as_tensor(imread(img1_path)))  # .permute(2, 0, 1)
+    img1 = preprocess_img(
+        torch.as_tensor(imread(img1_path))
+    )  # .permute(2, 0, 1)
     img2_path = "/home/vkokhan/projects/dichrome/dichrome/trunk/rankendall_test/test_data/farup_simple_d/04.png"
-    img2 = preprocess_img(torch.as_tensor(imread(img2_path)))  # .permute(2, 0, 1)
+    img2 = preprocess_img(
+        torch.as_tensor(imread(img2_path))
+    )  # .permute(2, 0, 1)
 
     color_space = "lab"
 
