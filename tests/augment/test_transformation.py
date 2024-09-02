@@ -7,7 +7,7 @@ from torch import zeros
 
 def create_test_datum() -> Datum:
     image = zeros(1, 1, 8, 16)
-    image[0,0,2:6:2,2:14] = 1.0
+    image[0, 0, 2:6:2, 2:14] = 1.0
     return Datum.from_tensor(image)
 
 
@@ -268,9 +268,7 @@ class ProjectivePaddingsAdditionTest(TestCase):
 
 class RotateTest(AlmostEqualForQuads, TestCase):
     def test_none(self):
-        rotate = create(
-            "rotate", {"angle": {"name": "constant", "value": 0}}
-        )
+        rotate = create("rotate", {"angle": {"name": "constant", "value": 0}})
         random = Random(13)
         res = rotate(create_test_datum(), random)
         self.assertEqual(res.quads, [((0, 0), (16, 0), (16, 8), (0, 8))])
@@ -312,9 +310,7 @@ class ProjectiveShiftTest(TestCase):
 
 class ScaleTest(TestCase):
     def test_none(self):
-        scale = create(
-            "scale", {"factor": {"name": "constant", "value": 1}}
-        )
+        scale = create("scale", {"factor": {"name": "constant", "value": 1}})
         random = Random(13)
         res = scale(create_test_datum(), random)
         self.assertEqual(res.quads, [((0, 0), (16, 0), (16, 8), (0, 8))])
@@ -343,18 +339,18 @@ class RasterizeTest(TestCase):
     pass
 
     # def test_flipped(self):
-        # from minimg.view.view_client import connect
-        # c = connect(__file__)
-        # rasterize = create("rasterize", {})
-        # flip_v = create("flip", {"direction": "vertical"})
-        # random = Random(13)
-        # src_datum = create_test_datum()
-        # c.log("source", src_datum.source.numpy()[0,0])
+    # from minimg.view.view_client import connect
+    # c = connect(__file__)
+    # rasterize = create("rasterize", {})
+    # flip_v = create("flip", {"direction": "vertical"})
+    # random = Random(13)
+    # src_datum = create_test_datum()
+    # c.log("source", src_datum.source.numpy()[0,0])
 
-        # res = rasterize(flip_v(src_datum, random), random)
-        # self.assertEqual(res.quads, [((16, 8), (0, 8), (0, 0), (16, 0))])
-        # assert res.image is not None and src_datum.image is not None
-        # from numpy.testing import assert_allclose
-        # c.log("expected", src_datum.source.numpy()[:,:,::-1,:][0,0].copy())
-        # c.log("res", res.image.numpy()[0,0])
-        # assert_allclose(res.image.numpy(), src_datum.source.numpy()[:,:,::-1,:])
+    # res = rasterize(flip_v(src_datum, random), random)
+    # self.assertEqual(res.quads, [((16, 8), (0, 8), (0, 0), (16, 0))])
+    # assert res.image is not None and src_datum.image is not None
+    # from numpy.testing import assert_allclose
+    # c.log("expected", src_datum.source.numpy()[:,:,::-1,:][0,0].copy())
+    # c.log("res", res.image.numpy()[0,0])
+    # assert_allclose(res.image.numpy(), src_datum.source.numpy()[:,:,::-1,:])

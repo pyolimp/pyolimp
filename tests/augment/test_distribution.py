@@ -79,7 +79,7 @@ class ConstantTest(TestCase):
 
 class RandrangeTest(TestCase):
     def test_default(self):
-        f = create_distribution({"name": "randrange", "start": -1, "stop":42})
+        f = create_distribution({"name": "randrange", "start": -1, "stop": 42})
         random = Random(13)
         distribution = [f(random) for _ in range(1000)]
         self.assertEqual(set(distribution), set(range(-1, 42)))

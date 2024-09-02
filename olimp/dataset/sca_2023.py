@@ -77,6 +77,7 @@ def _read_dataset_dir(
     dataset_root: Path,
 ) -> Iterator[tuple[Paths, list[SCA2023Item]]]:
     from os import walk
+
     for root, dirs, files in walk(dataset_root, onerror=print):
         good_paths = [file for file in files if file.endswith(".jpg")]
         if not good_paths:
