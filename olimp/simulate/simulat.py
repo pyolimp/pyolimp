@@ -24,7 +24,9 @@ def simulate(image: Tensor, params: Tensor | CVDSimulationParams) -> Tensor:
 
 class Simulate(ABC):
     @abstractmethod
-    def __call__(self, image: Tensor, params: Tensor | CVDSimulationParams) -> Tensor:
+    def __call__(
+        self, image: Tensor, params: Tensor | CVDSimulationParams
+    ) -> Tensor:
         raise NotImplementedError
 
     # @abstractmethod
@@ -63,8 +65,12 @@ class SimulateRetinalImage(Simulate):
         assert K.dtype == torch.float, "K must have data type torch.float"
 
         # Check value range
-        assert torch.all((I >= 0) & (I <= 1)), "Values in I must be in the range [0, 1]"
-        assert torch.all((K >= 0) & (K <= 1)), "Values in K must be in the range [0, 1]"
+        assert torch.all(
+            (I >= 0) & (I <= 1)
+        ), "Values in I must be in the range [0, 1]"
+        assert torch.all(
+            (K >= 0) & (K <= 1)
+        ), "Values in K must be in the range [0, 1]"
 
         original_ndim = I.ndim  # Store the original number of dimensions
 
@@ -144,7 +150,9 @@ class SimulateDichromacy(Simulate):
         small_mask = image < 0.0031308
         large_mask = torch.logical_not(small_mask)
         out[small_mask] = image[small_mask] * 12.92
-        out[large_mask] = torch.pow(image[large_mask], 1.0 / 2.4) * 1.055 - 0.055
+        out[large_mask] = (
+            torch.pow(image[large_mask], 1.0 / 2.4) * 1.055 - 0.055
+        )
         return out
 
     @staticmethod
@@ -176,7 +184,6 @@ class SimulateDichromacy(Simulate):
 
     @staticmethod
     def _simulate(image: Tensor, cvd_params: CVDSimulationParams) -> Tensor:
-
         assert cvd_params.sim_name in [
             "Vienot",
             "Huang",
@@ -185,7 +192,7 @@ class SimulateDichromacy(Simulate):
         assert cvd_params.cvd_type in [
             "PROTAN",
             "DEUTAN",
-            "rg"
+            "rg",
         ], "no such simulation"
         protan_Vienot = torch.tensor(
             [[0.0, 1.06481845, -0.06481845], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
@@ -221,15 +228,21 @@ class SimulateDichromacy(Simulate):
             sRGB = torch.clip(sRGB, 0, 1)
             return sRGB
 
-    def __call__(self, batch: Tensor, cvd_params: CVDSimulationParams) -> Tensor:
+    def __call__(
+        self, batch: Tensor, cvd_params: CVDSimulationParams
+    ) -> Tensor:
         if batch.ndim == 3:
             batch = batch[None]
         batch_sim = torch.zeros_like(batch, dtype=torch.float)
         for idx, image in enumerate(batch):
             image = image - image.min()
             image = image / image.max()
-            image_normalized, _ = SimulateDichromacy._local_change_range(image, 0.98)
-            batch_sim[idx] = SimulateDichromacy._simulate(image_normalized, cvd_params)
+            image_normalized, _ = SimulateDichromacy._local_change_range(
+                image, 0.98
+            )
+            batch_sim[idx] = SimulateDichromacy._simulate(
+                image_normalized, cvd_params
+            )
             # breakpoint()
         return batch_sim
 

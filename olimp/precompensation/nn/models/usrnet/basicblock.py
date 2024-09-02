@@ -148,7 +148,7 @@ FFT block
 
 class FFTBlock(nn.Module):
     def __init__(self, channel=64):
-        super(FFTBlock, self).__init__()
+        super().__init__()
         self.conv_fc = nn.Sequential(
             nn.Conv2d(1, channel, 1, padding=0, bias=True),
             nn.ReLU(inplace=True),
@@ -185,7 +185,7 @@ class FFTBlock(nn.Module):
 # -------------------------------------------------------
 class ConcatBlock(nn.Module):
     def __init__(self, submodule):
-        super(ConcatBlock, self).__init__()
+        super().__init__()
 
         self.sub = submodule
 
@@ -202,7 +202,7 @@ class ConcatBlock(nn.Module):
 # -------------------------------------------------------
 class ShortcutBlock(nn.Module):
     def __init__(self, submodule):
-        super(ShortcutBlock, self).__init__()
+        super().__init__()
 
         self.sub = submodule
 
@@ -231,7 +231,7 @@ class ResBlock(nn.Module):
         bias=True,
         mode="CRC",
     ):
-        super(ResBlock, self).__init__()
+        super().__init__()
 
         assert (
             in_channels == out_channels
@@ -253,7 +253,7 @@ class ResBlock(nn.Module):
 # -------------------------------------------------------
 class CALayer(nn.Module):
     def __init__(self, channel=64, reduction=16):
-        super(CALayer, self).__init__()
+        super().__init__()
 
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.conv_fc = nn.Sequential(
@@ -284,7 +284,7 @@ class RCABlock(nn.Module):
         mode="CRC",
         reduction=16,
     ):
-        super(RCABlock, self).__init__()
+        super().__init__()
         assert (
             in_channels == out_channels
         ), "Only support in_channels==out_channels."
@@ -318,7 +318,7 @@ class RCAGroup(nn.Module):
         reduction=16,
         nb=12,
     ):
-        super(RCAGroup, self).__init__()
+        super().__init__()
         assert (
             in_channels == out_channels
         ), "Only support in_channels==out_channels."
@@ -363,7 +363,7 @@ class ResidualDenseBlock_5C(nn.Module):
         bias=True,
         mode="CR",
     ):
-        super(ResidualDenseBlock_5C, self).__init__()
+        super().__init__()
 
         # gc: growth channel
         self.conv1 = conv(nc, gc, kernel_size, stride, padding, bias, mode)
@@ -404,7 +404,7 @@ class RRDB(nn.Module):
         bias=True,
         mode="CR",
     ):
-        super(RRDB, self).__init__()
+        super().__init__()
 
         self.RDB1 = ResidualDenseBlock_5C(
             nc, gc, kernel_size, stride, padding, bias, mode
@@ -639,8 +639,7 @@ class NonLocalBlock2D(nn.Module):
         downsample=False,
         downsample_mode="maxpool",
     ):
-
-        super(NonLocalBlock2D, self).__init__()
+        super().__init__()
 
         inter_nc = nc // 2
         self.inter_nc = inter_nc

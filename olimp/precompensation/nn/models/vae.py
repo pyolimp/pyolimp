@@ -6,7 +6,7 @@ from torch import nn
 class VAE(nn.Module):
     def __init__(self):
         super(VAE, self).__init__()
-        
+
         # Encoder
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 32, 3, stride=2, padding=1),
@@ -22,29 +22,41 @@ class VAE(nn.Module):
             nn.Conv2d(512, 1024, 3, stride=2, padding=1),
             nn.ReLU(),
         )
-        
+
         # Assuming input image size is 512x512
         self.fc_mu = nn.Linear(1024 * 8 * 8, 128)
         self.fc_logvar = nn.Linear(1024 * 8 * 8, 128)
-        
+
         # Decoder
         self.decoder_input = nn.Linear(128, 1024 * 8 * 8)
-        
+
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(1024, 512, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(
+                1024, 512, 3, stride=2, padding=1, output_padding=1
+            ),
             nn.ReLU(),
-            nn.ConvTranspose2d(512, 256, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(
+                512, 256, 3, stride=2, padding=1, output_padding=1
+            ),
             nn.ReLU(),
-            nn.ConvTranspose2d(256, 128, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(
+                256, 128, 3, stride=2, padding=1, output_padding=1
+            ),
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(
+                128, 64, 3, stride=2, padding=1, output_padding=1
+            ),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(
+                64, 32, 3, stride=2, padding=1, output_padding=1
+            ),
             nn.ReLU(),
-            nn.ConvTranspose2d(32, 1, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(
+                32, 1, 3, stride=2, padding=1, output_padding=1
+            ),
             nn.Sigmoid(),
         )
-    
+
     @classmethod
     def from_path(cls, path: str):
         model = cls()
@@ -56,16 +68,16 @@ class VAE(nn.Module):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
-    
+
     def forward(self, x):
         encoded = self.encoder(x)
         encoded = encoded.view(encoded.size(0), -1)
-        
+
         mu = self.fc_mu(encoded)
         logvar = self.fc_logvar(encoded)
-        
+
         z = self.reparameterize(mu, logvar)
-        
+
         decoded = self.decoder_input(z)
         decoded = decoded.view(-1, 1024, 8, 8)
         decoded = self.decoder(decoded)

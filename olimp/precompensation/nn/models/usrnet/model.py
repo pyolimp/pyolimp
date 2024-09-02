@@ -10,13 +10,13 @@
 }
 # --------------------------------------------
 """
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.fft
 from torch import Tensor
 from . import basicblock as B
-
 
 
 def splits(a: Tensor, sf: int):
@@ -279,7 +279,6 @@ class ResUNet(nn.Module):
         self.m_tail = B.conv(nc[0], out_nc, bias=False, mode="C")
 
     def forward(self, x: Tensor):
-
         h, w = x.size()[-2:]
         paddingBottom = int(np.ceil(h / 8) * 8 - h)
         paddingRight = int(np.ceil(w / 8) * 8 - w)
@@ -415,7 +414,6 @@ class USRNet(nn.Module):
 
         # unfolding
         for i in range(self.n):
-
             x = self.d(x, FB, FBC, F2B, FBFy, ab[:, i : i + 1, ...], sf)
             x = self.p(
                 torch.cat(
