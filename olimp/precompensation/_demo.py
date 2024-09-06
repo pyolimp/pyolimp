@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import Literal, Callable
 import numpy as np
-import cv2
 import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
+import torchvision
 from olimp.processing import conv
 
 from rich.progress import (
@@ -32,10 +32,10 @@ def demo(
 
         psf_info = np.load("./tests/test_data/psf.npz")
         progress.advance(task_l)
-        img = cv2.imread("./tests/test_data/horse.jpg")
+        img = torchvision.io.read_image("./tests/test_data/horse.jpg")
         progress.advance(task_l)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 255
-        img = cv2.resize(img, (512, 512)).transpose(2, 0, 1)
+        img = img / 255.0
+        img = torchvision.transforms.Resize((512, 512))(img)
         if mono:
             img = img[0]
         progress.advance(task_l)
@@ -59,7 +59,7 @@ def demo(
         f"A={psf_info['A']}, sum={psf_info['psf'].sum():g})"
     )
     if img.ndim == 3:
-        img = img.transpose(1, 2, 0)
+        img = img.permute(1, 2, 0)
     ax2.imshow(img, cmap="gray", vmin=0.0, vmax=1.0)
     ax2.set_title(f"Source ({img.min()}, {img.max()})")
 
