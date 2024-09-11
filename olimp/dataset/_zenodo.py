@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import cast, Iterator, Literal, Callable, NewType
-from functools import cached_property
 from pathlib import Path
 import numpy as np
 import os
 from torch import Tensor, tensor
+from torch._prims_common import DeviceLikeType
 from torchvision.io import read_image
 
 
@@ -15,14 +15,17 @@ class ZenodoItem:
     def __init__(self, path: Path) -> None:
         self.path = path
 
-    @cached_property
-    def data(self) -> Tensor:
+    def data(self, device: DeviceLikeType = "cpu") -> Tensor:
+        """
+        Default device is "cpu" because it's the torch way
+        """
         if self.path.suffix == ".jpg":
-            return read_image(self.path)
+            return tensor(read_image(self.path), device=device)
         elif self.path.suffix == ".csv":
             return tensor(
-                np.loadtxt(self.path, delimiter=",", dtype=np.float32)
-            )[None, ...]
+                np.loadtxt(self.path, delimiter=",", dtype=np.float32),
+                device=device,
+            ).unsqueeze(0)
         else:
             raise ValueError(
                 f"internal olimp error. Didn't expect {self.path}"
