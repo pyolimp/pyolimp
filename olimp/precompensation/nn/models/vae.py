@@ -1,11 +1,14 @@
 from __future__ import annotations
 import torch
 from torch import nn
+from torch import Tensor
+import torchvision
+from olimp.processing import conv
 
 
 class VAE(nn.Module):
     def __init__(self):
-        super(VAE, self).__init__()
+        super().__init__()
 
         # Encoder
         self.encoder = nn.Sequential(
@@ -60,16 +63,18 @@ class VAE(nn.Module):
     @classmethod
     def from_path(cls, path: str):
         model = cls()
-        state_dict = torch.load(path, map_location=torch.get_default_device())
+        state_dict = torch.load(
+            path, map_location=torch.get_default_device(), weights_only=True
+        )
         model.load_state_dict(state_dict)
         return model
 
-    def reparameterize(self, mu, logvar):
+    def reparameterize(self, mu: nn.Linear, logvar: nn.Linear):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         encoded = self.encoder(x)
         encoded = encoded.view(encoded.size(0), -1)
 
@@ -83,34 +88,34 @@ class VAE(nn.Module):
         decoded = self.decoder(decoded)
         return decoded, mu, logvar
 
+    def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
+        img_gray = image.to(torch.float32)[None, ...]
+        img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
+        img_blur = conv(img_gray, psf)
+
+        return torch.cat(
+            [
+                img_gray.unsqueeze(0),
+                img_blur.unsqueeze(0),
+                psf.unsqueeze(0).unsqueeze(0),
+            ],
+            dim=1,
+        )
+
 
 def _demo():
     from ..._demo import demo
     from typing import Callable
-    import torchvision
-    from olimp.processing import conv
 
     def demo_vae(
-        image: torch.Tensor,
-        psf: torch.Tensor,
+        image: Tensor,
+        psf: Tensor,
         progress: Callable[[float], None],
-    ) -> torch.Tensor:
+    ) -> Tensor:
         model = VAE.from_path("./olimp/weights/vae.pth")
         with torch.no_grad():
             psf = psf.to(torch.float32)
-
-            img_gray = image.to(torch.float32)[None, ...]
-            img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
-            img_blur = conv(img_gray, psf)
-
-            inputs = torch.cat(
-                [
-                    img_gray.unsqueeze(0),
-                    img_blur.unsqueeze(0),
-                    psf.unsqueeze(0).unsqueeze(0),
-                ],
-                dim=1,
-            )
+            inputs = model.preprocess(image, psf)
             progress(0.1)
             precompensation, _mu, _logvar = model(inputs)
             progress(1.0)

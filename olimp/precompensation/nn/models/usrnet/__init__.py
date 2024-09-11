@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Literal
 import torch
 from torch import nn, Tensor
+import torchvision
 from .model import USRNet
 
 
@@ -68,3 +69,20 @@ class PrecompensationUSRNet(USRNet):
             new_state_dict[new_key] = value
         model.load_state_dict(new_state_dict)
         return model
+
+    def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
+        psf = psf.unsqueeze(0).unsqueeze(0)
+        resize_transform = torchvision.transforms.Resize((512, 512))
+
+        image = resize_transform(image)
+        img_gray = image.to(torch.float32)[None, None, ...]
+        img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
+        # lower image contrast to make this demo look good
+        img_gray = (img_gray * (0.7 - 0.3)) + 0.3
+
+        return torch.cat(
+            [img_gray, img_gray, img_gray], dim=1
+        )  # B, 3, 512, 512
+
+    def xxx():
+        pass

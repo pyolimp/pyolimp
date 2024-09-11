@@ -1,8 +1,9 @@
 from __future__ import annotations
 import torch
-from torch import nn
 from torch import Tensor
 import segmentation_models_pytorch as smp
+import torchvision
+from olimp.processing import conv
 
 
 class UNET(smp.Unet):
@@ -31,12 +32,24 @@ class UNET(smp.Unet):
         model.load_state_dict(state_dict)
         return model
 
+    def preprocessing(self, image: Tensor, psf: Tensor) -> Tensor:
+        img_gray = image.to(torch.float32)[None, ...]
+        img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
+        img_blur = conv(img_gray, psf)
+
+        return torch.cat(
+            [
+                img_gray.unsqueeze(0),
+                img_blur.unsqueeze(0),
+                psf.unsqueeze(0).unsqueeze(0),
+            ],
+            dim=1,
+        )
+
 
 def _demo():
     from ..._demo import demo
     from typing import Callable
-    import torchvision
-    from olimp.processing import conv
 
     def demo_unet(
         image: torch.Tensor,
@@ -46,19 +59,7 @@ def _demo():
         model = UNET.from_path("./olimp/weights/unet-efficientnet-b0.pth")
         with torch.no_grad():
             psf = psf.to(torch.float32)
-
-            img_gray = image.to(torch.float32)[None, ...]
-            img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
-            img_blur = conv(img_gray, psf)
-
-            inputs = torch.cat(
-                [
-                    img_gray.unsqueeze(0),
-                    img_blur.unsqueeze(0),
-                    psf.unsqueeze(0).unsqueeze(0),
-                ],
-                dim=1,
-            )
+            inputs = model.preprocessing(image, psf)
             progress(0.1)
             precompensation = model(inputs)
             progress(1.0)
