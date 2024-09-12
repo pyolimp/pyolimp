@@ -1,0 +1,21 @@
+{
+    "model": {
+        "name": "vdsr"
+    },
+    "img": {
+        "dataset": {
+            "name": "SCA2023",
+            "subsets": [
+                "Images/Real_images/Faces"
+            ]
+        }
+    },
+    "psf": {
+        "dataset": {
+            "name": "SCA2023",
+            "subsets": [
+                "PSFs/Narrow"
+            ]
+        }
+    }
+}

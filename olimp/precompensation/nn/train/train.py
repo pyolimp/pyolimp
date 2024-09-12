@@ -272,8 +272,10 @@ class SGDConfig(BaseModel):
 
 OlimpDataset = Annotated[SCA2023, Field(..., discriminator="name")]
 Optimizer = Annotated[AdamConfig | SGDConfig, Field(..., discriminator="name")]
-Transforms = Annotated[
-    list[ResizeTransform | GrayscaleTransform], Field(discriminator="name")
+Transforms = list[
+    Annotated[
+        ResizeTransform | GrayscaleTransform, Field(discriminator="name")
+    ]
 ]
 
 
@@ -290,23 +292,17 @@ class DataloaderConfig(BaseModel):
 
 class ImgDataloaderConfig(DataloaderConfig):
 
-    transforms: Transforms = Field(
-        discriminator="name",
-        default=[
-            GrayscaleTransform(name="Grayscale"),
-            ResizeTransform(name="Resize"),
-        ],
-    )
+    transforms: Transforms = [
+        GrayscaleTransform(name="Grayscale"),
+        ResizeTransform(name="Resize"),
+    ]
 
 
 class PsfDataloaderConfig(DataloaderConfig):
-    transforms: Transforms = Field(
-        discriminator="name",
-        default=[
-            ResizeTransform(name="Resize"),
-            GrayscaleTransform(name="Grayscale"),
-        ],
-    )
+    transforms: Transforms = [
+        ResizeTransform(name="Resize"),
+        GrayscaleTransform(name="Grayscale"),
+    ]
 
 
 class Config(BaseModel):
@@ -319,6 +315,7 @@ class Config(BaseModel):
     validation_frac: float = 0.2
     epoch_dir: Path = Path("./epoch_saved")
     optimizer: Optimizer = AdamConfig(name="Adam")
+    epochs: int = 50
 
 
 from ....evaluation.loss import ms_ssim
@@ -375,7 +372,12 @@ def random_split(
     )
 
 
-def _evaluate_dataset(model: nn.Module, dl: DataLoader[tuple[Tensor, ...]]):
+def _evaluate_dataset(
+    model: nn.Module,
+    dl: DataLoader[tuple[Tensor, ...]],
+    img_transform: Compose,
+    psf_transform: Compose,
+):
     model_kwargs = {}
     device = next(model.parameters()).device
 
@@ -434,12 +436,15 @@ class TrainStatistics:
 
 def _train_loop(
     p: Progress,
+    model: torch.nn.Module,
     epochs: int,
     dl_train: DataLoader[tuple[Tensor, ...]],
     dl_validation: DataLoader[tuple[Tensor, ...]] | None,
     epoch_task: TaskID,
     optimizer: torch.optim.optimizer.Optimizer,
     epoch_dir: Path,
+    img_transform: Compose,
+    psf_transform: Compose,
 ):
     train_statistics = TrainStatistics(patience=3)
     model_name = type(model).__name__
@@ -454,7 +459,13 @@ def _train_loop(
         # training
         train_loss = 0.0
         for loss in p.track(
-            _evaluate_dataset(model, dl_train), task_id=training_task
+            _evaluate_dataset(
+                model,
+                dl_train,
+                img_transform=img_transform,
+                psf_transform=psf_transform,
+            ),
+            task_id=training_task,
         ):
             train_loss += loss.item()
             p.update(training_task, loss=f"{loss.item():g}")
@@ -472,7 +483,12 @@ def _train_loop(
         validation_loss = 0.0
         if dl_validation is not None:
             for loss in p.track(
-                _evaluate_dataset(model, dl_validation),
+                _evaluate_dataset(
+                    model,
+                    dl_validation,
+                    img_transform=img_transform,
+                    psf_transform=psf_transform,
+                ),
                 total=len(dl_validation),
                 description="Validation...",
             ):
@@ -502,7 +518,7 @@ def _train_loop(
             break
 
 
-def main(
+def train(
     model: nn.Module,
     img_dataset: Dataset[Tensor],
     img_transform: Compose,
@@ -566,12 +582,15 @@ def main(
     try:
         _train_loop(
             p,
+            model=model,
             epochs=epochs,
             dl_train=dl_train,
             dl_validation=dl_validation,
             epoch_task=epoch_task,
             optimizer=optimizer,
             epoch_dir=epoch_dir,
+            img_transform=img_transform,
+            psf_transform=psf_transform,
         )
     except KeyboardInterrupt:
         p.print("training stopped by user (Ctrl+C)")
@@ -595,12 +614,23 @@ def main(
     p.stop()
 
 
-if __name__ == "__main__":
+def main():
+    import argparse
 
-    with open("./schema.json", "w") as out:
-        schema = Config.schema_json()
-        out.write(schema)
-    with open("./config.json") as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default="./olimp/precompensation/nn/pipeline/vdsr.json",
+    )
+    args = parser.parse_args()
+    # schema_path = Path(__file__).with_name("schema.json")
+    # import json
+
+    # schema_path.write_text(
+    #     json.dumps(Config.model_json_schema(), ensure_ascii=False)
+    # )
+    with args.config.open() as f:
         data = json5.load(f)
     config = Config(**data)
 
@@ -618,7 +648,7 @@ if __name__ == "__main__":
         psf_dataset, psf_transform = config.psf.load()
         # psf_dataset._items = psf_dataset._items[0:3]
         create_optimizer = config.optimizer.load()
-        main(
+        train(
             model,
             img_dataset,
             img_transform,
@@ -628,7 +658,11 @@ if __name__ == "__main__":
             batch_size=config.batch_size,
             train_frac=config.train_frac,
             validation_frac=config.validation_frac,
-            epochs=42,
+            epochs=config.epochs,
             epoch_dir=config.epoch_dir,
             create_optimizer=create_optimizer,
         )
+
+
+if __name__ == "__main__":
+    main()
