@@ -1,0 +1,10 @@
+{
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "olimp/precompensation/nn/pipeline/*.json"
+            ],
+            "url": "./olimp/precompensation/nn/train/schema.json"
+        },
+    ]
+}
