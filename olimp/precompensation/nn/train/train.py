@@ -1,10 +1,21 @@
 from __future__ import annotations
-from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
+from rich.progress import (
+    Progress,
+    TextColumn,
+    BarColumn,
+    TimeRemainingColumn,
+    TaskID,
+)
 
 c = Progress()
 c.start()
+
+import warnings
+
+warnings.filterwarnings("error", category=UserWarning)
+
 load_task = c.add_task("Import libraries")
-from typing import Literal, Annotated, TYPE_CHECKING
+from typing import Literal, Annotated, Callable
 from math import prod
 
 import random
@@ -24,6 +35,11 @@ from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 
 c.update(load_task, completed=100)
+
+
+class BaseModel(BaseModel):
+    class Config:
+        extra = "forbid"
 
 
 #
@@ -73,15 +89,15 @@ class PrecompensationDWDN(ModelConfig):
 
 
 #
-# DataLoaderConfig
+# DatasetrConfig
 #
 
 
-class DataLoaderConfig(BaseModel):
+class DatasetrConfig(BaseModel):
     pass
 
 
-class SCA2023(DataLoaderConfig):
+class SCA2023(DatasetrConfig):
     name: Literal["SCA2023"]
 
     subsets: set[
@@ -102,9 +118,100 @@ class SCA2023(DataLoaderConfig):
     ]
 
     def load(self):
-        from ..dataloader.sca_2023 import SCA2023Dataset
+        from ..dataset.sca_2023 import SCA2023Dataset
 
         return SCA2023Dataset(self.subsets)
+
+
+class Olimp(DatasetrConfig):
+    name: Literal["Olimp"]
+
+    subsets: set[
+        Literal[
+            "*",  # load all
+            "abstracts and textures",
+            "abstracts and textures/abstract art",
+            "abstracts and textures/backgrounds and patterns",
+            "abstracts and textures/colorful abstracts",
+            "abstracts and textures/geometric shapes",
+            "abstracts and textures/neon abstracts",
+            "abstracts and textures/textures",
+            "animals",
+            "animals/birds",
+            "animals/farm animals",
+            "animals/insects and spiders",
+            "animals/marine life",
+            "animals/pets",
+            "animals/wild animals",
+            "art and culture",
+            "art and culture/cartoon and comics",
+            "art and culture/crafts and handicrafts",
+            "art and culture/dance and theater performances",
+            "art and culture/music concerts and instruments",
+            "art and culture/painting and frescoes",
+            "art and culture/sculpture and bas-reliefs",
+            "food and drinks",
+            "food and drinks/desserts and bakery",
+            "food and drinks/dishes",
+            "food and drinks/drinks",
+            "food and drinks/food products on store shelves",
+            "food and drinks/fruits and vegetables",
+            "food and drinks/street food",
+            "interiors",
+            "interiors/gyms and pools",
+            "interiors/living spaces",
+            "interiors/museums and galleries",
+            "interiors/offices",
+            "interiors/restaurants and cafes",
+            "interiors/shopping centers and stores",
+            "nature",
+            "nature/beaches",
+            "nature/deserts",
+            "nature/fields and meadows",
+            "nature/forest",
+            "nature/mountains",
+            "nature/water bodies",
+            "objects and items",
+            "objects and items/books and stationery",
+            "objects and items/clothing and accessories",
+            "objects and items/electronics and gadgets",
+            "objects and items/furniture and decor",
+            "objects and items/tools and equipment",
+            "objects and items/toys and games",
+            "portraits and people",
+            "portraits and people/athletes and dancers",
+            "portraits and people/crowds and demonstrations",
+            "portraits and people/group photos",
+            "portraits and people/individual portraits",
+            "portraits and people/models on runway",
+            "portraits and people/workers in their workplaces",
+            "sports and active leisure",
+            "sports and active leisure/cycling and rollerblading",
+            "sports and active leisure/extreme sports",
+            "sports and active leisure/individual sports",
+            "sports and active leisure/martial arts",
+            "sports and active leisure/team sports",
+            "sports and active leisure/tourism and hikes",
+            "text and pictogram",
+            "text and pictogram/billboard text",
+            "text and pictogram/blueprints",
+            "text and pictogram/caricatures and pencil drawing",
+            "text and pictogram/text documents",
+            "text and pictogram/traffic signs",
+            "urban scenes",
+            "urban scenes/architecture",
+            "urban scenes/city at night",
+            "urban scenes/graffiti and street art",
+            "urban scenes/parks and squares",
+            "urban scenes/streets and avenues",
+            "urban scenes/transport",
+        ]
+    ]
+
+    def load(self):
+        from ..dataset.olimp import OlimpDataset
+
+        return OlimpDataset(self.subsets)
 
 
 #
@@ -132,10 +239,39 @@ class GrayscaleTransform(TransformsTransform):
 
 
 #
+# Optimizers
+#
+
+
+class AdamConfig(BaseModel):
+    name: Literal["Adam"]
+    learning_rate: float = 0.00001
+    eps: float = 1e-8
+
+    def load(self):
+        def optimizer(model: torch.nn.Module):
+            return torch.optim.Adam(model.parameters(), lr=self.learning_rate)
+
+        return optimizer
+
+
+class SGDConfig(BaseModel):
+    name: Literal["SGD"]
+    learning_rate: float = 0.00001
+
+    def load(self):
+        def optimizer(model: torch.nn.Module):
+            return torch.optim.SGD(model.parameters(), lr=self.learning_rate)
+
+        return optimizer
+
+
+#
 #
 #
 
 OlimpDataset = Annotated[SCA2023, Field(..., discriminator="name")]
+Optimizer = Annotated[AdamConfig | SGDConfig, Field(..., discriminator="name")]
 Transforms = Annotated[
     list[ResizeTransform | GrayscaleTransform], Field(discriminator="name")
 ]
@@ -181,7 +317,8 @@ class Config(BaseModel):
     batch_size: int = 1
     train_frac: float = 0.8
     validation_frac: float = 0.2
-    epoch_path: Path = Path("./epoch_saved")
+    epoch_dir: Path = Path("./epoch_saved")
+    optimizer: Optimizer = AdamConfig(name="Adam")
 
 
 from ....evaluation.loss import ms_ssim
@@ -238,27 +375,14 @@ def random_split(
     )
 
 
-def custom_collate_fn(batch):
-    breakpoint()
-    psfs, images, original_sums = zip(*batch)
-
-    # Repeat the first PSF in the batch across the batch dimension
-    psfs = torch.stack(psfs)
-    psf = psfs[0].unsqueeze(0).repeat(len(images), 1, 1, 1)
-
-    images = torch.stack(images)
-    original_sums = torch.tensor(original_sums)
-
-    return psf, images, original_sums
-
-
 def _evaluate_dataset(model: nn.Module, dl: DataLoader[tuple[Tensor, ...]]):
     model_kwargs = {}
+    device = next(model.parameters()).device
 
     for train_data in dl:
         image, psf = train_data
-        image = tensor(image)
-        psf = tensor(psf)
+        image = image.to(device)
+        psf = psf.to(device)
         image = img_transform(image)
         psf = psf_transform(psf)
         image = image.to(torch.float32) / 255.0
@@ -278,8 +402,104 @@ def _evaluate_dataset(model: nn.Module, dl: DataLoader[tuple[Tensor, ...]]):
         yield loss
 
 
-def should_stop_early(train_loss: list[float], val_loss: list[float]) -> bool:
-    return False
+class TrainStatistics:
+    def __init__(self, patience: int = 10):
+        self.train_loss: list[float] = []
+        self.validation_loss: list[float] = []
+        self.best_train_loss = float("inf")
+        self.best_validation_loss = float("inf")
+        self.epochs_no_improve = 0
+
+        self.is_best_train = True
+        self.is_best_validation = True
+        self._patience = patience
+
+    def __call__(self, train_loss: float, validation_loss: float):
+        self.is_best_validation = validation_loss < self.best_validation_loss
+        if self.is_best_validation:
+            self.best_validation_loss = validation_loss
+            self.epochs_no_improve = 0
+        else:
+            self.epochs_no_improve += 1
+
+        self.is_best_train = train_loss < self.best_train_loss
+        if self.is_best_train:
+            self.best_train_loss = train_loss
+
+        self.train_loss
+
+    def should_stop_early(self) -> bool:
+        return self.epochs_no_improve >= self._patience
+
+
+def _train_loop(
+    p: Progress,
+    epochs: int,
+    dl_train: DataLoader[tuple[Tensor, ...]],
+    dl_validation: DataLoader[tuple[Tensor, ...]] | None,
+    epoch_task: TaskID,
+    optimizer: torch.optim.optimizer.Optimizer,
+    epoch_dir: Path,
+):
+    train_statistics = TrainStatistics(patience=3)
+    model_name = type(model).__name__
+
+    for epoch in p.track(range(epochs), task_id=epoch_task):
+        model.train()
+
+        training_task = p.add_task(
+            "Training...", total=len(dl_train), loss="?"
+        )
+
+        # training
+        train_loss = 0.0
+        for loss in p.track(
+            _evaluate_dataset(model, dl_train), task_id=training_task
+        ):
+            train_loss += loss.item()
+            p.update(training_task, loss=f"{loss.item():g}")
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        p.remove_task(training_task)
+
+        train_loss /= len(dl_train)
+
+        p.update(epoch_task, loss=f"{train_loss:g}")
+
+        # validation
+        model.eval()
+        validation_loss = 0.0
+        if dl_validation is not None:
+            for loss in p.track(
+                _evaluate_dataset(model, dl_validation),
+                total=len(dl_validation),
+                description="Validation...",
+            ):
+                validation_loss += loss.item()
+            validation_loss /= len(dl_validation)
+
+        train_statistics(train_loss, validation_loss)
+
+        # save
+        cur_epoch_path = epoch_dir / f"{model_name}_{epoch:04d}.pth"
+        torch.save(model.state_dict(), cur_epoch_path)
+
+        if train_statistics.is_best_train:
+            best_train_path = cur_epoch_path.with_name("best_train.pth")
+            best_train_path.unlink(missing_ok=True)
+            best_train_path.hardlink_to(cur_epoch_path)
+
+        if train_statistics.is_best_validation:
+            best_validation_path = cur_epoch_path.with_name(
+                "best_validation.pth"
+            )
+            best_validation_path.unlink(missing_ok=True)
+            best_validation_path.hardlink_to(cur_epoch_path)
+
+        if train_statistics.should_stop_early():
+            p.console.print("Stop early")
+            break
 
 
 def main(
@@ -293,9 +513,10 @@ def main(
     train_frac: float,
     validation_frac: float,
     epochs: int,
-    epoch_path: Path,
+    epoch_dir: Path,
+    create_optimizer: Callable[[nn.Module], torch.optim.optimizer.Optimizer],
 ):
-    epoch_path.mkdir(exist_ok=True, parents=True)
+    epoch_dir.mkdir(exist_ok=True, parents=True)
     torch.manual_seed(random_seed)
     random.seed(random_seed)
 
@@ -329,21 +550,7 @@ def main(
     else:
         dl_test = None
 
-    initial_lr = 0.00001
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=initial_lr
-    )  # torch.optim.SGD
-
-    model_name = type(model).__name__
-
-    # device = next(model.parameters()).device
-
-    global_train_loss: list[float] = []
-    global_val_loss: list[float] = []
-
-    best_train_loss = float("inf")
-    best_val_loss = float("inf")
-
+    optimizer = create_optimizer(model)
     c.stop()
 
     p = Progress(
@@ -351,59 +558,41 @@ def main(
         BarColumn(),
         TextColumn("[progress.completed]{task.completed}/{task.total}"),
         TimeRemainingColumn(),
+        TextColumn("loss: {task.fields[loss]}"),
     )
     p.start()
+    epoch_task = p.add_task("Epoch...", total=epochs, loss="?")
 
-    for epoch in p.track(range(epochs), total=epochs, description="Epoch..."):
-        model.train()
-
-        # training
-        train_loss = 0.0
-        for loss in p.track(
-            _evaluate_dataset(model, dl_train),
-            total=len(dl_train),
-            description="Training...",
-        ):
-            train_loss += loss.item()
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-        train_loss /= len(dl_train)
-        global_train_loss.append(train_loss)
-
-        # validation
-        model.eval()
-        if dl_validation is not None:
-            val_loss = 0.0
-
-            for loss in p.track(
-                _evaluate_dataset(model, dl_validation),
-                total=len(dl_validation),
-                description="Validation...",
-            ):
-                val_loss += loss.item()
-            val_loss /= len(dl_validationval)
-            global_val_loss.append(val_loss)
-
-        # save
-        torch.save(
-            model.state_dict(), epoch_path / f"{model_name}_{epoch}.pth"
+    try:
+        _train_loop(
+            p,
+            epochs=epochs,
+            dl_train=dl_train,
+            dl_validation=dl_validation,
+            epoch_task=epoch_task,
+            optimizer=optimizer,
+            epoch_dir=epoch_dir,
         )
+    except KeyboardInterrupt:
+        p.print("training stopped by user (Ctrl+C)")
 
-        if should_stop_early(global_train_loss, global_val_loss):
-            break
+    p.console.print(p)
+    p.remove_task(epoch_task)
 
     # test
     if dl_test is not None:
+        test_task = p.add_task("Test... ", total=len(dl_test), loss="?")
         test_loss = 0.0
         for loss in p.track(
-            _evaluate_dataset(model, dl_test),
-            total=len(dl_test),
-            description="Test...",
+            _evaluate_dataset(model, dl_test), task_id=test_task
         ):
             test_loss += loss.item()
+            p.update(test_task, loss=f"{test_loss:g}")
+        test_loss /= len(dl_test)
+        p.update(test_task, loss=f"{test_loss:g}")
+        p.console.print(p, end="")
+        p.remove_task(test_task)
+    p.stop()
 
 
 if __name__ == "__main__":
@@ -415,10 +604,20 @@ if __name__ == "__main__":
         data = json5.load(f)
     config = Config(**data)
 
-    with torch.device("cuda" if torch.cuda.is_available() else "cpu"):
+    if torch.cuda.is_available():
+        device_str = "cuda"
+        c.console.print("Current device: [bold green] GPU")
+    else:
+        device_str = "cpu"
+        c.console.print("Current device: [bold red] CPU")
+
+    with torch.device(device_str):
         model = config.model.get_instance()
         img_dataset, img_transform = config.img.load()
+        # img_dataset._items = img_dataset._items[0:10]
         psf_dataset, psf_transform = config.psf.load()
+        # psf_dataset._items = psf_dataset._items[0:3]
+        create_optimizer = config.optimizer.load()
         main(
             model,
             img_dataset,
@@ -430,5 +629,6 @@ if __name__ == "__main__":
             train_frac=config.train_frac,
             validation_frac=config.validation_frac,
             epochs=42,
-            epoch_path=config.epoch_path,
+            epoch_dir=config.epoch_dir,
+            create_optimizer=create_optimizer,
         )
