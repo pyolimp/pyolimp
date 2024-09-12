@@ -20,7 +20,7 @@ class ZenodoItem:
         Default device is "cpu" because it's the torch way
         """
         if self.path.suffix == ".jpg":
-            return tensor(read_image(self.path), device=device)
+            return read_image(self.path).to(device=device)
         elif self.path.suffix == ".csv":
             return tensor(
                 np.loadtxt(self.path, delimiter=",", dtype=np.float32),
