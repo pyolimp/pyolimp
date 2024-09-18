@@ -1,1 +1,1 @@
-from .simulat import RetinalImageSimulator
+# from .simulat import RetinalImageSimulator
