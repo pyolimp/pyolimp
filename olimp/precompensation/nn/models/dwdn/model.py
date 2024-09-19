@@ -232,7 +232,7 @@ class DWDN(nn.Module):
             clear_feature_ch = get_uperleft_denominator(
                 blur_feature_ch, kernel
             )
-            clear_features[:, i : i + 1, :, :] = clear_feature_ch[
+            clear_features[:, i : i + 1, :, :] = clear_feature_ch.real[
                 :, :, ks:-ks, ks:-ks
             ]
 

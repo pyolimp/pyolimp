@@ -6,7 +6,7 @@ import torchvision
 from olimp.processing import conv
 
 
-class UNET(smp.Unet):
+class PrecompensationUNETB0(smp.Unet):
     def __init__(
         self,
         encoder_name: str = "efficientnet-b0",
@@ -32,19 +32,22 @@ class UNET(smp.Unet):
         model.load_state_dict(state_dict)
         return model
 
-    def preprocessing(self, image: Tensor, psf: Tensor) -> Tensor:
-        img_gray = image.to(torch.float32)[None, ...]
-        img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
-        img_blur = conv(img_gray, psf)
+    def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
+        # img_gray = image.to(torch.float32)[None, ...]
+        # img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
+        img_blur = conv(image, psf)
 
         return torch.cat(
             [
-                img_gray.unsqueeze(0),
-                img_blur.unsqueeze(0),
-                psf.unsqueeze(0).unsqueeze(0),
+                image,
+                img_blur,
+                psf,
             ],
             dim=1,
         )
+        
+    def arguments(self, *args, **kwargs):
+        return {}
 
 
 def _demo():
@@ -56,7 +59,7 @@ def _demo():
         psf: torch.Tensor,
         progress: Callable[[float], None],
     ) -> torch.Tensor:
-        model = UNET.from_path("./olimp/weights/unet-efficientnet-b0.pth")
+        model = PrecompensationUNETB0.from_path("./olimp/weights/unet-efficientnet-b0.pth")
         with torch.no_grad():
             psf = psf.to(torch.float32)
             inputs = model.preprocessing(image, psf)

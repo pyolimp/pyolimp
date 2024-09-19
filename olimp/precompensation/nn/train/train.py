@@ -67,6 +67,15 @@ class VAE(ModelConfig):
         from ..models.vae import VAE
 
         return VAE()
+    
+    
+class UNET_b0(ModelConfig):
+    name: Literal["unet_b0"]
+
+    def get_instance(self):
+        from ..models.unet_efficient_b0 import PrecompensationUNETB0
+
+        return PrecompensationUNETB0()
 
 
 class PrecompensationUSRNet(ModelConfig):
@@ -233,9 +242,10 @@ class ResizeTransform(TransformsTransform):
 
 class GrayscaleTransform(TransformsTransform):
     name: Literal["Grayscale"]
+    num_output_channels: int = 1
 
     def transform(self):
-        return Grayscale()
+        return Grayscale(self.num_output_channels)
 
 
 #
@@ -285,7 +295,10 @@ class DataloaderConfig(BaseModel):
 
     def load(self):
         dataset = self.dataset.load()
-        transforms = Compose([t.transform() for t in self.transforms])
+        all_transforms = [t.transform() for t in self.transforms]
+        if not all_transforms:
+            all_transforms.append(lambda a: a)
+        transforms = Compose(all_transforms)
 
         return dataset, transforms
 
@@ -300,13 +313,13 @@ class ImgDataloaderConfig(DataloaderConfig):
 
 class PsfDataloaderConfig(DataloaderConfig):
     transforms: Transforms = [
-        ResizeTransform(name="Resize"),
-        GrayscaleTransform(name="Grayscale"),
+        # ResizeTransform(name="Resize"),
+        # GrayscaleTransform(name="Grayscale"),
     ]
 
 
 class Config(BaseModel):
-    model: VDSR | VAE = Field(..., discriminator="name")
+    model: VDSR | VAE | UNET_b0 | PrecompensationUSRNet | PrecompensationDWDN = Field(..., discriminator="name")
     img: ImgDataloaderConfig
     psf: PsfDataloaderConfig | None
     random_seed: int = 47
@@ -380,6 +393,7 @@ def _evaluate_dataset(
 ):
     model_kwargs = {}
     device = next(model.parameters()).device
+    print("!!! A", device)
 
     for train_data in dl:
         image, psf = train_data
@@ -623,13 +637,21 @@ def main():
         type=Path,
         default="./olimp/precompensation/nn/pipeline/vdsr.json",
     )
+    parser.add_argument(
+        "--update-schema",
+        action="store_true",
+    )
     args = parser.parse_args()
-    # schema_path = Path(__file__).with_name("schema.json")
-    # import json
+    
+    if args.update_schema:
+        schema_path = Path(__file__).with_name("schema.json")
+        import json
 
-    # schema_path.write_text(
-    #     json.dumps(Config.model_json_schema(), ensure_ascii=False)
-    # )
+        schema_path.write_text(
+            json.dumps(Config.model_json_schema(), ensure_ascii=False)
+        )
+        return
+    
     with args.config.open() as f:
         data = json5.load(f)
     config = Config(**data)

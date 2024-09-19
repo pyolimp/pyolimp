@@ -88,9 +88,11 @@ def _demo():
         psf: Tensor,
         progress: Callable[[float], None],
     ) -> Tensor:
-        model = VDSR.from_path("./olimp/weights/vdsr.pth")
+        model = VDSR.from_path("/home/devel/olimp/pyolimp/epoch_saved/VDSR_0000.pth")
         with torch.no_grad():
             psf = psf.to(torch.float32)
+            image = image.unsqueeze(0).unsqueeze(0)
+            psf = psf.unsqueeze(0).unsqueeze(0)
             inputs = model.preprocess(image, psf)
             progress(0.1)
             precompensation = model(inputs)
