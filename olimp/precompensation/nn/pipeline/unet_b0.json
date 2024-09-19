@@ -1,6 +1,6 @@
 {
     "model": {
-        "name": "vdsr"
+        "name": "unet_b0"
     },
     "img": {
         "dataset": {

@@ -314,8 +314,9 @@ class DataNet(nn.Module):
         super().__init__()
 
     def forward(self, x, FB, FBC, F2B, FBFy, alpha, sf):
+        # (5) equation from usernet
         alphax_after_fft = torch.view_as_real(torch.fft.fft2(alpha * x))
-        FR = FBFy + alphax_after_fft
+        FR = FBFy + alphax_after_fft # || y - (x @ k) | l2 
         x1 = cmul(FB, FR)
         FBR = torch.mean(splits(x1, sf), dim=-1, keepdim=False)
         invW = torch.mean(splits(F2B, sf), dim=-1, keepdim=False)
@@ -396,25 +397,27 @@ class USRNet(nn.Module):
 
         # initialization & pre-calculation
         w, h = x.shape[-2:]
-        FB = p2o(k, (w * sf, h * sf))
-        FBC = cconj(FB, inplace=False)
-        F2B = r2c(cabs2(FB))
-        STy = upsample(x, sf=sf)
+        FB = p2o(k, (w * sf, h * sf)) # psf to otf
+        FBC = cconj(FB, inplace=False) # complex from otf
+        F2B = r2c(cabs2(FB)) # квадрат модуля (или амплитуды) OTF (FB) и преобразуется обратно в комплексное представление.
+        STy = upsample(x, sf=sf) 
         STy_after_fft = torch.view_as_real(torch.fft.fft2(STy))
-        FBFy = cmul(FBC, STy_after_fft)
+        FBFy = cmul(FBC, STy_after_fft) 
         x = nn.functional.interpolate(x, scale_factor=sf, mode="nearest")
 
         # hyper-parameter, alpha & beta
         ab = self.h(
             torch.cat(
-                (sigma, torch.tensor(sf).type_as(sigma).expand_as(sigma)),
+                (sigma, torch.tensor(data=sf).type_as(sigma).expand_as(sigma)),
                 dim=1,
             )
         )
 
         # unfolding
         for i in range(self.n):
+            # equation 5 usrnet
             x = self.d(x, FB, FBC, F2B, FBFy, ab[:, i : i + 1, ...], sf)
+            # equation 6 usrnet
             x = self.p(
                 torch.cat(
                     (

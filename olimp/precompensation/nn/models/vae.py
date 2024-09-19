@@ -89,18 +89,21 @@ class VAE(nn.Module):
         return decoded, mu, logvar
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
-        img_gray = image.to(torch.float32)[None, ...]
-        img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
-        img_blur = conv(img_gray, psf)
+        # img_gray = image.to(torch.float32)[None, ...]
+        # img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
+        img_blur = conv(image, psf)
 
         return torch.cat(
             [
-                img_gray.unsqueeze(0),
-                img_blur.unsqueeze(0),
-                psf.unsqueeze(0).unsqueeze(0),
+                image,
+                img_blur,
+                psf,
             ],
             dim=1,
         )
+        
+    def arguments(self, *args):
+        return {}
 
 
 def _demo():
