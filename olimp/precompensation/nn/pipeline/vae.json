@@ -1,6 +1,6 @@
 {
     "model": {
-        "name": "vdsr"
+        "name": "vae"
     },
     "img": {
         "dataset": {

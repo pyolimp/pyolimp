@@ -79,4 +79,6 @@ def demo(
         rp_arr = rp_arr.transpose(1, 2, 0)
     ax4.imshow(rp_arr, vmin=0.0, vmax=1.0, cmap="gray")
 
+    fig.savefig("/home/devel/olimp/pyolimp/epoch_saved/test.jpg")
+    
     plt.show()

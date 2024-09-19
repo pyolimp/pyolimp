@@ -1,9 +1,11 @@
 from __future__ import annotations
-from typing import Literal
+from typing import Literal, TypeAlias
 import torch
 from torch import nn, Tensor
 import torchvision
 from .model import USRNet
+
+Input: TypeAlias = tuple[Tensor, Tensor, int, Tensor]
 
 
 class PrecompensationUSRNet(USRNet):
@@ -53,9 +55,16 @@ class PrecompensationUSRNet(USRNet):
         # Add a Sigmoid layer to constrain the output between 0 and 1
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, x: Tensor, k: Tensor, scale_factor: int, sigma: Tensor):
+    def forward(self, inputs: Input):
+        x, k, scale_factor, sigma = inputs
         x = super().forward(x, k, scale_factor, sigma)
         return self.sigmoid(x)
+    
+    def preprocess(self, image: Tensor, psf: Tensor, scale_factor: int = 1, noise_level: int = 0) -> Input:
+        sigma = torch.tensor(noise_level).float().view([1, 1, 1, 1])
+        sigma = sigma.repeat([image.shape[0], 1, 1, 1])
+        psf = torch.fft.fftshift(psf)
+        return image, psf, scale_factor, sigma
 
     @classmethod
     def from_path(cls, path: str, **kwargs):
@@ -70,19 +79,5 @@ class PrecompensationUSRNet(USRNet):
         model.load_state_dict(new_state_dict)
         return model
 
-    def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
-        psf = psf.unsqueeze(0).unsqueeze(0)
-        resize_transform = torchvision.transforms.Resize((512, 512))
-
-        image = resize_transform(image)
-        img_gray = image.to(torch.float32)[None, None, ...]
-        img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
-        # lower image contrast to make this demo look good
-        img_gray = (img_gray * (0.7 - 0.3)) + 0.3
-
-        return torch.cat(
-            [img_gray, img_gray, img_gray], dim=1
-        )  # B, 3, 512, 512
-
-    def xxx():
-        pass
+    def arguments(self, *args):
+        return {}
