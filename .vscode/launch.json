@@ -1,0 +1,38 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "train: usrnet",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "olimp.precompensation.nn.train.train",
+            "args": [
+                "--config",
+                "olimp/precompensation/nn/pipeline/usrnet.json"
+            ]
+        },
+        {
+            "name": "train: dwdn",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "olimp.precompensation.nn.train.train",
+            "args": [
+                "--config",
+                "olimp/precompensation/nn/pipeline/dwdn.json"
+            ]
+        },
+        {
+            "name": "train: vae",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "olimp.precompensation.nn.train.train",
+            "args": [
+                "--config",
+                "olimp/precompensation/nn/pipeline/vae.json"
+            ]
+        }
+    ]
+}

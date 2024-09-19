@@ -67,8 +67,8 @@ class VAE(ModelConfig):
         from ..models.vae import VAE
 
         return VAE()
-    
-    
+
+
 class UNET_b0(ModelConfig):
     name: Literal["unet_b0"]
 
@@ -319,7 +319,9 @@ class PsfDataloaderConfig(DataloaderConfig):
 
 
 class Config(BaseModel):
-    model: VDSR | VAE | UNET_b0 | PrecompensationUSRNet | PrecompensationDWDN = Field(..., discriminator="name")
+    model: (
+        VDSR | VAE | UNET_b0 | PrecompensationUSRNet | PrecompensationDWDN
+    ) = Field(..., discriminator="name")
     img: ImgDataloaderConfig
     psf: PsfDataloaderConfig | None
     random_seed: int = 47
@@ -331,7 +333,7 @@ class Config(BaseModel):
     epochs: int = 50
 
 
-from ....evaluation.loss import ms_ssim
+from ....evaluation.loss import ms_ssim, vae_loss
 
 
 class ShuffeledDataset(Dataset[Tensor]):
@@ -405,16 +407,16 @@ def _evaluate_dataset(
         psf /= psf.sum(axis=(1, 2, 3)).view(-1, 1, 1, 1)
         inputs = model.preprocess(image, psf)
 
-        precompensated = model(
+        precompensated, *_ = model(
             inputs,
             **model.arguments(inputs, psf, **model_kwargs),
         )
 
-        loss_func = ms_ssim
+        loss_func = vae_loss  # ms_ssim
         retinal_precompensated = conv(
             precompensated.to(torch.float32).clip(0, 1), psf
         )
-        loss = loss_func(retinal_precompensated, image)
+        loss = loss_func(retinal_precompensated, image, *_)
         yield loss
 
 
@@ -642,7 +644,7 @@ def main():
         action="store_true",
     )
     args = parser.parse_args()
-    
+
     if args.update_schema:
         schema_path = Path(__file__).with_name("schema.json")
         import json
@@ -651,7 +653,7 @@ def main():
             json.dumps(Config.model_json_schema(), ensure_ascii=False)
         )
         return
-    
+
     with args.config.open() as f:
         data = json5.load(f)
     config = Config(**data)

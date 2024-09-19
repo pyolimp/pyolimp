@@ -59,8 +59,14 @@ class PrecompensationUSRNet(USRNet):
         x, k, scale_factor, sigma = inputs
         x = super().forward(x, k, scale_factor, sigma)
         return self.sigmoid(x)
-    
-    def preprocess(self, image: Tensor, psf: Tensor, scale_factor: int = 1, noise_level: int = 0) -> Input:
+
+    def preprocess(
+        self,
+        image: Tensor,
+        psf: Tensor,
+        scale_factor: int = 1,
+        noise_level: int = 0,
+    ) -> Input:
         sigma = torch.tensor(noise_level).float().view([1, 1, 1, 1])
         sigma = sigma.repeat([image.shape[0], 1, 1, 1])
         psf = torch.fft.fftshift(psf)

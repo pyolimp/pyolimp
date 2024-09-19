@@ -101,7 +101,7 @@ class VAE(nn.Module):
             ],
             dim=1,
         )
-        
+
     def arguments(self, *args):
         return {}
 

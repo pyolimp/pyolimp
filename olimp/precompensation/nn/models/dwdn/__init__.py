@@ -8,13 +8,17 @@ from .model import DWDN
 
 Input: TypeAlias = tuple[Tensor, Tensor]
 
+
 class PrecompensationDWDN(DWDN):
     def __init__(self, n_levels: int = 2, scale: float = 0.5):
         super().__init__(n_levels=n_levels, scale=scale)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, inputs: Input) -> Tensor:
-        image, psf, = inputs
+        (
+            image,
+            psf,
+        ) = inputs
         image = super().forward(image, psf)[0]
         return self.sigmoid(image)
 
@@ -30,6 +34,6 @@ class PrecompensationDWDN(DWDN):
     def preprocess(self, image: Tensor, psf: Tensor) -> Input:
         psf = torch.fft.fftshift(psf)
         return image, psf
-        
+
     def arguments(self, input: Tensor, psf: Tensor):
         return {}

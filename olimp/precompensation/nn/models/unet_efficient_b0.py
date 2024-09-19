@@ -45,7 +45,7 @@ class PrecompensationUNETB0(smp.Unet):
             ],
             dim=1,
         )
-        
+
     def arguments(self, *args, **kwargs):
         return {}
 
@@ -59,7 +59,9 @@ def _demo():
         psf: torch.Tensor,
         progress: Callable[[float], None],
     ) -> torch.Tensor:
-        model = PrecompensationUNETB0.from_path("./olimp/weights/unet-efficientnet-b0.pth")
+        model = PrecompensationUNETB0.from_path(
+            "./olimp/weights/unet-efficientnet-b0.pth"
+        )
         with torch.no_grad():
             psf = psf.to(torch.float32)
             inputs = model.preprocessing(image, psf)
