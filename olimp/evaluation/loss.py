@@ -13,6 +13,14 @@ def ms_ssim(pred: Tensor, target: Tensor) -> Tensor:
     return loss
 
 
+def vae_loss(
+    pred: Tensor, target: Tensor, mu: Tensor, logvar: Tensor
+) -> Tensor:
+    L1 = torch.nn.functional.l1_loss(pred, target, reduction="sum")
+    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    return L1 + KLD
+
+
 def L1_KLD(pred: Tensor, target: Tensor, mu: Tensor, logvar: Tensor) -> Tensor:
     # L1 loss for reconstruction
     L1 = torch.nn.functional.l1_loss(pred, target, reduction="sum")
