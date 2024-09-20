@@ -1,3 +1,4 @@
 __pycache__
 **/.datasets
 **/epoch_saved
+schema.json
