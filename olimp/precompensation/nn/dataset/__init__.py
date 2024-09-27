@@ -3,7 +3,7 @@ from typing import Callable, Generic, TypeVar
 
 from torch import Tensor
 from torch.utils.data import Dataset
-from olimp.dataset._zenodo import ZenodoItem
+from olimp.dataset._zenodo import ImgPath
 
 SubPath = TypeVar("SubPath", covariant=True)
 
@@ -24,7 +24,7 @@ class BaseZenodoDataset(Dataset[Tensor], Generic[SubPath]):
         self,
         categories: set[SubPath],
         progress_callback: Callable[[str, float], None] | None,
-    ) -> dict[SubPath, list[ZenodoItem]]:
+    ) -> dict[SubPath, list[ImgPath]]:
         raise NotImplementedError
 
     def __getitem__(self, index: int) -> Tensor:

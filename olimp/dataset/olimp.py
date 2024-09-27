@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Literal, TypeVar, cast, Callable
-from ._zenodo import ZenodoItem, load_dataset, SubPath, default_progress
+from ._zenodo import load_dataset, SubPath, ImgPath, default_progress
+from . import read_img_path
 
 
 Paths = Literal[
@@ -90,14 +91,14 @@ T = TypeVar("T", bound=Paths)
 def olimp(
     categories: set[T],
     progress_callback: Callable[[str, float], None] | None = default_progress,
-) -> dict[T, list[ZenodoItem]]:
+) -> dict[T, list[ImgPath]]:
     dataset = load_dataset(
         "OLIMP",
         13692233,
         cast(set[SubPath], categories),
         progress_callback=progress_callback,
     )
-    return cast(dict[T, list[ZenodoItem]], dataset)
+    return cast(dict[T, list[ImgPath]], dataset)
 
 
 if __name__ == "__main__":
@@ -115,6 +116,6 @@ if __name__ == "__main__":
         if progress:
             progress.stop()
     print(sorted(dataset))
-    print(dataset["*"][0].data.shape)
-    print(dataset["urban scenes/architecture"][0].data.shape)
-    print(dataset["urban scenes"][0].data.shape)
+    print(read_img_path(dataset["*"][0]).shape)
+    print(read_img_path(dataset["urban scenes/architecture"][0]).shape)
+    print(read_img_path(dataset["urban scenes"][0]).shape)
