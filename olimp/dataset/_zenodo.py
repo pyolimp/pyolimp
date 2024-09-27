@@ -1,35 +1,11 @@
 from __future__ import annotations
 from typing import cast, Iterator, Literal, Callable, NewType
 from pathlib import Path
-import numpy as np
 import os
-from torch import Tensor, tensor
-from torch._prims_common import DeviceLikeType
-from torchvision.io import read_image
+from . import ImgPath
 
 
 SubPath = NewType("SubPath", str)
-
-
-class ZenodoItem:
-    def __init__(self, path: Path) -> None:
-        self.path = path
-
-    def data(self, device: DeviceLikeType = "cpu") -> Tensor:
-        """
-        Default device is "cpu" because it's the torch way
-        """
-        if self.path.suffix == ".jpg":
-            return read_image(self.path).to(device=device)
-        elif self.path.suffix == ".csv":
-            return tensor(
-                np.loadtxt(self.path, delimiter=",", dtype=np.float32),
-                device=device,
-            ).unsqueeze(0)
-        else:
-            raise ValueError(
-                f"internal olimp error. Didn't expect {self.path}"
-            )
 
 
 def _download_zenodo(
@@ -73,7 +49,7 @@ def _download_zenodo(
 
 def _read_dataset_dir(
     dataset_root: Path, subpaths: set[SubPath]
-) -> Iterator[tuple[SubPath, list[ZenodoItem]]]:
+) -> Iterator[tuple[SubPath, list[ImgPath]]]:
     from os import walk
 
     # this code can be simpler, going through all subpaths,
@@ -96,7 +72,7 @@ def _read_dataset_dir(
             if file.endswith(".csv") and file != "parameters.csv"
         ]
         if good_paths:
-            items = [ZenodoItem(root / file) for file in files]
+            items = [ImgPath(root / file) for file in files]
             for subpath in fsubpaths:
                 yield subpath, items
 
@@ -124,7 +100,7 @@ def load_dataset(
     record: Literal[7848576, 13692233],
     subpaths: set[SubPath],
     progress_callback: Callable[[str, float], None] | None = default_progress,
-) -> dict[SubPath, list[ZenodoItem]]:
+) -> dict[SubPath, list[ImgPath]]:
     root_path = Path(os.environ.get("OLIMP_DATATEST", ".datasets")).absolute()
     dataset_path = root_path / dataset_name
     if not dataset_path.exists():
@@ -133,7 +109,7 @@ def load_dataset(
             root_path, record=record, progress_callback=progress_callback
         )
 
-    dataset: dict[SubPath, list[ZenodoItem]] = {}
+    dataset: dict[SubPath, list[ImgPath]] = {}
     for subpath, items in _read_dataset_dir(dataset_path, subpaths):
         if subpath in dataset:
             dataset[subpath] += items
