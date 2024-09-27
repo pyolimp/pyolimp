@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Literal, TypeVar, cast, Callable
-from ._zenodo import ZenodoItem, load_dataset, SubPath, default_progress
+from ._zenodo import load_dataset, SubPath, default_progress
+from . import read_img_path, ImgPath
 
 Paths = Literal[
     "Images",
@@ -23,14 +24,14 @@ T = TypeVar("T", bound=Paths)
 def sca_2023(
     categories: set[T],
     progress_callback: Callable[[str, float], None] | None = default_progress,
-) -> dict[T, list[ZenodoItem]]:
+) -> dict[T, list[ImgPath]]:
     dataset = load_dataset(
         "SCA-2023",
         7848576,
         cast(set[SubPath], categories),
         progress_callback=progress_callback,
     )
-    return cast(dict[T, list[ZenodoItem]], dataset)
+    return cast(dict[T, list[ImgPath]], dataset)
 
 
 if __name__ == "__main__":
@@ -42,5 +43,5 @@ if __name__ == "__main__":
         if progress:
             progress.stop()
     print(sorted(dataset))
-    print(dataset["Images"][0].data.shape)
-    print(dataset["PSFs/Medium"][0].data.shape)
+    print(read_img_path(dataset["Images"][0]).shape)
+    print(read_img_path(dataset["PSFs/Medium"][0]).shape)

@@ -27,11 +27,11 @@ import torch
 
 c.update(load_task, completed=50)
 from olimp.processing import conv
-from torch import nn, Tensor, tensor
+from torch import nn, Tensor
 from torchvision.transforms.v2 import Compose, Resize, Grayscale
 
 c.update(load_task, completed=75)
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, ConcatDataset
 from pathlib import Path
 
 c.update(load_task, completed=100)
@@ -223,6 +223,17 @@ class Olimp(DatasetConfig):
         return OlimpDataset(self.subsets)
 
 
+class Directory(DatasetConfig):
+    name: Literal["Directory"]
+    path: Path
+    matches: list[str] = ["*.jpg", "*.jpeg", "*.png"]
+
+    def load(self):
+        from ..dataset.directory import DirectoryDataset
+
+        return DirectoryDataset(self.path, self.matches)
+
+
 #
 # Transform
 #
@@ -280,7 +291,9 @@ class SGDConfig(BaseModel):
 #
 #
 
-OlimpDataset = Annotated[SCA2023, Field(..., discriminator="name")]
+OlimpDataset = Annotated[
+    SCA2023 | Olimp | Directory, Field(..., discriminator="name")
+]
 Optimizer = Annotated[AdamConfig | SGDConfig, Field(..., discriminator="name")]
 Transforms = list[
     Annotated[
@@ -291,15 +304,14 @@ Transforms = list[
 
 class DataloaderConfig(BaseModel):
     transforms: Transforms
-    dataset: OlimpDataset
+    datasets: list[OlimpDataset]
 
     def load(self):
-        dataset = self.dataset.load()
         all_transforms = [t.transform() for t in self.transforms]
         if not all_transforms:
             all_transforms.append(lambda a: a)
         transforms = Compose(all_transforms)
-
+        dataset = ConcatDataset([dataset.load() for dataset in self.datasets])
         return dataset, transforms
 
 
@@ -395,7 +407,6 @@ def _evaluate_dataset(
 ):
     model_kwargs = {}
     device = next(model.parameters()).device
-    print("!!! A", device)
 
     for train_data in dl:
         image, psf = train_data
@@ -652,7 +663,9 @@ def main():
         schema_path.write_text(
             json.dumps(Config.model_json_schema(), ensure_ascii=False)
         )
+        c.console.log(f"[green] {schema_path} [cyan]saved")
         return
+    c.console.log(f"Using [green]{args.config}")
 
     with args.config.open() as f:
         data = json5.load(f)
