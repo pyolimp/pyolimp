@@ -98,15 +98,15 @@ class PrecompensationDWDN(ModelConfig):
 
 
 #
-# DatasetrConfig
+# DatasetConfig
 #
 
 
-class DatasetrConfig(BaseModel):
+class DatasetConfig(BaseModel):
     pass
 
 
-class SCA2023(DatasetrConfig):
+class SCA2023(DatasetConfig):
     name: Literal["SCA2023"]
 
     subsets: set[
@@ -132,7 +132,7 @@ class SCA2023(DatasetrConfig):
         return SCA2023Dataset(self.subsets)
 
 
-class Olimp(DatasetrConfig):
+class Olimp(DatasetConfig):
     name: Literal["Olimp"]
 
     subsets: set[
