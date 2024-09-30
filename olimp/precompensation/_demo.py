@@ -77,6 +77,8 @@ def demo(
     ax3.set_title(
         f"Procompensation: {name} ({p_arr.min():g}, {p_arr.max():g})"
     )
+    assert p_arr.shape[0] == 1
+    p_arr = p_arr[0]
     if p_arr.ndim == 3:
         p_arr = p_arr.transpose(1, 2, 0)
     ax3.imshow(p_arr, vmin=0.0, vmax=1.0, cmap="gray")
