@@ -16,21 +16,16 @@ def _demo():
         )
         with torch.no_grad():
             psf = psf.to(torch.float32)
-            inputs = model.preprocess(image, psf)
-
-            noise_level = 0
-            sigma = torch.tensor(noise_level).float().view([1, 1, 1, 1])
-            sigma = sigma.repeat([inputs.shape[0], 1, 1, 1])
-            scale_factor = 1
+            inputs = model.preprocess(
+                image, psf, scale_factor=1, noise_level=0
+            )
 
             progress(0.1)
-            precompensation = model(
-                inputs, torch.fft.fftshift(psf), scale_factor, sigma
-            )
+            precompensation = model(inputs)
             progress(1.0)
             return precompensation[0, 0]
 
-    demo("USRNET", demo_usrnet, mono=True)
+    demo("USRNET", demo_usrnet, mono=True, num_output_channels=3)
 
 
 if __name__ == "__main__":

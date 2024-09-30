@@ -64,7 +64,7 @@ def _demo():
         )
         with torch.no_grad():
             psf = psf.to(torch.float32)
-            inputs = model.preprocessing(image, psf)
+            inputs = model.preprocess(image, psf)
             progress(0.1)
             precompensation = model(inputs)
             progress(1.0)
