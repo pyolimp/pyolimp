@@ -6588,7 +6588,6 @@ class Discriminator_transformer3(nn.Module):
 
 
 if __name__ == "__main__":
-    print("lol")
     test_data = np.load(
         "/home/devel/olimp/pyolimp/tests/test_data/test.npy", allow_pickle=True
     )
