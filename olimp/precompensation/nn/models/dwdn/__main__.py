@@ -19,7 +19,7 @@ def _demo():
             progress(1.0)
             return precompensation[0, 0]
 
-    demo("DWDN", demo_dwdn, mono=True)
+    demo("DWDN", demo_dwdn, mono=True, num_output_channels=3)
 
 
 if __name__ == "__main__":

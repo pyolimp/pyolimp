@@ -6,6 +6,7 @@ import torch
 from torch import Tensor
 import torchvision
 from olimp.processing import conv
+from torchvision.transforms.v2 import Resize, Grayscale
 
 from rich.progress import (
     Progress,
@@ -20,6 +21,7 @@ def demo(
     name: Literal["Montalto", "Bregman Jumbo", "Huang", "Feng Xu"],
     opt_function: Callable[[Tensor, Tensor, Callable[[float], None]], Tensor],
     mono: bool = False,
+    num_output_channels: int = 1,
 ):
     with Progress(
         SpinnerColumn(),
@@ -35,19 +37,25 @@ def demo(
         img = torchvision.io.read_image("./tests/test_data/horse.jpg")
         progress.advance(task_l)
         img = img / 255.0
-        img = torchvision.transforms.Resize((512, 512))(img)
+        img = Resize((512, 512))(img)
         if mono:
-            img = img[0]
+            img = Grayscale(num_output_channels=num_output_channels)(img)[
+                None, ...
+            ]
+        else:
+            img = img[None, ...]
         progress.advance(task_l)
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         with torch.device(device):
-            psf = torch.fft.fftshift(torch.tensor(psf_info["psf"]))
+            psf = torch.fft.fftshift(torch.tensor(psf_info["psf"]))[
+                None, None, ...
+            ]
 
             callback: Callable[[float], None] = lambda c: progress.update(
                 task_p, completed=c
             )
-            precompensation = opt_function(torch.tensor(img), psf, callback)
+            precompensation = opt_function(img.to(device), psf, callback)
             retinal_procompensated = conv(precompensation, psf)
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
@@ -58,6 +66,8 @@ def demo(
         f"PSF (S={psf_info['S']}, C={psf_info['C']}, "
         f"A={psf_info['A']}, sum={psf_info['psf'].sum():g})"
     )
+    assert img.shape[0] == 1
+    img = img[0]
     if img.ndim == 3:
         img = img.permute(1, 2, 0)
     ax2.imshow(img, cmap="gray", vmin=0.0, vmax=1.0)
@@ -72,6 +82,8 @@ def demo(
     ax3.imshow(p_arr, vmin=0.0, vmax=1.0, cmap="gray")
 
     rp_arr = retinal_procompensated.cpu().detach().numpy()
+    assert rp_arr.shape[0] == 1
+    rp_arr = rp_arr[0]
     ax4.set_title(
         f"Retinal Procompensated ({rp_arr.min():g}, {rp_arr.max():g})"
     )
