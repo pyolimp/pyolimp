@@ -6,14 +6,14 @@ from olimp.processing import conv, scale_value
 
 
 def feng_xu(image: Tensor, psf: Tensor, lambda_val: float = 7.0) -> Tensor:
-    f1 = torch.tensor([[1, -1]])
-    f2 = torch.tensor([[1], [-1]])
+    f1 = torch.tensor([[[[1, -1]]]])
+    f2 = torch.tensor([[[[1], [-1]]]])
 
     # Compute Fourier transforms
     F_Io = torch.fft.fft2(image)
     F_K = torch.fft.fft2(psf)
-    F_f1 = torch.fft.fft2(f1, s=image.shape)
-    F_f2 = torch.fft.fft2(f2, s=image.shape)
+    F_f1 = torch.fft.fft2(f1, dim=(0, 1, 2, 3), s=image.shape)
+    F_f2 = torch.fft.fft2(f2, dim=(0, 1, 2, 3), s=image.shape)
 
     # Compute conjugates and element-wise multiplication
     F_K_star = torch.conj(F_K)
