@@ -122,7 +122,7 @@ def _demo():
             progress(0.1)
             precompensation, _mu, _logvar = model(inputs)
             progress(1.0)
-            return precompensation[0, 0]
+            return precompensation
 
     demo("VAE", demo_vae, mono=True)
 
