@@ -3,12 +3,14 @@
         "name": "precompensationusrnet"
     },
     "img": {
-        "dataset": {
-            "name": "SCA2023",
-            "subsets": [
-                "Images/Real_images/Faces"
-            ]
-        },
+        "datasets": [
+            {
+                "name": "SCA2023",
+                "subsets": [
+                    "Images/Real_images/Faces"
+                ]
+            }
+        ],
         "transforms": [
             {
                 "name": "Grayscale",
@@ -24,12 +26,14 @@
         ]
     },
     "psf": {
-        "dataset": {
-            "name": "SCA2023",
-            "subsets": [
-                "PSFs/Narrow"
-            ]
-        }
+        "datasets": [
+            {
+                "name": "SCA2023",
+                "subsets": [
+                    "PSFs/Narrow"
+                ]
+            }
+        ]
     },
     "batch_size": 1
 }
