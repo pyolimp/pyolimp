@@ -1,3 +1,5 @@
 __pycache__
 **/.datasets
 **/epoch_saved
+# ignore common directory with external data
+/data
