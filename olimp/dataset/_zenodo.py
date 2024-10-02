@@ -72,7 +72,7 @@ def _read_dataset_dir(
             if file.endswith(".csv") and file != "parameters.csv"
         ]
         if good_paths:
-            items = [ImgPath(root / file) for file in files]
+            items = [ImgPath(root / file) for file in good_paths]
             for subpath in fsubpaths:
                 yield subpath, items
 
