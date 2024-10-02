@@ -19,4 +19,7 @@ def read_img_path(path: ImgPath, device: DeviceLikeType = "cpu") -> Tensor:
             np.loadtxt(path, delimiter=",", dtype=np.float32),
             device=device,
         ).unsqueeze(0)
-    return read_image(str(path)).to(device=device)
+    try:
+        return read_image(str(path)).to(device=device)
+    except Exception as e:
+        raise ValueError(f"bad image file: {path}") from e
