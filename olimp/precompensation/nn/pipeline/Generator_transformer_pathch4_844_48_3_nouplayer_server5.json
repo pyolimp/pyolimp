@@ -1,0 +1,32 @@
+{
+    "img": {
+        "datasets": [
+            {
+                "name": "Directory",
+                "path": "data/Color_cvd_D_experiment_1000/Color_cvd_D_experiment_1000"
+            }
+        ],
+        "transforms": [
+            {
+                "name": "Resize",
+                "size": [
+                    256,
+                    256
+                ],
+                "interpolation": "bicubic"
+            },
+            {
+                "name": "Float32"
+            },
+            {
+                "name": "Normalize",
+                "mean": [0.5, 0.5, 0.5],
+                "std": [0.5, 0.5, 0.5]
+            }
+
+        ]
+    },
+    "model": {
+        "name": "Generator_transformer_pathch4_844_48_3_nouplayer_server5"
+    }
+}
