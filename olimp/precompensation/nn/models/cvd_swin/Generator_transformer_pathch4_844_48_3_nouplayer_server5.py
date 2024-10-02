@@ -356,31 +356,41 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(nn.Module):
         flops += self.num_features * self.num_classes
         return flops
 
+    @classmethod
+    def from_path(cls, path: str = "./olimp/weights/cvd_swin.pth"):
+        state_dict = torch.load(
+            path,
+            map_location=torch.get_default_device(),
+            weights_only=True,
+        )
+        new_state_dict = {}
+        for key, value in state_dict.items():
+            new_key = key.replace("module.", "")
+            new_state_dict[new_key] = value
+        model = cls()
+        model.load_state_dict(new_state_dict)
+        return model
+
+    def preprocess(self, tensor: torch.Tensor) -> torch.Tensor:
+        return tensor
+
+    def arguments(self, *args, **kwargs):
+        return {}
+
 
 if __name__ == "__main__":
     import numpy as np
     import matplotlib.pyplot as plt
 
-    test_data = np.load(
-        "/home/devel/olimp/pyolimp/tests/test_data/test.npy", allow_pickle=True
-    )
+    test_data = np.load("./tests/test_data/test.npy", allow_pickle=True)
 
     test = test_data[3]
     test = test.clip(0, 1)
     test_t = torch.tensor(test).unsqueeze(0)
 
-    swd_swin = Generator_transformer_pathch4_844_48_3_nouplayer_server5()
-    state_dict = torch.load(
-        "/home/devel/olimp/pyolimp/olimp/weights/cvd_swin.pth",
-        map_location=torch.get_default_device(),
-        weights_only=True,
+    swd_swin = (
+        Generator_transformer_pathch4_844_48_3_nouplayer_server5.from_path()
     )
-    new_state_dict = {}
-    for key, value in state_dict.items():
-        new_key = key.replace("module.", "")
-        new_state_dict[new_key] = value
-    swd_swin.load_state_dict(new_state_dict)
-
     output = swd_swin(test_t)
 
     plt.imshow(output.detach().cpu().numpy().transpose([0, 2, 3, 1])[0])
