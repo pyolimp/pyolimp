@@ -10,342 +10,37 @@ from rich.progress import (
 c = Progress()
 c.start()
 
-import warnings
+# import warnings
 
-warnings.filterwarnings("error", category=UserWarning)
+# warnings.filterwarnings("error", category=UserWarning)
 
 load_task = c.add_task("Import libraries")
-from typing import Literal, Annotated, Callable
+from typing import Any, Callable, TypeAlias, Annotated
 from math import prod
 
 import random
-from pydantic import BaseModel, Field
 import json5
 
 c.update(load_task, completed=1)
 import torch
 
 c.update(load_task, completed=50)
-from olimp.processing import conv
 from torch import nn, Tensor
-from torchvision.transforms.v2 import Compose, Resize, Grayscale
+from torchvision.transforms.v2 import Compose
 
 c.update(load_task, completed=75)
-from torch.utils.data import Dataset, DataLoader, ConcatDataset
+from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 
 c.update(load_task, completed=100)
+from .config import Config
 
+# from ....evaluation.loss import ms_ssim, vae_loss
 
-class BaseModel(BaseModel):
-    class Config:
-        extra = "forbid"
-
-
-#
-# ModelConfig
-#
-
-
-class ModelConfig(BaseModel):
-    pass
-
-
-class VDSR(ModelConfig):
-    name: Literal["vdsr"]
-
-    def get_instance(self):
-        from ..models.vdsr import VDSR
-
-        return VDSR()
-
-
-class VAE(ModelConfig):
-    name: Literal["vae"]
-
-    def get_instance(self):
-        from ..models.vae import VAE
-
-        return VAE()
-
-
-class UNET_b0(ModelConfig):
-    name: Literal["unet_b0"]
-
-    def get_instance(self):
-        from ..models.unet_efficient_b0 import PrecompensationUNETB0
-
-        return PrecompensationUNETB0()
-
-
-class PrecompensationUSRNet(ModelConfig):
-    name: Literal["precompensationusrnet"]
-
-    def get_instance(self):
-        from ..models.usrnet import PrecompensationUSRNet
-
-        return PrecompensationUSRNet()
-
-
-class PrecompensationDWDN(ModelConfig):
-    name: Literal["precompensationdwdn"]
-    n_levels: int = 1
-
-    def get_instance(self):
-        from ..models.dwdn import PrecompensationDWDN
-
-        return PrecompensationDWDN(n_levels=self.n_levels)
-
-
-#
-# DatasetConfig
-#
-
-
-class DatasetConfig(BaseModel):
-    pass
-
-
-class SCA2023(DatasetConfig):
-    name: Literal["SCA2023"]
-
-    subsets: set[
-        Literal[
-            "Images",
-            "Images/Icons",
-            "Images/Real_images/Animals",
-            "Images/Real_images",
-            "Images/Real_images/Faces",
-            "Images/Real_images/Natural",
-            "Images/Real_images/Urban",
-            "Images/Texts",
-            "PSFs",
-            "PSFs/Broad",
-            "PSFs/Medium",
-            "PSFs/Narrow",
-        ]
-    ]
-
-    def load(self):
-        from ..dataset.sca_2023 import SCA2023Dataset
-
-        return SCA2023Dataset(self.subsets)
-
-
-class Olimp(DatasetConfig):
-    name: Literal["Olimp"]
-
-    subsets: set[
-        Literal[
-            "*",  # load all
-            "abstracts and textures",
-            "abstracts and textures/abstract art",
-            "abstracts and textures/backgrounds and patterns",
-            "abstracts and textures/colorful abstracts",
-            "abstracts and textures/geometric shapes",
-            "abstracts and textures/neon abstracts",
-            "abstracts and textures/textures",
-            "animals",
-            "animals/birds",
-            "animals/farm animals",
-            "animals/insects and spiders",
-            "animals/marine life",
-            "animals/pets",
-            "animals/wild animals",
-            "art and culture",
-            "art and culture/cartoon and comics",
-            "art and culture/crafts and handicrafts",
-            "art and culture/dance and theater performances",
-            "art and culture/music concerts and instruments",
-            "art and culture/painting and frescoes",
-            "art and culture/sculpture and bas-reliefs",
-            "food and drinks",
-            "food and drinks/desserts and bakery",
-            "food and drinks/dishes",
-            "food and drinks/drinks",
-            "food and drinks/food products on store shelves",
-            "food and drinks/fruits and vegetables",
-            "food and drinks/street food",
-            "interiors",
-            "interiors/gyms and pools",
-            "interiors/living spaces",
-            "interiors/museums and galleries",
-            "interiors/offices",
-            "interiors/restaurants and cafes",
-            "interiors/shopping centers and stores",
-            "nature",
-            "nature/beaches",
-            "nature/deserts",
-            "nature/fields and meadows",
-            "nature/forest",
-            "nature/mountains",
-            "nature/water bodies",
-            "objects and items",
-            "objects and items/books and stationery",
-            "objects and items/clothing and accessories",
-            "objects and items/electronics and gadgets",
-            "objects and items/furniture and decor",
-            "objects and items/tools and equipment",
-            "objects and items/toys and games",
-            "portraits and people",
-            "portraits and people/athletes and dancers",
-            "portraits and people/crowds and demonstrations",
-            "portraits and people/group photos",
-            "portraits and people/individual portraits",
-            "portraits and people/models on runway",
-            "portraits and people/workers in their workplaces",
-            "sports and active leisure",
-            "sports and active leisure/cycling and rollerblading",
-            "sports and active leisure/extreme sports",
-            "sports and active leisure/individual sports",
-            "sports and active leisure/martial arts",
-            "sports and active leisure/team sports",
-            "sports and active leisure/tourism and hikes",
-            "text and pictogram",
-            "text and pictogram/billboard text",
-            "text and pictogram/blueprints",
-            "text and pictogram/caricatures and pencil drawing",
-            "text and pictogram/text documents",
-            "text and pictogram/traffic signs",
-            "urban scenes",
-            "urban scenes/architecture",
-            "urban scenes/city at night",
-            "urban scenes/graffiti and street art",
-            "urban scenes/parks and squares",
-            "urban scenes/streets and avenues",
-            "urban scenes/transport",
-        ]
-    ]
-
-    def load(self):
-        from ..dataset.olimp import OlimpDataset
-
-        return OlimpDataset(self.subsets)
-
-
-class Directory(DatasetConfig):
-    name: Literal["Directory"]
-    path: Path
-    matches: list[str] = ["*.jpg", "*.jpeg", "*.png"]
-
-    def load(self):
-        from ..dataset.directory import DirectoryDataset
-
-        return DirectoryDataset(self.path, self.matches)
-
-
-#
-# Transform
-#
-
-
-class TransformsTransform(BaseModel):
-    pass
-
-
-class ResizeTransform(TransformsTransform):
-    name: Literal["Resize"]
-    size: list[int] = [512, 512]
-
-    def transform(self):
-        return Resize(self.size)
-
-
-class GrayscaleTransform(TransformsTransform):
-    name: Literal["Grayscale"]
-    num_output_channels: int = 1
-
-    def transform(self):
-        return Grayscale(self.num_output_channels)
-
-
-#
-# Optimizers
-#
-
-
-class AdamConfig(BaseModel):
-    name: Literal["Adam"]
-    learning_rate: float = 0.00001
-    eps: float = 1e-8
-
-    def load(self):
-        def optimizer(model: torch.nn.Module):
-            return torch.optim.Adam(model.parameters(), lr=self.learning_rate)
-
-        return optimizer
-
-
-class SGDConfig(BaseModel):
-    name: Literal["SGD"]
-    learning_rate: float = 0.00001
-
-    def load(self):
-        def optimizer(model: torch.nn.Module):
-            return torch.optim.SGD(model.parameters(), lr=self.learning_rate)
-
-        return optimizer
-
-
-#
-#
-#
-
-OlimpDataset = Annotated[
-    SCA2023 | Olimp | Directory, Field(..., discriminator="name")
+LossFunction: TypeAlias = Annotated[
+    Callable[[list[Tensor], list[Tensor]], Tensor],
+    "(model result, model input before preprocessing) -> loss",
 ]
-Optimizer = Annotated[AdamConfig | SGDConfig, Field(..., discriminator="name")]
-Transforms = list[
-    Annotated[
-        ResizeTransform | GrayscaleTransform, Field(discriminator="name")
-    ]
-]
-
-
-class DataloaderConfig(BaseModel):
-    transforms: Transforms
-    datasets: list[OlimpDataset]
-
-    def load(self):
-        all_transforms = [t.transform() for t in self.transforms]
-        if not all_transforms:
-            all_transforms.append(lambda a: a)
-        transforms = Compose(all_transforms)
-        dataset = ConcatDataset([dataset.load() for dataset in self.datasets])
-        return dataset, transforms
-
-
-class ImgDataloaderConfig(DataloaderConfig):
-
-    transforms: Transforms = [
-        GrayscaleTransform(name="Grayscale"),
-        ResizeTransform(name="Resize"),
-    ]
-
-
-class PsfDataloaderConfig(DataloaderConfig):
-    transforms: Transforms = [
-        # ResizeTransform(name="Resize"),
-        # GrayscaleTransform(name="Grayscale"),
-    ]
-
-
-class Config(BaseModel):
-    model: (
-        VDSR | VAE | UNET_b0 | PrecompensationUSRNet | PrecompensationDWDN
-    ) = Field(..., discriminator="name")
-    img: ImgDataloaderConfig
-    psf: PsfDataloaderConfig | None
-    random_seed: int = 47
-    batch_size: int = 1
-    train_frac: float = 0.8
-    validation_frac: float = 0.2
-    epoch_dir: Path = Path("./epoch_saved")
-    optimizer: Optimizer = AdamConfig(name="Adam")
-    epochs: int = 50
-
-
-from ....evaluation.loss import ms_ssim, vae_loss
 
 
 class ShuffeledDataset(Dataset[Tensor]):
@@ -402,32 +97,35 @@ def random_split(
 def _evaluate_dataset(
     model: nn.Module,
     dl: DataLoader[tuple[Tensor, ...]],
-    img_transform: Compose,
-    psf_transform: Compose,
+    transforms: tuple[Compose, ...],
+    loss_function: LossFunction,
 ):
     model_kwargs = {}
     device = next(model.parameters()).device
 
     for train_data in dl:
-        image, psf = train_data
-        image = image.to(device)
-        psf = psf.to(device)
-        image = img_transform(image)
-        psf = psf_transform(psf)
-        image = image.to(torch.float32) / 255.0
-        psf /= psf.sum(axis=(1, 2, 3)).view(-1, 1, 1, 1)
-        inputs = model.preprocess(image, psf)
+        datums: list[Tensor] = []
+        for datum, transform in zip(train_data, transforms, strict=True):
+            datum = datum.to(device)
+            datums.append(transform(datum))
+        inputs = model.preprocess(*datums)
 
-        precompensated, *_ = model(
+        precompensated = model(
             inputs,
-            **model.arguments(inputs, psf, **model_kwargs),
+            **model.arguments(inputs, datums[-1], **model_kwargs),
         )
 
-        loss_func = vae_loss  # ms_ssim
-        retinal_precompensated = conv(
-            precompensated.to(torch.float32).clip(0, 1), psf
-        )
-        loss = loss_func(retinal_precompensated, image, *_)
+        loss = loss_function(precompensated, datums)
+        return loss
+
+        # from ....evaluation.loss.ssim import SSIMLoss
+
+        # retinal_precompensated = conv(
+        #     precompensated.to(torch.float32).clip(0, 1), psf
+        # )
+        # #
+        # loss_func = SSIMLoss() #vae_loss  # ms_ssim
+        # loss = loss_func(retinal_precompensated, image, *_)
         yield loss
 
 
@@ -470,8 +168,8 @@ def _train_loop(
     epoch_task: TaskID,
     optimizer: torch.optim.optimizer.Optimizer,
     epoch_dir: Path,
-    img_transform: Compose,
-    psf_transform: Compose,
+    transforms: tuple[Compose, ...],
+    loss_function: LossFunction,
 ):
     train_statistics = TrainStatistics(patience=3)
     model_name = type(model).__name__
@@ -489,8 +187,8 @@ def _train_loop(
             _evaluate_dataset(
                 model,
                 dl_train,
-                img_transform=img_transform,
-                psf_transform=psf_transform,
+                transforms=transforms,
+                loss_function=loss_function,
             ),
             task_id=training_task,
         ):
@@ -513,8 +211,8 @@ def _train_loop(
                 _evaluate_dataset(
                     model,
                     dl_validation,
-                    img_transform=img_transform,
-                    psf_transform=psf_transform,
+                    transforms=transforms,
+                    loss_func=loss_func,
                 ),
                 total=len(dl_validation),
                 description="Validation...",
@@ -549,8 +247,8 @@ def train(
     model: nn.Module,
     img_dataset: Dataset[Tensor],
     img_transform: Compose,
-    psf_dataset: Dataset[Tensor],
-    psf_transform: Compose,
+    psf_dataset: Dataset[Tensor] | None,
+    psf_transform: Compose | None,
     random_seed: int,
     batch_size: int,
     train_frac: float,
@@ -558,6 +256,7 @@ def train(
     epochs: int,
     epoch_dir: Path,
     create_optimizer: Callable[[nn.Module], torch.optim.optimizer.Optimizer],
+    loss_function: LossFunction,
 ):
     epoch_dir.mkdir(exist_ok=True, parents=True)
     torch.manual_seed(random_seed)
@@ -567,15 +266,22 @@ def train(
         img_dataset, train_frac, validation_frac
     )
 
-    psf_dataset_train, psf_dataset_validation, psf_dataset_test = random_split(
-        psf_dataset, train_frac, validation_frac
-    )
-
-    dataset_train = ProductDataset(img_dataset_train, psf_dataset_train)
-    dataset_validation = ProductDataset(
-        img_dataset_validation, psf_dataset_validation
-    )
-    dataset_test = ProductDataset(img_dataset_test, psf_dataset_test)
+    if psf_dataset is not None:
+        psf_dataset_train, psf_dataset_validation, psf_dataset_test = (
+            random_split(psf_dataset, train_frac, validation_frac)
+        )
+        dataset_train = ProductDataset(img_dataset_train, psf_dataset_train)
+        dataset_validation = ProductDataset(
+            img_dataset_validation, psf_dataset_validation
+        )
+        dataset_test = ProductDataset(img_dataset_test, psf_dataset_test)
+        assert psf_transform is not None
+        transforms = img_transform, psf_transform
+    else:
+        dataset_train = ProductDataset(img_dataset_train)
+        dataset_validation = ProductDataset(img_dataset_validation)
+        dataset_test = ProductDataset(img_dataset_test)
+        transforms = (img_transform,)
 
     dl_train = DataLoader(dataset_train, shuffle=True, batch_size=batch_size)
 
@@ -616,8 +322,8 @@ def train(
             epoch_task=epoch_task,
             optimizer=optimizer,
             epoch_dir=epoch_dir,
-            img_transform=img_transform,
-            psf_transform=psf_transform,
+            transforms=transforms,
+            loss_function=loss_function,
         )
     except KeyboardInterrupt:
         p.print("training stopped by user (Ctrl+C)")
@@ -630,7 +336,13 @@ def train(
         test_task = p.add_task("Test... ", total=len(dl_test), loss="?")
         test_loss = 0.0
         for loss in p.track(
-            _evaluate_dataset(model, dl_test), task_id=test_task
+            _evaluate_dataset(
+                model,
+                dl_test,
+                transforms=transforms,
+                loss_function=loss_function,
+            ),
+            task_id=test_task,
         ):
             test_loss += loss.item()
             p.update(test_task, loss=f"{test_loss:g}")
@@ -678,11 +390,16 @@ def main():
         device_str = "cpu"
         c.console.print("Current device: [bold red] CPU")
 
+    loss_function = config.loss_function.load(config.model)
+
     with torch.device(device_str):
         model = config.model.get_instance()
         img_dataset, img_transform = config.img.load()
         # img_dataset._items = img_dataset._items[0:10]
-        psf_dataset, psf_transform = config.psf.load()
+        if config.psf is not None:
+            psf_dataset, psf_transform = config.psf.load()
+        else:
+            psf_dataset = psf_transform = None
         # psf_dataset._items = psf_dataset._items[0:3]
         create_optimizer = config.optimizer.load()
         train(
@@ -698,6 +415,7 @@ def main():
             epochs=config.epochs,
             epoch_dir=config.epoch_dir,
             create_optimizer=create_optimizer,
+            loss_function=loss_function,
         )
 
 
