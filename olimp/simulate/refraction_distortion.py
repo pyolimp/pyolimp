@@ -1,8 +1,8 @@
-
 import torch
 from torch import Tensor
 
 from olimp.simulate import Distortion
+
 
 class RefractionDistortion(Distortion):
     def __init__(self, K: Tensor) -> None:

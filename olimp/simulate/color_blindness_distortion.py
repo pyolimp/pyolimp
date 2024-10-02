@@ -5,6 +5,7 @@ from torch import Tensor
 
 from olimp.simulate import Distortion
 
+
 class ColorBlindnessDistortion(Distortion):
     def __init__(
         self,
