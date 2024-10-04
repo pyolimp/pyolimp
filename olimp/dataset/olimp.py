@@ -93,8 +93,7 @@ def olimp(
     progress_callback: Callable[[str, float], None] | None = default_progress,
 ) -> dict[T, list[ImgPath]]:
     dataset = load_dataset(
-        "OLIMP",
-        13692233,
+        ("OLIMP", 13692233),
         cast(set[SubPath], categories),
         progress_callback=progress_callback,
     )

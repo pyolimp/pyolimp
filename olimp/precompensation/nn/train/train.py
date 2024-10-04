@@ -373,6 +373,7 @@ def main():
             json.dumps(Config.model_json_schema(), ensure_ascii=False)
         )
         c.console.log(f"[green] {schema_path} [cyan]saved")
+        c.stop()
         return
     c.console.log(f"Using [green]{args.config}")
 
@@ -387,10 +388,9 @@ def main():
         device_str = "cpu"
         c.console.print("Current device: [bold red] CPU")
 
-    loss_function = config.loss_function.load(config.model)
-
     with torch.device(device_str):
         model = config.model.get_instance()
+        loss_function = config.loss_function.load(model)
         img_dataset, img_transform = config.img.load()
         # img_dataset._items = img_dataset._items[0:10]
         if config.psf is not None:
