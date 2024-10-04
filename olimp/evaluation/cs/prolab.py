@@ -28,14 +28,14 @@ class ProLab:
     def __init__(self, illuminant_xyz: Tensor):
         self._illuminant_xyz = illuminant_xyz
 
-    def _from_XYZ(self, color: Tensor) -> Tensor:
+    def from_XYZ(self, color: Tensor) -> Tensor:
         color_ = color / self._illuminant_xyz
         return (
             (torch.tensordot(color_, self.Q, dims=1)).T
             / (torch.tensordot(color_, self.q, dims=1).T + 1.0)
         ).T
 
-    def _to_XYZ(self, color: Tensor) -> Tensor:
+    def to_XYZ(self, color: Tensor) -> Tensor:
         y2 = torch.tensordot(color, self.Q_inv, dims=1)
         xyz = y2.T / (1.0 - torch.tensordot(y2, self.q, dims=1)).T
         return xyz.T * self._illuminant_xyz

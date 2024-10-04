@@ -42,11 +42,19 @@ class CIELAB:
         assert illuminant_xyz is not None
         self._illuminant_xyz = illuminant_xyz
 
-    def _from_XYZ(self, color: Tensor):
-        return torch.tensordot(f(color / self._illuminant_xyz), self.A, dims=1)
+    def from_XYZ(self, color: Tensor):
+        return torch.tensordot(
+            f(color / self._illuminant_xyz),
+            self.A.to(device=color.device),
+            dims=1,
+        )
 
-    def _to_XYZ(self, color: Tensor):
+    def to_XYZ(self, color: Tensor):
         return (
-            finv(torch.tensordot(color, self.Ainv, dims=1))
+            finv(
+                torch.tensordot(
+                    color, self.Ainv.to(device=color.device), dims=1
+                )
+            )
             * self._illuminant_xyz
         )

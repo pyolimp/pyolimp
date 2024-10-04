@@ -17,10 +17,10 @@ class linRGB:
     def __init__(self, illuminant_xyz: Tensor | None = None):
         assert illuminant_xyz is None
 
-    def _from_XYZ(self, color: Tensor) -> Tensor:
-        return color @ LIN_RGB_MATRIX
+    def from_XYZ(self, color: Tensor) -> Tensor:
+        return color @ LIN_RGB_MATRIX.to(device=color.device)
 
-    def _from_sRGB(self, color: Tensor) -> Tensor:
+    def from_sRGB(self, color: Tensor) -> Tensor:
         if color.min() < 0 or color.max() > 1:
             warnings.warn(
                 f"sRGB range should be in [0, 1] not [{color.min()}, {color.max()}]"
@@ -33,5 +33,5 @@ class linRGB:
         )
         return color
 
-    def _to_XYZ(self, color: Tensor) -> Tensor:
-        return color @ torch.linalg.inv(LIN_RGB_MATRIX)
+    def to_XYZ(self, color: Tensor) -> Tensor:
+        return color @ torch.linalg.inv(LIN_RGB_MATRIX.to(device=color.device))
