@@ -6,7 +6,7 @@ from . import (
     Upsample,
     resi_connection_layer,
 )
-
+from torch import Tensor
 import torch
 import torch.nn as nn
 from timm.models.layers import trunc_normal_
@@ -292,9 +292,10 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(nn.Module):
     def no_weight_decay_keywords(self):
         return {"relative_position_bias_table"}
 
-    def forward_features(self, x):
+    def forward_features(self, x: Tensor) -> Tensor:
 
         x = self.patch_embed(x)
+
         if self.ape:
             x = x + self.absolute_pos_embed
         x = self.pos_drop(x)
@@ -307,6 +308,7 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(nn.Module):
             self.downsample_result.append(x)
         i = 0
         x1 = x
+
         # print('x1',x.size(),len(self.downsample_result))
         for uplayer in self.uplayers:
             x1 = uplayer(x1)
@@ -336,11 +338,11 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(nn.Module):
         # x = torch.flatten(x, 1)
         return x
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         # print('forward',x.size())
         x = self.forward_features(x)
         # x = self.head(x)
-        return x
+        return (x,)
 
     def flops(self):
         flops = 0

@@ -28,5 +28,9 @@
     },
     "model": {
         "name": "Generator_transformer_pathch4_844_48_3_nouplayer_server5"
+    },
+    "loss_function": {
+        "name": "ColorBlindnessLoss",
+        "type": "deutan"
     }
 }

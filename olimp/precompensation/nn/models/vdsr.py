@@ -58,7 +58,7 @@ class VDSR(nn.Module):
 
         out = torch.add(out, identity)
 
-        return self.sigmoid(out)
+        return (self.sigmoid(out),)
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
         # image = torchvision.transforms.Grayscale()(image)
