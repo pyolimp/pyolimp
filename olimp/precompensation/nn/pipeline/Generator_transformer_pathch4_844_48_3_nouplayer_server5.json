@@ -2,8 +2,8 @@
     "img": {
         "datasets": [
             {
-                "name": "Directory",
-                "path": "data/Color_cvd_D_experiment_1000/Color_cvd_D_experiment_1000"
+                "name": "CVD",
+                "subsets": ["Color_cvd_D_experiment_100000"]
             }
         ],
         "transforms": [

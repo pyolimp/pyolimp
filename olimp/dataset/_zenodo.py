@@ -10,7 +10,7 @@ SubPath = NewType("SubPath", str)
 
 def _download_zenodo(
     root: Path,
-    record: Literal[7848576],
+    record: Literal[7848576, 13692233, 13881170],
     progress_callback: Callable[[str, float], None] | None,
 ) -> None:
     import requests
@@ -37,7 +37,6 @@ def _download_zenodo(
                             )
         assert zip_path.exists(), zip_path
 
-        print("zip_path", zip_path)
         with ZipFile(zip_path) as zf:
             for idx, member in enumerate(zf.infolist(), 1):
                 zf.extract(member, root)
@@ -52,6 +51,10 @@ def _read_dataset_dir(
 ) -> Iterator[tuple[SubPath, list[ImgPath]]]:
     from os import walk
 
+    # CVD dataset has two root files
+    root_directories = [d for d in Path(dataset_root).iterdir() if d.is_dir()]
+    if len(root_directories) == 1:
+        (dataset_root,) = root_directories
     # this code can be simpler, going through all subpaths,
 
     for root, dirs, files in walk(dataset_root, onerror=print):
@@ -65,7 +68,7 @@ def _read_dataset_dir(
         if not fsubpaths:
             continue
         good_paths = [
-            file for file in files if file.endswith((".jpg", ".jpeg"))
+            file for file in files if file.endswith((".jpg", ".jpeg", ".png"))
         ] or [
             file
             for file in files
@@ -96,17 +99,21 @@ def default_progress(action: str, done: float) -> None:
 
 
 def load_dataset(
-    dataset_name: Literal["SCA-2023", "OLIMP"],
-    record: Literal[7848576, 13692233],
+    dataset_name_and_record: (
+        tuple[Literal["SCA-2023"], Literal[7848576]]
+        | tuple[Literal["OLIMP"], Literal[13692233]]
+        | tuple[Literal["CVD"], Literal[13881170]]
+    ),
     subpaths: set[SubPath],
     progress_callback: Callable[[str, float], None] | None = default_progress,
 ) -> dict[SubPath, list[ImgPath]]:
+    dataset_name, record = dataset_name_and_record
     root_path = Path(os.environ.get("OLIMP_DATATEST", ".datasets")).absolute()
     dataset_path = root_path / dataset_name
     if not dataset_path.exists():
-        root_path.mkdir(parents=True, exist_ok=True)
+        dataset_path.mkdir(parents=True, exist_ok=True)
         _download_zenodo(
-            root_path, record=record, progress_callback=progress_callback
+            dataset_path, record=record, progress_callback=progress_callback
         )
 
     dataset: dict[SubPath, list[ImgPath]] = {}

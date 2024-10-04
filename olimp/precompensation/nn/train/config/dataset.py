@@ -137,6 +137,20 @@ class Directory(DatasetConfig):
         return DirectoryDataset(self.path, self.matches)
 
 
+class CVD(DatasetConfig):
+    name: Literal["CVD"]
+    subsets: set[
+        Literal[
+            "Color_cvd_D_experiment_100000", "Color_cvd_P_experiment_100000"
+        ]
+    ]
+
+    def load(self):
+        from ...dataset.cvd import CVDDataset
+
+        return CVDDataset(self.subsets)
+
+
 Dataset = Annotated[
-    SCA2023 | Olimp | Directory, Field(..., discriminator="name")
+    SCA2023 | Olimp | CVD | Directory, Field(..., discriminator="name")
 ]
