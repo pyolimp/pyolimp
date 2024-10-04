@@ -76,15 +76,13 @@ def projective_transformation(points: Tensor, proj_matrix: Tensor) -> Tensor:
 
 
 def srgb2prolab(srgb: Tensor) -> Tensor:
-    xyz: Tensor = sRGB()._to_XYZ(srgb)
-    prolab = ProLab(torch.tensor([0.95047, 1.0, 1.08883]))._from_XYZ(xyz)
-    return prolab
+    D65_sRGB = torch.tensor([0.95047, 1.0, 1.08883])
+    return ProLab(D65_sRGB).from_XYZ(sRGB().to_XYZ(srgb))
 
 
 def srgb2lab(srgb: Tensor) -> Tensor:
-    xyz: Tensor = sRGB()._to_XYZ(srgb)
-    Lab = CIELAB(torch.tensor([0.95047, 1.0, 1.08883]))._from_XYZ(xyz)
-    return Lab
+    D65_sRGB = torch.tensor([0.95047, 1.0, 1.08883])
+    return CIELAB(D65_sRGB).from_XYZ(sRGB().to_XYZ(srgb))
 
 
 def pixel_contrasts(
