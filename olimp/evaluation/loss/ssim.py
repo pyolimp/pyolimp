@@ -90,7 +90,7 @@ class SSIMLoss(nn.Module):
         return kernel_2d
 
 
-class ContrastSSIMLoss(nn.Module):
+class ContrastLoss(nn.Module):
     @staticmethod
     def calculate_contrast_oneimg_l1(img: Tensor, window_size: int) -> Tensor:
         img = img.permute(0, 2, 3, 1)
@@ -98,8 +98,6 @@ class ContrastSSIMLoss(nn.Module):
             :, window_size : 256 - window_size, window_size : 256 - window_size
         ]
         x = x_diff
-        # print('2222',x.shape)
-        # start = time.time()
         flag = 0
         for i in range(-window_size, window_size + 1):
             for j in range(-window_size, window_size + 1):
@@ -113,16 +111,13 @@ class ContrastSSIMLoss(nn.Module):
                         ]
                     )
                     img_diff = torch.sum(torch.abs(img_diff), 3)
-                    # print(img_diff,img_diff.size())
                     img_diff = torch.unsqueeze(img_diff, 3)
                     x = img_diff
                     flag += 1
                 elif (i == 0) and (j == 0):
                     continue
                 else:
-                    # print(img_diff.shape)
                     flag += 1
-                    # print(i, j, flag)
                     img_diff = (
                         x_diff
                         - img[
@@ -134,19 +129,18 @@ class ContrastSSIMLoss(nn.Module):
                     img_diff = torch.sum(torch.abs(img_diff), 3)
                     img_diff = torch.unsqueeze(img_diff, 3)
                     x = torch.cat((x, img_diff), 3)
-        # print(x[1,120,120,:])
         # exit()
         # nrand = np.array([i for i in range(120)])
         # np.random.shuffle(nrand)
-        # print(np.random.shuffle(nrand))
         # nrand = nrand[0:60]
-        # print(nrand)
         # trand = torch.from_numpy(nrand).type(torch.long)
         # trand = torch.arange(120)
         # trand = torch.randint(0, 120, (60,))
         return torch.abs(x[:, :, :, :120])
 
-    def forward(
-        self, original_image: Tensor, simulated_image: Tensor
-    ) -> Tensor:
+    def forward(self, image: Tensor, precompensated: Tensor) -> Tensor:
         criterion_contrast = torch.nn.L1Loss()
+        return criterion_contrast(
+            self.calculate_contrast_oneimg_l1(image, window_size=5),
+            self.calculate_contrast_oneimg_l1(precompensated, window_size=5),
+        )

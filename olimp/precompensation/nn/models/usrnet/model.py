@@ -218,21 +218,21 @@ class ResUNet(nn.Module):
                 B.ResBlock(nc[0], nc[0], bias=False, mode="C" + act_mode + "C")
                 for _ in range(nb)
             ],
-            downsample_block(nc[0], nc[1], bias=False, mode="2")
+            downsample_block(nc[0], nc[1], bias=False, mode="2"),
         )
         self.m_down2 = B.sequential(
             *[
                 B.ResBlock(nc[1], nc[1], bias=False, mode="C" + act_mode + "C")
                 for _ in range(nb)
             ],
-            downsample_block(nc[1], nc[2], bias=False, mode="2")
+            downsample_block(nc[1], nc[2], bias=False, mode="2"),
         )
         self.m_down3 = B.sequential(
             *[
                 B.ResBlock(nc[2], nc[2], bias=False, mode="C" + act_mode + "C")
                 for _ in range(nb)
             ],
-            downsample_block(nc[2], nc[3], bias=False, mode="2")
+            downsample_block(nc[2], nc[3], bias=False, mode="2"),
         )
 
         self.m_body = B.sequential(
@@ -259,21 +259,21 @@ class ResUNet(nn.Module):
             *[
                 B.ResBlock(nc[2], nc[2], bias=False, mode="C" + act_mode + "C")
                 for _ in range(nb)
-            ]
+            ],
         )
         self.m_up2 = B.sequential(
             upsample_block(nc[2], nc[1], bias=False, mode="2"),
             *[
                 B.ResBlock(nc[1], nc[1], bias=False, mode="C" + act_mode + "C")
                 for _ in range(nb)
-            ]
+            ],
         )
         self.m_up1 = B.sequential(
             upsample_block(nc[1], nc[0], bias=False, mode="2"),
             *[
                 B.ResBlock(nc[0], nc[0], bias=False, mode="C" + act_mode + "C")
                 for _ in range(nb)
-            ]
+            ],
         )
 
         self.m_tail = B.conv(nc[0], out_nc, bias=False, mode="C")

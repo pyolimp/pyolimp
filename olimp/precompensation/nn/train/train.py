@@ -114,18 +114,11 @@ def _evaluate_dataset(
             inputs,
             **model.arguments(inputs, datums[-1], **model_kwargs),
         )
-
+        assert isinstance(precompensated, tuple | list), (
+            f"All models MUST return tuple "
+            f"({model} returned {type(precompensated)})"
+        )
         loss = loss_function(precompensated, datums)
-        return loss
-
-        # from ....evaluation.loss.ssim import SSIMLoss
-
-        # retinal_precompensated = conv(
-        #     precompensated.to(torch.float32).clip(0, 1), psf
-        # )
-        # #
-        # loss_func = SSIMLoss() #vae_loss  # ms_ssim
-        # loss = loss_func(retinal_precompensated, image, *_)
         yield loss
 
 
@@ -198,6 +191,7 @@ def _train_loop(
             loss.backward()
             optimizer.step()
         p.remove_task(training_task)
+        assert train_loss, train_loss
 
         train_loss /= len(dl_train)
 
@@ -239,7 +233,7 @@ def _train_loop(
             best_validation_path.hardlink_to(cur_epoch_path)
 
         if train_statistics.should_stop_early():
-            p.console.print("Stop early")
+            p.console.log("Stop early")
             break
 
 
@@ -279,8 +273,11 @@ def train(
         transforms = img_transform, psf_transform
     else:
         dataset_train = ProductDataset(img_dataset_train)
+        c.console.log(f"Train: {len(dataset_train)} items")
         dataset_validation = ProductDataset(img_dataset_validation)
+        c.console.log(f"Validation: {len(dataset_validation)} items")
         dataset_test = ProductDataset(img_dataset_test)
+        c.console.log(f"Test: {len(dataset_test)} items")
         transforms = (img_transform,)
 
     dl_train = DataLoader(dataset_train, shuffle=True, batch_size=batch_size)
