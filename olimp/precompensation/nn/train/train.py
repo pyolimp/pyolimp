@@ -7,33 +7,27 @@ from rich.progress import (
     TaskID,
 )
 
-c = Progress()
-c.start()
+with Progress() as ci:
+    load_task = ci.add_task("Import libraries")
+    from typing import Callable, TypeAlias, Annotated
+    from math import prod
 
-# import warnings
+    import random
+    import json5
 
-# warnings.filterwarnings("error", category=UserWarning)
+    ci.update(load_task, completed=1)
+    import torch
 
-load_task = c.add_task("Import libraries")
-from typing import Any, Callable, TypeAlias, Annotated
-from math import prod
+    ci.update(load_task, completed=50)
+    from torch import nn, Tensor
+    from torchvision.transforms.v2 import Compose
 
-import random
-import json5
+    ci.update(load_task, completed=75)
+    from torch.utils.data import Dataset, DataLoader
+    from pathlib import Path
 
-c.update(load_task, completed=1)
-import torch
-
-c.update(load_task, completed=50)
-from torch import nn, Tensor
-from torchvision.transforms.v2 import Compose
-
-c.update(load_task, completed=75)
-from torch.utils.data import Dataset, DataLoader
-from pathlib import Path
-
-c.update(load_task, completed=100)
-from .config import Config
+    ci.update(load_task, completed=100)
+    from .config import Config
 
 # from ....evaluation.loss import ms_ssim, vae_loss
 
@@ -297,57 +291,54 @@ def train(
         dl_test = None
 
     optimizer = create_optimizer(model)
-    c.stop()
 
-    p = Progress(
+    with Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         TextColumn("[progress.completed]{task.completed}/{task.total}"),
         TimeRemainingColumn(),
         TextColumn("loss: {task.fields[loss]}"),
-    )
-    p.start()
-    epoch_task = p.add_task("Epoch...", total=epochs, loss="?")
+    ) as p:
+        epoch_task = p.add_task("Epoch...", total=epochs, loss="?")
 
-    try:
-        _train_loop(
-            p,
-            model=model,
-            epochs=epochs,
-            dl_train=dl_train,
-            dl_validation=dl_validation,
-            epoch_task=epoch_task,
-            optimizer=optimizer,
-            epoch_dir=epoch_dir,
-            transforms=transforms,
-            loss_function=loss_function,
-        )
-    except KeyboardInterrupt:
-        p.print("training stopped by user (Ctrl+C)")
-
-    p.console.print(p)
-    p.remove_task(epoch_task)
-
-    # test
-    if dl_test is not None:
-        test_task = p.add_task("Test... ", total=len(dl_test), loss="?")
-        test_loss = 0.0
-        for loss in p.track(
-            _evaluate_dataset(
-                model,
-                dl_test,
+        try:
+            _train_loop(
+                p,
+                model=model,
+                epochs=epochs,
+                dl_train=dl_train,
+                dl_validation=dl_validation,
+                epoch_task=epoch_task,
+                optimizer=optimizer,
+                epoch_dir=epoch_dir,
                 transforms=transforms,
                 loss_function=loss_function,
-            ),
-            task_id=test_task,
-        ):
-            test_loss += loss.item()
+            )
+        except KeyboardInterrupt:
+            p.console.log("training stopped by user (Ctrl+C)")
+
+        p.console.print(p)
+        p.remove_task(epoch_task)
+
+        # test
+        if dl_test is not None:
+            test_task = p.add_task("Test... ", total=len(dl_test), loss="?")
+            test_loss = 0.0
+            for loss in p.track(
+                _evaluate_dataset(
+                    model,
+                    dl_test,
+                    transforms=transforms,
+                    loss_function=loss_function,
+                ),
+                task_id=test_task,
+            ):
+                test_loss += loss.item()
+                p.update(test_task, loss=f"{test_loss:g}")
+            test_loss /= len(dl_test)
             p.update(test_task, loss=f"{test_loss:g}")
-        test_loss /= len(dl_test)
-        p.update(test_task, loss=f"{test_loss:g}")
-        p.console.print(p, end="")
-        p.remove_task(test_task)
-    p.stop()
+            p.console.print(p, end="")
+            p.remove_task(test_task)
 
 
 def main():
@@ -372,10 +363,9 @@ def main():
         schema_path.write_text(
             json.dumps(Config.model_json_schema(), ensure_ascii=False)
         )
-        c.console.log(f"[green] {schema_path} [cyan]saved")
-        c.stop()
+        ci.console.log(f"[green] {schema_path} [cyan]saved")
         return
-    c.console.log(f"Using [green]{args.config}")
+    ci.console.log(f"Using [green]{args.config}")
 
     with args.config.open() as f:
         data = json5.load(f)
@@ -383,10 +373,10 @@ def main():
 
     if torch.cuda.is_available():
         device_str = "cuda"
-        c.console.print("Current device: [bold green] GPU")
+        ci.console.print("Current device: [bold green] GPU")
     else:
         device_str = "cpu"
-        c.console.print("Current device: [bold red] CPU")
+        ci.console.print("Current device: [bold red] CPU")
 
     with torch.device(device_str):
         model = config.model.get_instance()
