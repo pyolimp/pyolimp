@@ -11,6 +11,7 @@ class RefractionDistortionConfig(StrictModel):
 
     def load(self):
         from .....simulate.refraction_distortion import RefractionDistortion
+
         dataset, transform = self.psf.load()
         return dataset, transform, RefractionDistortion
 

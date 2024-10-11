@@ -109,7 +109,7 @@ def _evaluate_dataset(
     # dls = [img_dl[0]] + distortions_group.dataloaders
     transforms = [dls[1]] + distortions_group.composees
 
-    for batches in zip(*dls[0],  strict=True):
+    for batches in zip(*dls[0], strict=True):
         datums: list[Tensor] = []
         for batch, transform in zip(batches, transforms):
             batch = batch.to(device)
@@ -391,7 +391,9 @@ def train(
 
         # test
         if dls_test is not None:
-            test_task = p.add_task("Test... ", total=len(dls_test[0]), loss="?")
+            test_task = p.add_task(
+                "Test... ", total=len(dls_test[0]), loss="?"
+            )
             test_loss = 0.0
             for loss in p.track(
                 _evaluate_dataset(

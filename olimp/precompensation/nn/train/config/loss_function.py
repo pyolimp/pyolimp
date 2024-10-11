@@ -81,12 +81,21 @@ class MultiScaleSSIMLossFunction(StrictModel):
             k1=self.k1,
             k2=self.k2,
         )
-        def f(model_output: list[Tensor], datums: list[Tensor], distortions: list[type[Distortion]]) -> Tensor:
+
+        def f(
+            model_output: list[Tensor],
+            datums: list[Tensor],
+            distortions: list[type[Distortion]],
+        ) -> Tensor:
             assert isinstance(model_output, tuple | list)
             assert isinstance(datums, tuple | list)
             distorted: list[Tensor] = []
-            for distortion, d_input in zip(distortions, datums[1:], strict=True):
-                distorted.append(distortion(d_input)(*model_output).clip(min=0.0, max=1.0))
+            for distortion, d_input in zip(
+                distortions, datums[1:], strict=True
+            ):
+                distorted.append(
+                    distortion(d_input)(*model_output).clip(min=0.0, max=1.0)
+                )
             return ms_ssim(*model_output, *distorted)
 
         return f
