@@ -10,5 +10,5 @@ class Distortion(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def __call__(self, I: Tensor) -> Tensor:
+    def __call__(self, image: Tensor) -> Tensor:
         raise NotImplementedError

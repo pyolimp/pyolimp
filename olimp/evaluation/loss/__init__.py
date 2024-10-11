@@ -1,18 +1,11 @@
 from typing import Literal
 
-from piq import MultiScaleSSIMLoss
 import torch
 from torch import Tensor
 
 from ..cs.srgb import sRGB
 from ..cs.cielab import CIELAB
 from ..cs.prolab import ProLab
-
-
-def ms_ssim(pred: Tensor, target: Tensor) -> Tensor:
-    _ms_ssim = MultiScaleSSIMLoss()
-    loss = _ms_ssim(pred, target)
-    return loss
 
 
 def vae_loss(

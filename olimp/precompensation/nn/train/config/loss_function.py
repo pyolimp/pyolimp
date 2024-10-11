@@ -3,6 +3,7 @@ from typing import Annotated, Literal, Any, TypeAlias
 from .base import StrictModel
 from pydantic import Field, confloat
 from olimp.processing import conv
+from .....simulate import Distortion
 from torch import Tensor
 import torch
 
@@ -63,7 +64,35 @@ class ColorBlindnessLossFunction(StrictModel):
         return f
 
 
+class MultiScaleSSIMLossFunction(StrictModel):
+    name: Literal["MS_SSIM"]
+
+    kernel_size: int = 11
+    kernel_sigma: float = 1.5
+    k1: float = 0.01
+    k2: float = 0.03
+
+    def load(self, _model: Any):
+        from piq import MultiScaleSSIMLoss
+
+        ms_ssim = MultiScaleSSIMLoss(
+            kernel_size=self.kernel_size,
+            kernel_sigma=self.kernel_sigma,
+            k1=self.k1,
+            k2=self.k2,
+        )
+        def f(model_output: list[Tensor], datums: list[Tensor], distortions: list[type[Distortion]]) -> Tensor:
+            assert isinstance(model_output, tuple | list)
+            assert isinstance(datums, tuple | list)
+            distorted: list[Tensor] = []
+            for distortion, d_input in zip(distortions, datums[1:], strict=True):
+                distorted.append(distortion(d_input)(*model_output).clip(min=0.0, max=1.0))
+            return ms_ssim(*model_output, *distorted)
+
+        return f
+
+
 LossFunction = Annotated[
-    VaeLossFunction | ColorBlindnessLossFunction,
+    VaeLossFunction | ColorBlindnessLossFunction | MultiScaleSSIMLossFunction,
     Field(..., discriminator="name"),
 ]
