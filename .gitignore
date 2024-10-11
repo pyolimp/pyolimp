@@ -3,3 +3,6 @@ __pycache__
 **/epoch_saved
 # ignore common directory with external data
 /data
+# schema.json must be generated using
+# `python -m olimp.precompensation.nn.train.train --update-schema`
+schema.json
