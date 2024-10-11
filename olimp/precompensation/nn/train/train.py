@@ -9,7 +9,7 @@ from rich.progress import (
 
 with Progress() as ci:
     load_task = ci.add_task("Import libraries")
-    from typing import Callable, TypeAlias, Annotated
+    from typing import Callable, TypeAlias, Annotated, Any
     from math import prod
 
     import random
@@ -23,16 +23,17 @@ with Progress() as ci:
     from torchvision.transforms.v2 import Compose
 
     ci.update(load_task, completed=75)
-    from torch.utils.data import Dataset, DataLoader
+    from torch.utils.data import Dataset, DataLoader, RandomSampler
     from pathlib import Path
 
-    ci.update(load_task, completed=100)
-    from .config import Config
+    ci.update(load_task, completed=95)
+    from .config import Config, DistortionsGroup, Distortion
 
-# from ....evaluation.loss import ms_ssim, vae_loss
+    ci.update(load_task, completed=100)
+
 
 LossFunction: TypeAlias = Annotated[
-    Callable[[list[Tensor], list[Tensor]], Tensor],
+    Callable[[list[Tensor], list[Tensor], list[type[Distortion]]], Tensor],
     "(model result, model input before preprocessing) -> loss",
 ]
 
@@ -69,39 +70,51 @@ class ProductDataset(Dataset[tuple[Tensor, ...]]):
         return prod(self._sizes)
 
 
+def _split_numbers(
+    dataset_size: int, train_frac: float, validation_frac: float
+) -> tuple[int, int, int]:
+    train_size = round(train_frac * dataset_size)
+    val_size = round(validation_frac * dataset_size)
+    test_size = dataset_size - (train_size + val_size)
+    return train_size, val_size, test_size
+
+
 def random_split(
     dataset: Dataset[Tensor], train_frac: float, validation_frac: float
 ) -> tuple[ShuffeledDataset, ShuffeledDataset, ShuffeledDataset]:
-    size = len(dataset)
-    train_size = round(train_frac * size)
-    val_size = round(validation_frac * size)
-    test_size = size - (train_size + val_size)
+    train_size, val_size, _test_size = _split_numbers(
+        len(dataset), train_frac, validation_frac
+    )
 
     indices = torch.randperm(len(dataset), device="cpu")
 
     return (
         ShuffeledDataset(dataset, indices[:train_size].tolist()),
         ShuffeledDataset(
-            dataset, indices[train_size : train_size + test_size].tolist()
+            dataset, indices[train_size : train_size + val_size].tolist()
         ),
-        ShuffeledDataset(dataset, indices[train_size + test_size :].tolist()),
+        ShuffeledDataset(dataset, indices[train_size + val_size :].tolist()),
     )
 
 
 def _evaluate_dataset(
     model: nn.Module,
-    dl: DataLoader[tuple[Tensor, ...]],
-    transforms: tuple[Compose, ...],
+    dls: tuple[list[DataLoader[Tensor]], Compose],
+    distortions_group: DistortionsGroup,
     loss_function: LossFunction,
 ):
     model_kwargs = {}
     device = next(model.parameters()).device
 
-    for train_data in dl:
+    # dls = [img_dl[0]] + distortions_group.dataloaders
+    transforms = [dls[1]] + distortions_group.composees
+
+    for batches in zip(*dls[0],  strict=True):
         datums: list[Tensor] = []
-        for datum, transform in zip(train_data, transforms, strict=True):
-            datum = datum.to(device)
-            datums.append(transform(datum))
+        for batch, transform in zip(batches, transforms):
+            batch = batch.to(device)
+            datums.append(transform(batch))
+
         inputs = model.preprocess(*datums)
 
         precompensated = model(
@@ -112,7 +125,9 @@ def _evaluate_dataset(
             f"All models MUST return tuple "
             f"({model} returned {type(precompensated)})"
         )
-        loss = loss_function(precompensated, datums)
+        loss = loss_function(
+            precompensated, datums, distortions_group.distortions_classes
+        )
         yield loss
 
 
@@ -150,12 +165,13 @@ def _train_loop(
     p: Progress,
     model: torch.nn.Module,
     epochs: int,
-    dl_train: DataLoader[tuple[Tensor, ...]],
-    dl_validation: DataLoader[tuple[Tensor, ...]] | None,
+    dls_train: list[DataLoader[Tensor]],
+    dls_validation: list[DataLoader[Tensor]] | None,
+    distortions_group: DistortionsGroup,
     epoch_task: TaskID,
     optimizer: torch.optim.optimizer.Optimizer,
     epoch_dir: Path,
-    transforms: tuple[Compose, ...],
+    img_transform: Compose,
     loss_function: LossFunction,
 ):
     train_statistics = TrainStatistics(patience=3)
@@ -165,7 +181,7 @@ def _train_loop(
         model.train()
 
         training_task = p.add_task(
-            "Training...", total=len(dl_train), loss="?"
+            "Training...", total=len(dls_train[0]), loss="?"
         )
 
         # training
@@ -173,8 +189,8 @@ def _train_loop(
         for loss in p.track(
             _evaluate_dataset(
                 model,
-                dl_train,
-                transforms=transforms,
+                dls=(dls_train, img_transform),
+                distortions_group=distortions_group,
                 loss_function=loss_function,
             ),
             task_id=training_task,
@@ -184,29 +200,35 @@ def _train_loop(
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        p.remove_task(training_task)
         assert train_loss, train_loss
 
-        train_loss /= len(dl_train)
+        train_loss /= len(dls_train[0])
 
         p.update(epoch_task, loss=f"{train_loss:g}")
 
         # validation
         model.eval()
         validation_loss = 0.0
-        if dl_validation is not None:
+        if dls_validation is not None:
+            validating_task = p.add_task(
+                "Validating...", total=len(dls_validation[0]), loss="?"
+            )
             for loss in p.track(
                 _evaluate_dataset(
                     model,
-                    dl_validation,
-                    transforms=transforms,
-                    loss_func=loss_func,
+                    dls=(dls_validation, img_transform),
+                    distortions_group=distortions_group,
+                    loss_function=loss_function,
                 ),
-                total=len(dl_validation),
+                total=len(dls_validation[0]),
                 description="Validation...",
+                task_id=validating_task,
             ):
                 validation_loss += loss.item()
-            validation_loss /= len(dl_validation)
+            validation_loss /= len(dls_validation[0])
+            p.remove_task(validating_task)
+
+        p.remove_task(training_task)
 
         train_statistics(train_loss, validation_loss)
 
@@ -231,64 +253,110 @@ def _train_loop(
             break
 
 
+def _as_dataloaders(
+    datasets: list[Dataset[Tensor]],
+    batch_size: int,
+    sample_size: int,
+) -> list[DataLoader[Tensor]] | None:
+    dataloaders: list[DataLoader[Tensor]] = []
+    if any(len(dataset) == 0 for dataset in datasets) or not sample_size:
+        return None
+    for dataset in datasets:
+        sampler = RandomSampler(dataset, num_samples=sample_size)
+        # ci.log(f"Created sampler with {sample_size=}")
+        dataloaders.append(
+            DataLoader(
+                dataset=dataset,
+                sampler=sampler,
+                batch_size=batch_size,
+                # drop_last=True,
+            )
+        )
+    return dataloaders
+
+
+def _prepare_dataloaders(
+    img_dataset: Dataset[Tensor],
+    distortions_group: DistortionsGroup,
+    batch_size: int,
+    sample_size: int,
+    train_frac: float,
+    validation_frac: float,
+) -> tuple[
+    list[DataLoader[Tensor]] | None,
+    list[DataLoader[Tensor]] | None,
+    list[DataLoader[Tensor]] | None,
+]:
+    datasets_train: list[Dataset[Tensor]] = []
+    datasets_validation: list[Dataset[Tensor]] = []
+    datasets_test: list[Dataset[Tensor]] = []
+
+    for dataset in [img_dataset] + distortions_group.datasets:
+        dataset_train, dataset_validation, dataset_test = random_split(
+            dataset, train_frac, validation_frac
+        )
+        datasets_train.append(dataset_train)
+        datasets_validation.append(dataset_validation)
+        datasets_test.append(dataset_test)
+
+    sample_size_train, sample_size_val, sample_size_test = _split_numbers(
+        sample_size, train_frac=train_frac, validation_frac=validation_frac
+    )
+    dataloaders = (
+        _as_dataloaders(
+            datasets_train,
+            batch_size=batch_size,
+            sample_size=sample_size_train,
+        ),
+        _as_dataloaders(
+            datasets_validation,
+            batch_size=batch_size,
+            sample_size=sample_size_val,
+        ),
+        _as_dataloaders(
+            datasets_test, batch_size=batch_size, sample_size=sample_size_test
+        ),
+    )
+    return dataloaders
+
+
 def train(
     model: nn.Module,
     img_dataset: Dataset[Tensor],
     img_transform: Compose,
-    psf_dataset: Dataset[Tensor] | None,
-    psf_transform: Compose | None,
     random_seed: int,
     batch_size: int,
+    sample_size: int,
     train_frac: float,
     validation_frac: float,
     epochs: int,
     epoch_dir: Path,
     create_optimizer: Callable[[nn.Module], torch.optim.optimizer.Optimizer],
     loss_function: LossFunction,
+    distortions_group: DistortionsGroup,
 ):
     epoch_dir.mkdir(exist_ok=True, parents=True)
     torch.manual_seed(random_seed)
     random.seed(random_seed)
 
-    img_dataset_train, img_dataset_validation, img_dataset_test = random_split(
-        img_dataset, train_frac, validation_frac
+    dls_train, dls_validation, dls_test = _prepare_dataloaders(
+        img_dataset=img_dataset,
+        distortions_group=distortions_group,
+        batch_size=batch_size,
+        sample_size=sample_size,
+        train_frac=train_frac,
+        validation_frac=validation_frac,
     )
 
-    if psf_dataset is not None:
-        psf_dataset_train, psf_dataset_validation, psf_dataset_test = (
-            random_split(psf_dataset, train_frac, validation_frac)
-        )
-        dataset_train = ProductDataset(img_dataset_train, psf_dataset_train)
-        dataset_validation = ProductDataset(
-            img_dataset_validation, psf_dataset_validation
-        )
-        dataset_test = ProductDataset(img_dataset_test, psf_dataset_test)
-        assert psf_transform is not None
-        transforms = img_transform, psf_transform
-    else:
-        dataset_train = ProductDataset(img_dataset_train)
-        c.console.log(f"Train: {len(dataset_train)} items")
-        dataset_validation = ProductDataset(img_dataset_validation)
-        c.console.log(f"Validation: {len(dataset_validation)} items")
-        dataset_test = ProductDataset(img_dataset_test)
-        c.console.log(f"Test: {len(dataset_test)} items")
-        transforms = (img_transform,)
+    def _log_size(name: str, dls: list[DataLoader[Any]] | None):
+        if dls is None:
+            ci.log(f"{name}: [red]disabled")
+        else:
+            ci.log(f"{name}: {[len(dl) for dl in dls]} batches")
 
-    dl_train = DataLoader(dataset_train, shuffle=True, batch_size=batch_size)
-
-    if dataset_validation:
-        dl_validation = DataLoader(
-            dataset_validation, shuffle=True, batch_size=batch_size
-        )
-    else:
-        dl_validation = None
-
-    if dataset_test:
-        dl_test = DataLoader(
-            dataset_test, shuffle=False, batch_size=batch_size
-        )
-    else:
-        dl_test = None
+    _log_size("Train", dls_train)
+    _log_size("Validation", dls_validation)
+    _log_size("Test", dls_test)
 
     optimizer = create_optimizer(model)
 
@@ -306,28 +374,29 @@ def train(
                 p,
                 model=model,
                 epochs=epochs,
-                dl_train=dl_train,
-                dl_validation=dl_validation,
+                dls_train=dls_train,
+                dls_validation=dls_validation,
                 epoch_task=epoch_task,
                 optimizer=optimizer,
                 epoch_dir=epoch_dir,
-                transforms=transforms,
+                img_transform=img_transform,
                 loss_function=loss_function,
+                distortions_group=distortions_group,
             )
         except KeyboardInterrupt:
             p.console.log("training stopped by user (Ctrl+C)")
 
-        p.console.print(p)
+        p.print(p)
         p.remove_task(epoch_task)
 
         # test
-        if dl_test is not None:
-            test_task = p.add_task("Test... ", total=len(dl_test), loss="?")
+        if dls_test is not None:
+            test_task = p.add_task("Test... ", total=len(dls_test[0]), loss="?")
             test_loss = 0.0
             for loss in p.track(
                 _evaluate_dataset(
                     model,
-                    dl_test,
+                    dls_test,
                     transforms=transforms,
                     loss_function=loss_function,
                 ),
@@ -373,36 +442,31 @@ def main():
 
     if torch.cuda.is_available():
         device_str = "cuda"
-        ci.console.print("Current device: [bold green] GPU")
+        ci.log("Current device: [bold green]GPU")
     else:
         device_str = "cpu"
-        ci.console.print("Current device: [bold red] CPU")
+        ci.log("Current device: [bold red]CPU")
 
     with torch.device(device_str):
+        distortions_group = config.load_distortions()
         model = config.model.get_instance()
         loss_function = config.loss_function.load(model)
         img_dataset, img_transform = config.img.load()
-        # img_dataset._items = img_dataset._items[0:10]
-        if config.psf is not None:
-            psf_dataset, psf_transform = config.psf.load()
-        else:
-            psf_dataset = psf_transform = None
-        # psf_dataset._items = psf_dataset._items[0:3]
         create_optimizer = config.optimizer.load()
         train(
             model,
             img_dataset,
             img_transform,
-            psf_dataset,
-            psf_transform,
             random_seed=config.random_seed,
             batch_size=config.batch_size,
             train_frac=config.train_frac,
+            sample_size=config.sample_size,
             validation_frac=config.validation_frac,
             epochs=config.epochs,
             epoch_dir=config.epoch_dir,
             create_optimizer=create_optimizer,
             loss_function=loss_function,
+            distortions_group=distortions_group,
         )
 
 

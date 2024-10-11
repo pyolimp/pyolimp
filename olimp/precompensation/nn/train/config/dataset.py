@@ -3,6 +3,16 @@ from typing import Annotated, Literal
 from pydantic import Field
 from pathlib import Path
 from .base import StrictModel
+from torchvision.transforms.v2 import Compose
+from torch.utils.data import ConcatDataset, Dataset as TorchDataset
+from torch import Tensor
+from .transform import (
+    Transforms,
+    GrayscaleTransform,
+    ResizeTransform,
+    PSFNormalizeTransform,
+    Float32Transform,
+)
 
 
 class DatasetConfig(StrictModel):
@@ -154,3 +164,36 @@ class CVD(DatasetConfig):
 Dataset = Annotated[
     SCA2023 | Olimp | CVD | Directory, Field(..., discriminator="name")
 ]
+
+
+class BaseDataloaderConfig(StrictModel):
+    transforms: Transforms
+    datasets: list[Dataset]
+
+    @staticmethod
+    def noop(input: Tensor) -> Tensor:
+        return input
+
+    def load(self):
+        all_transforms = [t.transform() for t in self.transforms]
+        if not all_transforms:
+            all_transforms.append(self.noop)
+        transforms = Compose(all_transforms)
+        dataset = ConcatDataset[TorchDataset[Tensor]](
+            [dataset.load() for dataset in self.datasets]
+        )
+        return dataset, transforms
+
+
+class ImgDataloaderConfig(BaseDataloaderConfig):
+    transforms: Transforms = [
+        GrayscaleTransform(name="Grayscale"),
+        ResizeTransform(name="Resize"),
+    ]
+
+
+class PsfDataloaderConfig(BaseDataloaderConfig):
+    transforms: Transforms = [
+        Float32Transform(name="Float32"),
+        PSFNormalizeTransform(name="PSFNormalize"),
+    ]
