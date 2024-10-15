@@ -1,58 +1,54 @@
 from __future__ import annotations
-from typing import Literal
+from typing import NamedTuple
 from pathlib import Path
-from torchvision.transforms import Compose
-from torch.utils.data import ConcatDataset
+from pydantic import Field
 from .base import StrictModel
-from .transform import (
-    Transforms,
-    GrayscaleTransform,
-    ResizeTransform,
-    PSFNormalizeTransform,
-    Float32Transform,
-)
 from .optimizer import Optimizer, AdamConfig
 from .model import Model as ModelConfig
-from .dataset import Dataset
+from .dataset import ImgDataloaderConfig
 from .loss_function import LossFunction, VaeLossFunction
+from .distortion import DistortionConfig
+
+from torch.utils.data import Dataset, DataLoader, RandomSampler
+from torch import Tensor
+from torchvision.transforms.v2 import Compose
+from .....simulate import Distortion
 
 
-class BaseDataloaderConfig(StrictModel):
-    transforms: Transforms
-    datasets: list[Dataset]
-
-    def load(self):
-        all_transforms = [t.transform() for t in self.transforms]
-        if not all_transforms:
-            all_transforms.append(lambda a: a)
-        transforms = Compose(all_transforms)
-        dataset = ConcatDataset([dataset.load() for dataset in self.datasets])
-        return dataset, transforms
-
-
-class ImgDataloaderConfig(BaseDataloaderConfig):
-    transforms: Transforms = [
-        GrayscaleTransform(name="Grayscale"),
-        ResizeTransform(name="Resize"),
-    ]
-
-
-class PsfDataloaderConfig(BaseDataloaderConfig):
-    transforms: Transforms = [
-        Float32Transform(name="Float32"),
-        PSFNormalizeTransform(name="PSFNormalize"),
-    ]
+class DistortionsGroup(NamedTuple):
+    datasets: list[Dataset[Tensor]]
+    composees: list[Compose]
+    distortions_classes: list[type[Distortion]]
 
 
 class Config(StrictModel):
     model: ModelConfig
     img: ImgDataloaderConfig
-    psf: PsfDataloaderConfig | None = None
+    distortion: list[DistortionConfig]
     random_seed: int = 47
     batch_size: int = 1
+    sample_size: int = Field(
+        default=1000, description="Number of items for one epoch"
+    )
     train_frac: float = 0.8
     validation_frac: float = 0.2
-    epoch_dir: Path = Path("./epoch_saved")
+    epoch_dir: Path = Field(
+        default=Path("./epoch_saved"),
+        description="Where to save .pth files",
+    )
     optimizer: Optimizer = AdamConfig(name="Adam")
-    epochs: int = 50
+    epochs: int = Field(
+        default=50, description="Maximal number of epochs to run"
+    )
     loss_function: LossFunction = VaeLossFunction(name="Vae")
+
+    def load_distortions(self) -> DistortionsGroup:
+        datasets: list[Dataset[Tensor]] = []
+        composees: list[Compose] = []
+        distortions_classes: list[type[Distortion]] = []
+        for distortion in self.distortion:
+            dataset, compose, distortion_cls = distortion.load()
+            datasets.append(dataset)
+            composees.append(compose)
+            distortions_classes.append(distortion_cls)
+        return DistortionsGroup(datasets, composees, distortions_classes)
