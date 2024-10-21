@@ -13,7 +13,3 @@ class OlimpDataset(BaseZenodoDataset[Paths]):
         return _olimp(
             categories=categories, progress_callback=progress_callback
         )
-
-
-class OlimpImages(OlimpDataset):
-    subsets: set[Paths] = {"*"}

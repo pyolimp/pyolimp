@@ -17,7 +17,9 @@ from .transform import (
 
 
 class DatasetConfig(StrictModel):
-    pass
+    limit: int | None = Field(
+        default=None, description="Load dataset, but only take first N images"
+    )
 
 
 class SCA2023(DatasetConfig):
@@ -43,7 +45,7 @@ class SCA2023(DatasetConfig):
     def load(self):
         from ...dataset.sca_2023 import SCA2023Dataset
 
-        return SCA2023Dataset(self.subsets)
+        return SCA2023Dataset(self.subsets, limit=self.limit)
 
 
 class Olimp(DatasetConfig):
@@ -134,7 +136,7 @@ class Olimp(DatasetConfig):
     def load(self):
         from ...dataset.olimp import OlimpDataset
 
-        return OlimpDataset(self.subsets)
+        return OlimpDataset(self.subsets, limit=self.limit)
 
 
 class Directory(DatasetConfig):
@@ -145,7 +147,7 @@ class Directory(DatasetConfig):
     def load(self):
         from ...dataset.directory import DirectoryDataset
 
-        return DirectoryDataset(self.path, self.matches)
+        return DirectoryDataset(self.path, self.matches, limit=self.limit)
 
 
 class CVD(DatasetConfig):
@@ -159,7 +161,7 @@ class CVD(DatasetConfig):
     def load(self):
         from ...dataset.cvd import CVDDataset
 
-        return CVDDataset(self.subsets)
+        return CVDDataset(self.subsets, limit=self.limit)
 
 
 Dataset = Annotated[

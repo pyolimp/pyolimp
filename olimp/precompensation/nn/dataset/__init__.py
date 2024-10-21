@@ -5,12 +5,13 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from olimp.dataset._zenodo import ImgPath
 from olimp.dataset import read_img_path
+from itertools import islice
 
 SubPath = TypeVar("SubPath", covariant=True)
 
 
 class BaseZenodoDataset(Dataset[Tensor], Generic[SubPath]):
-    def __init__(self, subsets: set[SubPath] | None):
+    def __init__(self, subsets: set[SubPath] | None, limit: int | None = None):
         if subsets is None:
             subsets = getattr(self, "subsets", None)
             if not subsets:
@@ -19,7 +20,11 @@ class BaseZenodoDataset(Dataset[Tensor], Generic[SubPath]):
         dataset = self.create_dataset(
             categories=subsets, progress_callback=None
         )
-        self._items = [item for subset in subsets for item in dataset[subset]]
+        self._items = list(
+            islice(
+                (item for subset in subsets for item in dataset[subset]), limit
+            )
+        )
 
     def create_dataset(
         self,
