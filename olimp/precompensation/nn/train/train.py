@@ -213,20 +213,21 @@ def _train_loop(
             validating_task = p.add_task(
                 "Validating...", total=len(dls_validation[0]), loss="?"
             )
-            for loss in p.track(
-                _evaluate_dataset(
-                    model,
-                    dls=(dls_validation, img_transform),
-                    distortions_group=distortions_group,
-                    loss_function=loss_function,
-                ),
-                total=len(dls_validation[0]),
-                description="Validation...",
-                task_id=validating_task,
-            ):
-                validation_loss += loss.item()
-            validation_loss /= len(dls_validation[0])
-            p.remove_task(validating_task)
+            with torch.inference_mode():
+                for loss in p.track(
+                    _evaluate_dataset(
+                        model,
+                        dls=(dls_validation, img_transform),
+                        distortions_group=distortions_group,
+                        loss_function=loss_function,
+                    ),
+                    total=len(dls_validation[0]),
+                    description="Validation...",
+                    task_id=validating_task,
+                ):
+                    validation_loss += loss.item()
+                validation_loss /= len(dls_validation[0])
+                p.remove_task(validating_task)
 
         p.remove_task(training_task)
 
@@ -395,18 +396,19 @@ def train(
                 "Test... ", total=len(dls_test[0]), loss="?"
             )
             test_loss = 0.0
-            for loss in p.track(
-                _evaluate_dataset(
-                    model,
-                    dls_test,
-                    transforms=transforms,
-                    loss_function=loss_function,
-                ),
-                task_id=test_task,
-            ):
-                test_loss += loss.item()
-                p.update(test_task, loss=f"{test_loss:g}")
-            test_loss /= len(dl_test)
+            with torch.inference_mode():
+                for loss in p.track(
+                    _evaluate_dataset(
+                        model,
+                        dls=(dls_test, img_transform),
+                        distortions_group=distortions_group,
+                        loss_function=loss_function,
+                    ),
+                    task_id=test_task,
+                ):
+                    test_loss += loss.item()
+                    p.update(test_task, loss=f"{test_loss:g}")
+            test_loss /= len(dls_test[0])
             p.update(test_task, loss=f"{test_loss:g}")
             p.console.print(p, end="")
             p.remove_task(test_task)
