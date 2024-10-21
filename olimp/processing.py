@@ -3,6 +3,8 @@ import torch
 
 
 def conv(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
+    assert image.dtype == torch.float32, image.dtype
+    assert kernel.dtype == torch.float32, kernel.dtype
     assert (
         image.shape[-2:] == kernel.shape[-2:]
     ), f"Expected equal shapes, got: image={image.shape[-2:]}, kernel={kernel.shape[-2:]}"
