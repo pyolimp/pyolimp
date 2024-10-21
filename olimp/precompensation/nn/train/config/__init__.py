@@ -6,10 +6,10 @@ from .base import StrictModel
 from .optimizer import Optimizer, AdamConfig
 from .model import Model as ModelConfig
 from .dataset import ImgDataloaderConfig
-from .loss_function import LossFunction, VaeLossFunction
+from .loss_function import LossFunction
 from .distortion import DistortionConfig
 
-from torch.utils.data import Dataset, DataLoader, RandomSampler
+from torch.utils.data import Dataset
 from torch import Tensor
 from torchvision.transforms.v2 import Compose
 from .....simulate import Distortion
@@ -40,7 +40,7 @@ class Config(StrictModel):
     epochs: int = Field(
         default=50, description="Maximal number of epochs to run"
     )
-    loss_function: LossFunction = VaeLossFunction(name="Vae")
+    loss_function: LossFunction
 
     def load_distortions(self) -> DistortionsGroup:
         datasets: list[Dataset[Tensor]] = []
