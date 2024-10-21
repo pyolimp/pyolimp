@@ -1,14 +1,17 @@
 {
     "model": {
-        "name": "precompensationdwdn"
+        "name": "precompensationdwdn",
+        "path": "./olimp/weights/dwdn.pt"
     },
     "img": {
-        "dataset": {
-            "name": "SCA2023",
-            "subsets": [
-                "Images/Real_images/Faces"
-            ]
-        },
+        "datasets": [
+            {
+                "name": "SCA2023",
+                "subsets": [
+                    "Images/Real_images/Faces"
+                ]
+            }
+        ],
         "transforms": [
             {
                 "name": "Grayscale",
@@ -20,16 +23,33 @@
                     512,
                     512
                 ]
+            },
+            {
+                "name": "Float32"
+            },
+            {
+                "name": "Divide",
+                "value": 255
             }
         ]
     },
-    "psf": {
-        "dataset": {
-            "name": "SCA2023",
-            "subsets": [
-                "PSFs/Narrow"
-            ]
+    "distortion": [
+        {
+            "name": "refraction_datasets",
+            "psf": {
+                "datasets": [
+                    {
+                        "name": "SCA2023",
+                        "subsets": [
+                            "PSFs/Narrow"
+                        ]
+                    }
+                ]
+            }
         }
-    },
-    "batch_size": 1
+    ],
+    "batch_size": 1,
+    "loss_function": {
+        "name": "MS_SSIM"
+    }
 }
