@@ -96,7 +96,8 @@ class MultiScaleSSIMLossFunction(StrictModel):
                 distorted.append(
                     distortion(d_input)(*model_output).clip(min=0.0, max=1.0)
                 )
-            return ms_ssim(*model_output, *distorted)
+            original_image = datums[0]
+            return ms_ssim(*distorted, original_image)
 
         return f
 
