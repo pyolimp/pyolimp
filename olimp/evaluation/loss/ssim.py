@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import torch.nn as nn
+from torch.nn import Module, L1Loss
 import torch.nn.functional as F
 import torch
 from torch import Tensor
 
 
-class SSIMLoss(nn.Module):
+class SSIMLoss(Module):
     def __init__(self, kernel_size: int = 11, sigma: float = 1.5) -> None:
         """Computes the structural similarity (SSIM) index map between two images.
 
@@ -90,7 +90,7 @@ class SSIMLoss(nn.Module):
         return kernel_2d
 
 
-class ContrastLoss(nn.Module):
+class ContrastLoss(Module):
     @staticmethod
     def calculate_contrast_oneimg_l1(img: Tensor, window_size: int) -> Tensor:
         img = img.permute(0, 2, 3, 1)
@@ -139,7 +139,7 @@ class ContrastLoss(nn.Module):
         return torch.abs(x[:, :, :, :120])
 
     def forward(self, image: Tensor, precompensated: Tensor) -> Tensor:
-        criterion_contrast = torch.nn.L1Loss()
+        criterion_contrast = L1Loss()
         return criterion_contrast(
             self.calculate_contrast_oneimg_l1(image, window_size=5),
             self.calculate_contrast_oneimg_l1(precompensated, window_size=5),
