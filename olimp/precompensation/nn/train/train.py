@@ -173,7 +173,7 @@ def _train_loop(
     epoch_dir: Path,
     img_transform: Compose,
     loss_function: LossFunction,
-):
+) -> None:
     train_statistics = TrainStatistics(patience=3)
     model_name = type(model).__name__
 
@@ -335,7 +335,7 @@ def train(
     create_optimizer: Callable[[nn.Module], torch.optim.optimizer.Optimizer],
     loss_function: LossFunction,
     distortions_group: DistortionsGroup,
-):
+) -> None:
     epoch_dir.mkdir(exist_ok=True, parents=True)
     torch.manual_seed(random_seed)
     random.seed(random_seed)
@@ -370,22 +370,23 @@ def train(
     ) as p:
         epoch_task = p.add_task("Epoch...", total=epochs, loss="?")
 
-        try:
-            _train_loop(
-                p,
-                model=model,
-                epochs=epochs,
-                dls_train=dls_train,
-                dls_validation=dls_validation,
-                epoch_task=epoch_task,
-                optimizer=optimizer,
-                epoch_dir=epoch_dir,
-                img_transform=img_transform,
-                loss_function=loss_function,
-                distortions_group=distortions_group,
-            )
-        except KeyboardInterrupt:
-            p.console.log("training stopped by user (Ctrl+C)")
+        if dls_train is not None:  # allow "test only" mode
+            try:
+                _train_loop(
+                    p,
+                    model=model,
+                    epochs=epochs,
+                    dls_train=dls_train,
+                    dls_validation=dls_validation,
+                    epoch_task=epoch_task,
+                    optimizer=optimizer,
+                    epoch_dir=epoch_dir,
+                    img_transform=img_transform,
+                    loss_function=loss_function,
+                    distortions_group=distortions_group,
+                )
+            except KeyboardInterrupt:
+                p.log("training stopped by user (Ctrl+C)")
 
         p.print(p)
         p.remove_task(epoch_task)
