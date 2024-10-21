@@ -5,7 +5,7 @@ from typing import Any, TypeAlias
 
 from .model import DWDN
 
-Input: TypeAlias = tuple[Tensor, Tensor]
+Inputs: TypeAlias = tuple[Tensor, Tensor]
 
 
 class PrecompensationDWDN(DWDN):
@@ -13,13 +13,13 @@ class PrecompensationDWDN(DWDN):
         super().__init__(n_levels=n_levels, scale=scale)
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, inputs: Input) -> Tensor:
+    def forward(self, inputs: Inputs) -> Tensor:
         (
             image,
             psf,
         ) = inputs
         image = super().forward(image, psf)[0]
-        return self.sigmoid(image)
+        return (self.sigmoid(image),)
 
     @classmethod
     def from_path(cls, path: str, **kwargs: Any):
@@ -30,7 +30,7 @@ class PrecompensationDWDN(DWDN):
         model.load_state_dict(state_dict)
         return model
 
-    def preprocess(self, image: Tensor, psf: Tensor) -> Input:
+    def preprocess(self, image: Tensor, psf: Tensor) -> Inputs:
         psf = torch.fft.fftshift(psf)
         return image, psf
 
