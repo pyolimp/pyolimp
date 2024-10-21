@@ -4,6 +4,7 @@ from torch.utils.data import Dataset
 from torch import Tensor
 from collections.abc import Sequence, Iterator
 from olimp.dataset import read_img_path, ImgPath
+from itertools import islice
 
 
 def read_path(root: Path, matches: Sequence[str]) -> Iterator[ImgPath]:
@@ -19,8 +20,10 @@ def read_path(root: Path, matches: Sequence[str]) -> Iterator[ImgPath]:
 
 
 class DirectoryDataset(Dataset[Tensor]):
-    def __init__(self, root: Path, matches: Sequence[str]) -> None:
-        self._paths = list(read_path(root, matches))
+    def __init__(
+        self, root: Path, matches: Sequence[str], limit: int | None = None
+    ) -> None:
+        self._paths = list(islice(read_path(root, matches), limit))
         if not self._paths:
             raise ValueError(f"There are no {", ".join(matches)} in {root}")
 

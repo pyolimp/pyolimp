@@ -4,7 +4,7 @@ from . import BaseZenodoDataset, ImgPath
 from olimp.dataset.cvd import cvd as _cvd, Paths
 
 
-class CDVDataset(BaseZenodoDataset[Paths]):
+class CVDDataset(BaseZenodoDataset[Paths]):
     def create_dataset(
         self,
         categories: set[Paths],
