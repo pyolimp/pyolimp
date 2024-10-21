@@ -6,3 +6,5 @@ __pycache__
 # schema.json must be generated using
 # `python -m olimp.precompensation.nn.train.train --update-schema`
 schema.json
+# torch memory profile
+*.pickle
