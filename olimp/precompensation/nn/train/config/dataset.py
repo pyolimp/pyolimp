@@ -12,6 +12,7 @@ from .transform import (
     ResizeTransform,
     PSFNormalizeTransform,
     Float32Transform,
+    DivideTransform,
 )
 
 
@@ -189,6 +190,8 @@ class ImgDataloaderConfig(BaseDataloaderConfig):
     transforms: Transforms = [
         GrayscaleTransform(name="Grayscale"),
         ResizeTransform(name="Resize"),
+        Float32Transform(name="Float32"),
+        DivideTransform(name="Divide"),
     ]
 
 
