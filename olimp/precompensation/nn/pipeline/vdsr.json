@@ -8,7 +8,8 @@
                 "name": "SCA2023",
                 "subsets": [
                     "Images/Real_images/Faces"
-                ]
+                ],
+                "limit": 1
             }
         ]
     },
@@ -21,7 +22,8 @@
                         "name": "SCA2023",
                         "subsets": [
                             "PSFs/Narrow"
-                        ]
+                        ],
+                        "limit": 1
                     }
                 ]
             }
@@ -31,5 +33,10 @@
         "name": "MS_SSIM"
     },
     "batch_size": 4,
-    "sample_size": 100
+    "sample_size": 120,
+    "optimizer": {
+        "name": "Adam",
+        "learning_rate": 0.01,
+        "eps": 1e-8
+    }
 }

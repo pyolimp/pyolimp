@@ -1,6 +1,7 @@
 {
     "model": {
-        "name": "precompensationusrnet"
+        "name": "precompensationusrnet",
+        "path": "./olimp/weights/usrnet.pth"
     },
     "img": {
         "datasets": [
@@ -25,15 +26,23 @@
             }
         ]
     },
-    "psf": {
-        "datasets": [
-            {
-                "name": "SCA2023",
-                "subsets": [
-                    "PSFs/Narrow"
+    "distortion": [
+        {
+            "name": "refraction_datasets",
+            "psf": {
+                "datasets": [
+                    {
+                        "name": "SCA2023",
+                        "subsets": [
+                            "PSFs/Narrow"
+                        ]
+                    }
                 ]
             }
-        ]
-    },
-    "batch_size": 1
+        }
+    ],
+    "batch_size": 1,
+    "loss_function": {
+        "name": "MS_SSIM"
+    }
 }
