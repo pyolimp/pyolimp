@@ -1,11 +1,29 @@
 from __future__ import annotations
-from typing import Annotated, Literal, Any, TypeAlias
+from typing import Annotated, Literal, Any, TypeAlias, Callable
 from .base import StrictModel
 from pydantic import Field, confloat
-from olimp.processing import conv
 from .....simulate import Distortion
 from torch import Tensor
-import torch
+
+
+def _create_simple_loss(loss: Callable[[Tensor, Tensor], Tensor]):
+    def f(
+        model_output: list[Tensor],
+        datums: list[Tensor],
+        distortions: list[type[Distortion]],
+    ) -> Tensor:
+        assert isinstance(model_output, tuple | list)
+        assert isinstance(datums, tuple | list)
+        distorted: list[Tensor] = []
+        for distortion, d_input in zip(distortions, datums[1:], strict=True):
+            distorted.append(
+                distortion(d_input)(*model_output).clip(min=0.0, max=1.0)
+            )
+        original_image = datums[0]
+        assert len(distorted) == 1, len(distorted)
+        return loss(distorted[0], original_image)
+
+    return f
 
 
 class VaeLossFunction(StrictModel):
@@ -19,13 +37,16 @@ class VaeLossFunction(StrictModel):
             model, VAE
         ), f"Vae loss only work with Vae model, not {model}"
 
-        def f(model_output: list[Tensor], datums: list[Tensor]) -> Tensor:
-            image, psf = datums
+        def f(
+            model_output: list[Tensor],
+            datums: list[Tensor],
+            distortions: list[type[Distortion]],
+        ) -> Tensor:
+            assert len(distortions) == 1, "Not implemented"
+            original_image = datums[0]
             precompensated, *args = model_output
-            retinal_precompensated = conv(
-                precompensated.to(torch.float32).clip(0, 1), psf
-            )
-            loss = vae_loss(retinal_precompensated, image, *args)
+            retinal_precompensated = distortions[0](datums[1])(precompensated)
+            loss = vae_loss(retinal_precompensated, original_image, *args)
             return loss
 
         return f
@@ -82,27 +103,51 @@ class MultiScaleSSIMLossFunction(StrictModel):
             k2=self.k2,
         )
 
-        def f(
-            model_output: list[Tensor],
-            datums: list[Tensor],
-            distortions: list[type[Distortion]],
-        ) -> Tensor:
-            assert isinstance(model_output, tuple | list)
-            assert isinstance(datums, tuple | list)
-            distorted: list[Tensor] = []
-            for distortion, d_input in zip(
-                distortions, datums[1:], strict=True
-            ):
-                distorted.append(
-                    distortion(d_input)(*model_output).clip(min=0.0, max=1.0)
-                )
-            original_image = datums[0]
-            return ms_ssim(*distorted, original_image)
+        return _create_simple_loss(ms_ssim)
 
-        return f
+
+class RMSLossFunction(StrictModel):
+    name: Literal["RMS"]
+    color_space: Literal["lab", "prolab"]
+
+    n_pixel_neighbors: int = 1000
+    step: int = 10
+    sigma_rate: float = 0.25
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.rms import RMS
+
+        rms = RMS(
+            self.color_space,
+            n_pixel_neighbors=self.n_pixel_neighbors,
+            step=self.step,
+            sigma_rate=self.sigma_rate,
+        )
+
+        return _create_simple_loss(rms)
+
+
+class CDLossFunction(StrictModel):
+    name: Literal["CD"]
+    color_space: Literal["lab", "prolab"]
+    lightness_weight: int = 0
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.cd import CD
+
+        cd = CD(
+            color_space=self.color_space,
+            lightness_weight=self.lightness_weight,
+        )
+
+        return _create_simple_loss(cd)
 
 
 LossFunction = Annotated[
-    VaeLossFunction | ColorBlindnessLossFunction | MultiScaleSSIMLossFunction,
+    VaeLossFunction
+    | ColorBlindnessLossFunction
+    | MultiScaleSSIMLossFunction
+    | RMSLossFunction
+    | CDLossFunction,
     Field(..., discriminator="name"),
 ]
