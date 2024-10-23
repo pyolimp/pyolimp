@@ -12,15 +12,29 @@
             }
         ]
     },
-    "psf": {
-        "datasets": [
-            {
-                "name": "SCA2023",
-                "subsets": [
-                    "PSFs/Narrow"
+    "distortion": [
+        {
+            "name": "refraction_datasets",
+            "psf": {
+                "datasets": [
+                    {
+                        "name": "SCA2023",
+                        "subsets": [
+                            "PSFs/Narrow"
+                        ]
+                    }
                 ]
             }
-        ]
+        }
+    ],
+    "loss_function": {
+        "name": "Vae"
     },
-    "batch_size": 16
+    "batch_size": 4,
+    "sample_size": 120,
+    "optimizer": {
+        "name": "Adam",
+        "learning_rate": 0.001,
+        "eps": 1e-8
+    }
 }
