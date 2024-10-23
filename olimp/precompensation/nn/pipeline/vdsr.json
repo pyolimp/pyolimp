@@ -1,6 +1,7 @@
 {
     "model": {
-        "name": "vdsr"
+        "name": "vdsr",
+        "path": "./olimp/weights/vdsr.pth"
     },
     "img": {
         "datasets": [
@@ -8,8 +9,7 @@
                 "name": "SCA2023",
                 "subsets": [
                     "Images/Real_images/Faces"
-                ],
-                "limit": 1
+                ]
             }
         ]
     },
@@ -22,8 +22,7 @@
                         "name": "SCA2023",
                         "subsets": [
                             "PSFs/Narrow"
-                        ],
-                        "limit": 1
+                        ]
                     }
                 ]
             }
@@ -36,7 +35,7 @@
     "sample_size": 120,
     "optimizer": {
         "name": "Adam",
-        "learning_rate": 0.01,
+        "learning_rate": 0.0001,
         "eps": 1e-8
     }
 }
