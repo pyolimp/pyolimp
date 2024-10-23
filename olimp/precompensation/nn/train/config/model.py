@@ -48,12 +48,26 @@ class PrecompensationUSRNet(ModelConfig):
     name: Literal["precompensationusrnet"]
     path: str | None = None
 
+    n_iter: int = 8
+    h_nc: int = 64
+    in_nc: int = 4
+    out_nc: int = 3
+    nc: list[int] = [64, 128, 256, 512]
+    nb: int = 2
+
     def get_instance(self):
         from ...models.usrnet import PrecompensationUSRNet
 
         if self.path is not None:
             return PrecompensationUSRNet.from_path(path=self.path)
-        return PrecompensationUSRNet()
+        return PrecompensationUSRNet(
+            n_iter=self.n_iter,
+            h_nc=self.h_nc,
+            in_nc=self.in_nc,
+            out_nc=self.out_nc,
+            nc=self.nc,
+            nb=self.nb,
+        )
 
 
 class PrecompensationDWDN(ModelConfig):
