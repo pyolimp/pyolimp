@@ -58,7 +58,7 @@ class PrecompensationUSRNet(USRNet):
     def forward(self, inputs: Input):
         x, k, scale_factor, sigma = inputs
         x = super().forward(x, k, scale_factor, sigma)
-        return self.sigmoid(x)
+        return (self.sigmoid(x),)
 
     def preprocess(
         self,

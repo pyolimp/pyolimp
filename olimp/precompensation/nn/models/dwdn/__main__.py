@@ -15,7 +15,7 @@ def _demo():
         with torch.no_grad():
             inputs = model.preprocess(image, psf.to(torch.float32))
             progress(0.1)
-            precompensation = model(inputs, **model.arguments(inputs, psf))
+            (precompensation,) = model(inputs, **model.arguments(inputs, psf))
             progress(1.0)
             return precompensation
 
