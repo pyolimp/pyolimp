@@ -46,6 +46,9 @@ class PrecompensationUNETB0(smp.Unet):
             dim=1,
         )
 
+    def forward(self, image: Tensor) -> Tensor:
+        return (super().forward(image),)
+
     def arguments(self, *args, **kwargs):
         return {}
 
