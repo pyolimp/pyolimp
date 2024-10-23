@@ -48,9 +48,9 @@ def demo(
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         with torch.device(device):
-            psf = torch.fft.fftshift(torch.tensor(psf_info["psf"]))[
-                None, None, ...
-            ]
+            psf = torch.fft.fftshift(
+                torch.tensor(psf_info["psf"]).to(torch.float32)
+            )[None, None, ...]
 
             callback: Callable[[float], None] = lambda c: progress.update(
                 task_p, completed=c
