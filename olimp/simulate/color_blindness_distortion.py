@@ -7,22 +7,16 @@ from olimp.simulate import Distortion
 
 
 class ColorBlindnessDistortion(Distortion):
+    blindness_type: Literal["PROTAN", "DEUTAN"]
+
     def __init__(
         self,
-        sim_type: Literal["Vienot", "Huang", "Farup"],
-        blindness_type: Literal["PROTAN", "DEUTAN", "rg"],
+        blindness_type: Literal["PROTAN", "DEUTAN"],
     ) -> None:
-        assert sim_type in [
-            "Vienot",
-            "Huang",
-            "Farup",
-        ], "no such distortion"
         assert blindness_type in [
             "PROTAN",
             "DEUTAN",
-            "rg",
         ], "no such distortion"
-        self.sim_type = sim_type
         self.blindness_type = blindness_type
 
     @staticmethod
@@ -64,9 +58,9 @@ class ColorBlindnessDistortion(Distortion):
                 [0.27293945, 0.66418685, 0.06287371],
                 [0.10022701, 0.78761123, 0.11216177],
                 [0.01781695, 0.10961952, 0.87256353],
-            ]
+            ],
+            device=linRGB.device,
         )
-
         LMS = linRGB @ LMS_from_RGB.T
         return LMS
 
@@ -77,7 +71,8 @@ class ColorBlindnessDistortion(Distortion):
                 [5.30329968, -4.49954803, 0.19624834],
                 [-0.67146001, 1.86248629, -0.19102629],
                 [-0.0239335, -0.14210614, 1.16603964],
-            ]
+            ],
+            device=LMS.device,
         )
         inv_linRGB = LMS @ RGB_from_LMS.T
         sRGB = ColorBlindnessDistortion._sRGB_from_linearRGB(inv_linRGB)
@@ -86,42 +81,23 @@ class ColorBlindnessDistortion(Distortion):
     @staticmethod
     def _simulate(
         image: Tensor,
-        sim_type: Literal["Vienot", "Huang", "Farup"],
-        blindness_type: Literal["PROTAN", "DEUTAN", "rg"],
+        blindness_type: Literal["PROTAN", "DEUTAN"],
     ) -> Tensor:
         protan_Vienot = torch.tensor(
-            [[0.0, 1.06481845, -0.06481845], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-        )
-        protan_Huang = torch.tensor(
-            [[0.0, 1.20166964, -0.20166964], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+            [[0.0, 1.06481845, -0.06481845], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
+            device=image.device,
         )
         deutan_Vienot = torch.tensor(
-            [[1.0, 0.0, 0.0], [0.93912723, 0.0, 0.06087277], [0.0, 0.0, 1.0]]
-        )
-        deutan_Huang = torch.tensor(
-            [[1.0, 0.0, 0.0], [0.83217547, 0.0, 0.16782453], [0.0, 0.0, 1.0]]
-        )
-        FarupRGmatrix = torch.tensor(
-            [[0.5, 0.5, 0.0], [0.5, 0.5, 0.0], [0.0, 0.0, 1.0]]
+            [[1.0, 0.0, 0.0], [0.93912723, 0.0, 0.06087277], [0.0, 0.0, 1.0]],
+            device=image.device,
         )
 
-        if blindness_type == "rg" and sim_type == "Farup":
-            return image @ FarupRGmatrix.T
-        elif blindness_type in ("PROTAN", "DEUTAN") and sim_type in (
-            "Vienot",
-            "Huang",
-        ):
+        if blindness_type in ("PROTAN", "DEUTAN"):
             lms = ColorBlindnessDistortion._convert_from_sRGB(image)
             if blindness_type == "PROTAN":
-                if sim_type == "Vienot":
-                    dichromat_LMS = lms @ protan_Vienot.T
-                elif sim_type == "Huang":
-                    dichromat_LMS = lms @ protan_Huang.T
+                dichromat_LMS = lms @ protan_Vienot.T
             elif blindness_type == "DEUTAN":
-                if sim_type == "Vienot":
-                    dichromat_LMS = lms @ deutan_Vienot.T
-                elif sim_type == "Huang":
-                    dichromat_LMS = lms @ deutan_Huang.T
+                dichromat_LMS = lms @ deutan_Vienot.T
             sRGB = ColorBlindnessDistortion._convert_from_LMS(dichromat_LMS)
             sRGB = torch.clip(sRGB, 0, 1)
             return sRGB
@@ -140,6 +116,6 @@ class ColorBlindnessDistortion(Distortion):
                 image.permute(1, 2, 0), 0.98
             )
             I_sim[idx] = ColorBlindnessDistortion._simulate(
-                image_normalized, self.sim_type, self.blindness_type
+                image_normalized, self.blindness_type
             ).permute(2, 0, 1)
         return I_sim
