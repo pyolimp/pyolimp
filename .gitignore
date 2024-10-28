@@ -8,3 +8,5 @@ __pycache__
 schema.json
 # torch memory profile
 *.pickle
+# created by `python -m venv .venv`
+/.venv
