@@ -198,9 +198,9 @@ def _train_loop(
         ):
             train_loss += loss.item()
             p.update(training_task, loss=f"{loss.item():g}")
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            optimizer.zero_grad()
         assert train_loss, train_loss
 
         train_loss /= len(dls_train[0])
