@@ -23,7 +23,8 @@ with Progress() as ci:
     from torchvision.transforms.v2 import Compose
 
     ci.update(load_task, completed=75)
-    from torch.utils.data import Dataset, DataLoader, RandomSampler
+    from torch.utils.data import Dataset, DataLoader
+    from .torch_issue_135990 import RandomSamplerCPU as RandomSampler
     from pathlib import Path
 
     ci.update(load_task, completed=95)
