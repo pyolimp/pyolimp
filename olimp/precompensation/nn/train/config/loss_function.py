@@ -30,12 +30,12 @@ class VaeLossFunction(StrictModel):
     name: Literal["Vae"]
 
     def load(self, model: Any):
-        from ...models.vae import VAE
         from .....evaluation.loss import vae_loss
 
-        assert isinstance(
-            model, VAE
-        ), f"Vae loss only work with Vae model, not {model}"
+        assert type(model).__name__ in (
+            "VAE",
+            "CVAE",
+        ), f"Vae loss only work with (C)Vae model, not {model}"
 
         def f(
             model_output: list[Tensor],

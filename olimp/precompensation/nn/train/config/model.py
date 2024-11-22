@@ -32,6 +32,18 @@ class VAE(ModelConfig):
         return VAE()
 
 
+class CVAE(ModelConfig):
+    name: Literal["cvae"]
+    path: str | None = None
+
+    def get_instance(self):
+        from ...models.cvae import CVAE
+
+        if self.path is not None:
+            return CVAE.from_path(path=self.path)
+        return CVAE()
+
+
 class UNET_b0(ModelConfig):
     name: Literal["unet_b0"]
     path: str | None = None
@@ -103,6 +115,7 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(ModelConfig):
 Model = Annotated[
     VDSR
     | VAE
+    | CVAE
     | UNET_b0
     | PrecompensationUSRNet
     | PrecompensationDWDN

@@ -1,0 +1,43 @@
+{
+    "model": {
+        "name": "cvae"
+    },
+    "img": {
+        "datasets": [
+            {
+                "name": "SCA2023",
+                "subsets": [
+                    "Images/Real_images/Faces"
+                ],
+                "limit": 2
+            }
+        ]
+    },
+    "distortion": [
+        {
+            "name": "refraction_datasets",
+            "psf": {
+                "datasets": [
+                    {
+                        "name": "SCA2023",
+                        "subsets": [
+                            "PSFs/Broad"
+                        ],
+                        "limit": 1
+                    }
+                ]
+            }
+        }
+    ],
+    "loss_function": {
+        "name": "Vae"
+    },
+    "batch_size": 1,
+    "sample_size": 10,
+    "optimizer": {
+        "name": "Adam",
+        "learning_rate": 0.001,
+        "eps": 1e-8
+    },
+    "epochs": 500
+}
