@@ -55,7 +55,7 @@ def demo(
             callback: Callable[[float], None] = lambda c: progress.update(
                 task_p, completed=c
             )
-            precompensation = opt_function(img.to(device), psf, callback)
+            (precompensation,) = opt_function(img.to(device), psf, callback)
             retinal_procompensated = conv(precompensation, psf)
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
