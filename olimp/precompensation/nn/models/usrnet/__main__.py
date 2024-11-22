@@ -14,7 +14,7 @@ def _demo():
         model = PrecompensationUSRNet.from_path(
             path="./olimp/weights/usrnet.pth"
         )
-        with torch.no_grad():
+        with torch.inference_mode():
             psf = psf.to(torch.float32)
             inputs = model.preprocess(
                 image, psf, scale_factor=1, noise_level=0

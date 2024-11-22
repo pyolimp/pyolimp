@@ -12,7 +12,7 @@ def _demo():
     ) -> Tensor:
         model = PrecompensationDWDN.from_path(path="./olimp/weights/dwdn.pt")
 
-        with torch.no_grad():
+        with torch.inference_mode():
             inputs = model.preprocess(image, psf.to(torch.float32))
             progress(0.1)
             (precompensation,) = model(inputs, **model.arguments(inputs, psf))

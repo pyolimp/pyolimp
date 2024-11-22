@@ -65,7 +65,7 @@ def _demo():
         model = PrecompensationUNETB0.from_path(
             "./olimp/weights/unet-efficientnet-b0.pth"
         )
-        with torch.no_grad():
+        with torch.inference_mode():
             psf = psf.to(torch.float32)
             inputs = model.preprocess(image, psf)
             progress(0.1)
