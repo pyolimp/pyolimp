@@ -116,7 +116,7 @@ def _demo():
         progress: Callable[[float], None],
     ) -> Tensor:
         model = VAE.from_path("./olimp/weights/vae.pth")
-        with torch.no_grad():
+        with torch.inference_mode():
             psf = psf.to(torch.float32)
             inputs = model.preprocess(image, psf)
             progress(0.1)
