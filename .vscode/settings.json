@@ -6,5 +6,11 @@
             ],
             "url": "./olimp/precompensation/nn/train/schema.json"
         },
+    ],
+    "cSpell.words": [
+        "CVAE",
+        "DWDN",
+        "UNET",
+        "VDSR"
     ]
 }
