@@ -9,7 +9,7 @@ from olimp.simulate.color_blindness_distortion import ColorBlindnessDistortion
 
 class TennenholtzZachevskyParameters(NamedTuple):
     contrast_func_type: Literal["lin", "exp"] = "lin"
-    sim_window_size: int = 21
+    sim_window_size: int = 11
     progress: Callable[[float], None] | None = None
 
 
@@ -84,13 +84,15 @@ def tennenholtz_zachevsky(
     img_3ch: Tensor,
     distortion: ColorBlindnessDistortion,
     parameters: TennenholtzZachevskyParameters = TennenholtzZachevskyParameters(),
-) -> Tensor:
+) -> tuple[Tensor]:
     """
     Tennenholtz-Zachevsky Natural Contrast Enhancement color blindness precompensation.
     """
     from skimage.color import rgb2hsv, hsv2rgb
 
-    img_3ch = img_3ch
+    res = torch.zeros_like(img_3ch)
+
+    img_3ch = img_3ch[0]
 
     img_2ch = distortion(img_3ch)[0]
 
@@ -149,9 +151,10 @@ def tennenholtz_zachevsky(
             if curr_error < optimal_error:
                 optimal_error = curr_error
                 optimal_params_img = img_3ch_hsv_v_streched.clone()
-    return torch.as_tensor(
+    res[0] = torch.as_tensor(
         hsv2rgb(optimal_params_img.permute(1, 2, 0).detach().cpu())
     ).permute(2, 0, 1)
+    return res
 
 
 def _demo():
@@ -162,10 +165,12 @@ def _demo():
         distortion: ColorBlindnessDistortion,
         progress: Callable[[float], None],
     ) -> torch.Tensor:
-        return tennenholtz_zachevsky(
-            image,
-            distortion,
-            TennenholtzZachevskyParameters(progress=progress),
+        return (
+            tennenholtz_zachevsky(
+                image,
+                distortion,
+                TennenholtzZachevskyParameters(progress=progress),
+            ),
         )
 
     distortion = ColorBlindnessDistortion("PROTAN")
