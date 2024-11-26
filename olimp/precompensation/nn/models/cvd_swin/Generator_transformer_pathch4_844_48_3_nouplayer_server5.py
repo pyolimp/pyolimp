@@ -9,6 +9,7 @@ from . import (
 from torch import Tensor
 import torch
 import torch.nn as nn
+import torchvision.transforms as transforms
 from timm.models.layers import trunc_normal_
 
 
@@ -58,6 +59,15 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(nn.Module):
         **kwargs,
     ):
         super().__init__()
+
+        transform_val_list1 = [
+            transforms.Normalize((-1.0, -1.0, -1.0), (2.0, 2.0, 2.0))
+        ]
+        transform_val_list2 = [
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ]
+        self.trans_compose1 = transforms.Compose(transform_val_list1)
+        self.trans_compose2 = transforms.Compose(transform_val_list2)
 
         # self.num_classes = num_classes
         self.num_layers = len(depths)
@@ -374,27 +384,45 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(nn.Module):
         return model
 
     def preprocess(self, tensor: torch.Tensor) -> torch.Tensor:
-        return tensor
+        return self.trans_compose2(tensor)
+        # return tensor
+
+    def postprocess(self, tensor: torch.Tensor) -> torch.Tensor:
+        return self.trans_compose1(tensor)
+        # return tensor
 
     def arguments(self, *args, **kwargs):
         return {}
 
 
-if __name__ == "__main__":
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    test_data = np.load("./tests/test_data/test.npy", allow_pickle=True)
-
-    test = test_data[3]
-    test = test.clip(0, 1)
-    test_t = torch.tensor(test).unsqueeze(0)
-
-    swd_swin = (
-        Generator_transformer_pathch4_844_48_3_nouplayer_server5.from_path()
+def _demo():
+    from ...._demo_cvd import demo
+    from typing import Callable
+    from olimp.simulate.color_blindness_distortion import (
+        ColorBlindnessDistortion,
     )
-    output = swd_swin(test_t)
 
-    plt.imshow(output.detach().cpu().numpy().transpose([0, 2, 3, 1])[0])
-    plt.savefig("fig2.png")
-    plt.show()
+    def demo_cvd_swin(
+        image: Tensor,
+        distortion: ColorBlindnessDistortion,
+        progress: Callable[[float], None],
+    ) -> torch.Tensor:
+        swd_swin = (
+            Generator_transformer_pathch4_844_48_3_nouplayer_server5.from_path()
+        )
+        image = swd_swin.preprocess(image)
+        progress(0.1)
+        precompensation = swd_swin(image)
+        progress(1.0)
+        return (swd_swin.postprocess(precompensation[0]),)
+
+    distortion = ColorBlindnessDistortion("PROTAN")
+    demo(
+        "CVD-SWIN",
+        demo_cvd_swin,
+        distortion=distortion,
+    )
+
+
+if __name__ == "__main__":
+    _demo()
