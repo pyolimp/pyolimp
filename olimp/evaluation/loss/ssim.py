@@ -23,7 +23,6 @@ class SSIMLoss(Module):
         )
 
     def forward(self, x: Tensor, y: Tensor, as_loss: bool = True) -> Tensor:
-
         if not self.gaussian_kernel.is_cuda:
             self.gaussian_kernel = self.gaussian_kernel.to(x.device)
 
@@ -35,7 +34,6 @@ class SSIMLoss(Module):
             return ssim_map
 
     def _ssim(self, x: Tensor, y: Tensor) -> Tensor:
-
         # Compute means
         ux = F.conv2d(
             x, self.gaussian_kernel, padding=self.kernel_size // 2, groups=3
@@ -76,7 +74,6 @@ class SSIMLoss(Module):
     def _create_gaussian_kernel(
         self, kernel_size: int, sigma: float
     ) -> Tensor:
-
         start = (1 - kernel_size) / 2
         end = (1 + kernel_size) / 2
         kernel_1d = torch.arange(start, end, step=1, dtype=torch.float)
