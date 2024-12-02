@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Annotated, Literal, Any, TypeAlias, Callable
+from typing import Annotated, Literal, Any, TypeAlias, Callable, Union
 from .base import StrictModel
 from pydantic import Field, confloat
 from .....simulate import Distortion
@@ -151,7 +151,7 @@ class SSIMLossFunction(StrictModel):
     k2: float = 0.03
 
     def load(self, _model: Any):
-        from piq import SSIMLoss
+        from .....evaluation.loss.piq import SSIMLoss
 
         ssim = SSIMLoss(
             kernel_size=self.kernel_size,
@@ -172,7 +172,7 @@ class MultiScaleSSIMLossFunction(StrictModel):
     k2: float = 0.03
 
     def load(self, _model: Any):
-        from piq import MultiScaleSSIMLoss
+        from .....evaluation.loss.piq import MultiScaleSSIMLoss
 
         ms_ssim = MultiScaleSSIMLoss(
             kernel_size=self.kernel_size,
@@ -182,6 +182,40 @@ class MultiScaleSSIMLossFunction(StrictModel):
         )
 
         return _create_simple_loss(ms_ssim)
+
+
+class FSIMLossFunction(StrictModel):
+    name: Literal["FSIM"]
+
+    reduction: Literal["none", "mean", "sum"] = "mean"
+    data_range: Union[int, float] = 1.0
+    chromatic: bool = True
+    scales: int = 4
+    orientations: int = 4
+    min_length: int = 6
+    mult: int = 2
+    sigma_f: float = 0.55
+    delta_theta: float = 1.2
+    k: float = 2.0
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.piq import FSIMLoss
+
+        fsim = FSIMLoss(
+            reduction=self.reduction
+            data_range=self.data_range,
+            chromatic=self.chromatic,
+            reduction=self.reduction,
+            scales=self.scales,
+            orientations=self.orientations,
+            min_length=self.min_length,
+            mult=self.mult,
+            sigma_f=self.sigma_f,
+            delta_theta=self.delta_theta,
+            k=self.k,
+        )
+
+        return _create_simple_loss(fsim)
 
 
 class RMSLossFunction(StrictModel):
