@@ -11,12 +11,12 @@ class PSNR(Module):
     Peak Signal-to-Noise Ratio (PSNR) metric implemented as a PyTorch module.
 
     Args:
-        mse_metric (Module): MSE metric class instance. Defaults to `MSE(invert=False)`.
+        mse_metric (Module): MSE metric class instance.
     """
 
     def __init__(
         self,
-        mse_metric: MSE = MSE(invert=False),
+        mse_metric: MSE = MSE(),
     ) -> None:
         self.mse_metric = mse_metric
 
