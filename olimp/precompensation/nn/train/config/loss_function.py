@@ -202,10 +202,9 @@ class FSIMLossFunction(StrictModel):
         from .....evaluation.loss.piq import FSIMLoss
 
         fsim = FSIMLoss(
-            reduction=self.reduction
+            reduction=self.reduction,
             data_range=self.data_range,
             chromatic=self.chromatic,
-            reduction=self.reduction,
             scales=self.scales,
             orientations=self.orientations,
             min_length=self.min_length,
