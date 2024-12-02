@@ -85,6 +85,84 @@ class ColorBlindnessLossFunction(StrictModel):
         return f
 
 
+class MSELossFucntion(StrictModel):
+    name: Literal["MSE"]
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.mse import MSE
+
+        mse = MSE()
+
+        return _create_simple_loss(mse)
+
+
+class PSNRLossFunction(StrictModel):
+    name: Literal["PSNR"]
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.psnr import PSNR
+
+        psrn = PSNR()
+
+        return _create_simple_loss(psrn)
+
+
+class NRMSELossFuction(StrictModel):
+    name: Literal["NRMSE"]
+
+    invert: bool = False
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.nrmse import NormalizedRootMSE
+
+        nrmse = NormalizedRootMSE(invert=self.invert)
+
+        return _create_simple_loss(nrmse)
+
+
+class StressLossFunction(StrictModel):
+    name: Literal["Stress"]
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.stress import Stress
+
+        stress = Stress()
+
+        return _create_simple_loss(stress)
+
+
+class CorrLossFunction(StrictModel):
+    name: Literal["CORR"]
+
+    def laod(self, _model: Any):
+        from .....evaluation.loss.corr import Correlation
+
+        corr = Correlation()
+
+        return _create_simple_loss(corr)
+
+
+class SSIMLossFunction(StrictModel):
+    name: Literal["SSIM"]
+
+    kernel_size: int = 11
+    kernel_sigma: float = 1.5
+    k1: float = 0.01
+    k2: float = 0.03
+
+    def load(self, _model: Any):
+        from piq import SSIMLoss
+
+        ssim = SSIMLoss(
+            kernel_size=self.kernel_size,
+            kernel_sigma=self.kernel_sigma,
+            k1=self.k1,
+            k2=self.k2,
+        )
+
+        return _create_simple_loss(ssim)
+
+
 class MultiScaleSSIMLossFunction(StrictModel):
     name: Literal["MS_SSIM"]
 
