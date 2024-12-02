@@ -121,12 +121,12 @@ class NRMSELossFuction(StrictModel):
 
 
 class StressLossFunction(StrictModel):
-    name: Literal["Stress"]
+    name: Literal["STRESS"]
 
     def load(self, _model: Any):
-        from .....evaluation.loss.stress import Stress
+        from .....evaluation.loss.stress import STRESS
 
-        stress = Stress()
+        stress = STRESS()
 
         return _create_simple_loss(stress)
 

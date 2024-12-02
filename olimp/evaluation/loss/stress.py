@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 
 
-class Stress(Module):
+class STRESS(Module):
     """
     Computes the Stress or 1 - Stress metric between two tensors.
 
@@ -14,7 +14,7 @@ class Stress(Module):
     """
 
     def __init__(self, invert: bool = False):
-        super(Stress, self).__init__()  # type: ignore
+        super(STRESS, self).__init__()  # type: ignore
         self.invert = invert
 
     def forward(self, x: Tensor, y: Tensor) -> Tensor:

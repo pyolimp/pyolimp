@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from typing import Literal
 from torch.nn import Module
 import torch
 from torch import Tensor
@@ -15,7 +15,9 @@ class NormalizedRootMSE(Module):
     """
 
     def __init__(
-        self, normalization: str = "euclidean", invert: bool = True
+        self,
+        normalization: Literal["euclidean", "min-max", "mean"] = "euclidean",
+        invert: bool = True,
     ) -> None:
         super(NormalizedRootMSE, self).__init__()  # type: ignore
         self.normalization = normalization.lower()
@@ -25,6 +27,22 @@ class NormalizedRootMSE(Module):
             raise ValueError(
                 "Unsupported normalization type. Choose from 'euclidean', 'min-max', or 'mean'."
             )
+
+        self._denom_function = getattr(
+            self, f"_{normalization.replace('-', '_')}"
+        )
+
+    @staticmethod
+    def _euclidean(x: Tensor) -> Tensor:
+        return torch.sqrt(torch.mean(x**2))
+
+    @staticmethod
+    def _min_max(x: Tensor) -> Tensor:
+        return x.max() - x.min()
+
+    @staticmethod
+    def _mean(x: Tensor) -> Tensor:
+        return x.mean()
 
     def forward(self, x: Tensor, y: Tensor) -> Tensor:
         """
@@ -41,14 +59,7 @@ class NormalizedRootMSE(Module):
         mse_value = torch.mean((x - y) ** 2)
 
         # Compute normalization denominator
-        if self.normalization == "euclidean":
-            denom = torch.sqrt(torch.mean(x**2))
-        elif self.normalization == "min-max":
-            denom = x.max() - x.min()
-        elif self.normalization == "mean":
-            denom = x.mean()
-        else:
-            raise ValueError("Unsupported normalization type.")
+        denom = self._denom_function(x)
 
         # Avoid division by zero
         if denom == 0:
