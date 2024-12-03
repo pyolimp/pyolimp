@@ -1,4 +1,5 @@
 """ FLIP metric functions """
+
 #################################################################################
 # Copyright (c) 2020-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
@@ -53,6 +54,8 @@ import sys
 import numpy as np
 import torch
 import torch.nn as nn
+from torch import Tensor
+from typing import Literal, Tuple
 
 
 class HDRFLIPLoss(nn.Module):
@@ -71,13 +74,13 @@ class HDRFLIPLoss(nn.Module):
 
     def forward(
         self,
-        test,
-        reference,
-        pixels_per_degree=(0.7 * 3840 / 0.7) * np.pi / 180,
-        tone_mapper="aces",
-        start_exposure=None,
-        stop_exposure=None,
-    ):
+        test: Tensor,
+        reference: Tensor,
+        pixels_per_degree: float = (0.7 * 3840 / 0.7) * np.pi / 180,
+        tone_mapper: Literal["reinhard", "hable", "aces"] = "aces",
+        start_exposure: Tensor | None = None,
+        stop_exposure: Tensor | None = None,
+    ) -> Tensor:
         """
         Computes the HDR-FLIP error map between two HDR images,
         assuming the images are observed at a certain number of
@@ -170,10 +173,10 @@ class LDRFLIPLoss(nn.Module):
 
     def forward(
         self,
-        test,
-        reference,
-        pixels_per_degree=(0.7 * 3840 / 0.7) * np.pi / 180,
-    ):
+        test: Tensor,
+        reference: Tensor,
+        pixels_per_degree: float = (0.7 * 3840 / 0.7) * np.pi / 180,
+    ) -> Tensor:
         """
         Computes the LDR-FLIP error map between two LDR images,
         assuming the images are observed at a certain number of
@@ -207,7 +210,16 @@ class LDRFLIPLoss(nn.Module):
         return torch.mean(deltaE)
 
 
-def compute_ldrflip(test, reference, pixels_per_degree, qc, qf, pc, pt, eps):
+def compute_ldrflip(
+    test: Tensor,
+    reference: Tensor,
+    pixels_per_degree: float,
+    qc: float,
+    qf: float,
+    pc: float,
+    pt: float,
+    eps: float,
+) -> Tensor:
     """
     Computes the LDR-FLIP error map between two LDR images,
     assuming the images are observed at a certain number of
@@ -290,7 +302,11 @@ def compute_ldrflip(test, reference, pixels_per_degree, qc, qf, pc, pt, eps):
     return torch.pow(deltaE_c, 1 - deltaE_f)
 
 
-def tone_map(img, tone_mapper, exposure):
+def tone_map(
+    img: Tensor,
+    tone_mapper: Literal["reinhard", "hable", "aces"],
+    exposure: Tensor,
+) -> Tensor:
     """
     Applies exposure compensation and tone mapping.
     Refer to the Visualizing Errors in Rendered High Dynamic Range Images
@@ -363,7 +379,12 @@ def tone_map(img, tone_mapper, exposure):
     return torch.clamp(y, 0.0, 1.0)
 
 
-def compute_start_stop_exposures(reference, tone_mapper, tmax, tmin):
+def compute_start_stop_exposures(
+    reference: Tensor,
+    tone_mapper: Literal["reinhard", "hable"],
+    tmax: float,
+    tmin: float,
+) -> Tuple[Tensor, Tensor]:
     """
     Computes start and stop exposure for HDR-FLIP based on given tone mapper and reference image.
     Refer to the Visualizing Errors in Rendered High Dynamic Range Images
@@ -469,7 +490,9 @@ def compute_start_stop_exposures(reference, tone_mapper, tmax, tmin):
     return start_exposure, stop_exposure
 
 
-def generate_spatial_filter(pixels_per_degree, channel):
+def generate_spatial_filter(
+    pixels_per_degree: float, channel: Literal["A", "RG", "BY"]
+) -> Tuple[Tensor, int]:
     """
     Generates spatial contrast sensitivity filters with width depending on
     the number of pixels per degree of visual angle of the observer
@@ -526,7 +549,9 @@ def generate_spatial_filter(pixels_per_degree, channel):
     return g, r
 
 
-def spatial_filter(img, s_a, s_rg, s_by, radius):
+def spatial_filter(
+    img: Tensor, s_a: Tensor, s_rg: Tensor, s_by: Tensor, radius: float
+) -> Tensor:
     """
     Filters an image with channel specific spatial contrast sensitivity functions
     and clips result to the unit cube in linear RGB
@@ -576,7 +601,7 @@ def spatial_filter(img, s_a, s_rg, s_by, radius):
     return torch.clamp(img_tilde_linear_rgb, 0.0, 1.0)
 
 
-def hunt_adjustment(img):
+def hunt_adjustment(img: Tensor) -> Tensor:
     """
     Applies Hunt-adjustment to an image
 
@@ -595,7 +620,7 @@ def hunt_adjustment(img):
     return img_h
 
 
-def hyab(reference, test, eps):
+def hyab(reference: Tensor, test: Tensor, eps: float) -> Tensor:
     """
     Computes the HyAB distance between reference and test images
 
@@ -610,7 +635,9 @@ def hyab(reference, test, eps):
     return root + delta_norm  # alternative abs to stabilize training
 
 
-def redistribute_errors(power_deltaE_hyab, cmax, pc, pt):
+def redistribute_errors(
+    power_deltaE_hyab: Tensor, cmax: float, pc: float, pt: float
+) -> Tensor:
     """
     Redistributes exponentiated HyAB errors to the [0,1] range
 
@@ -634,7 +661,11 @@ def redistribute_errors(power_deltaE_hyab, cmax, pc, pt):
     return deltaE_c
 
 
-def feature_detection(img_y, pixels_per_degree, feature_type):
+def feature_detection(
+    img_y: Tensor,
+    pixels_per_degree: float,
+    feature_type: Literal["edge"] | None,
+) -> Tensor:
     """
     Detects edges and points (features) in the achromatic image
 
@@ -691,7 +722,27 @@ def feature_detection(img_y, pixels_per_degree, feature_type):
     return torch.cat((featuresX, featuresY), dim=1)
 
 
-def color_space_transform(input_color, fromSpace2toSpace):
+def color_space_transform(
+    input_color: Tensor,
+    fromSpace2toSpace: Literal[
+        "srgb2linrgb",
+        "linrgb2srgb",
+        "linrgb2xyz",
+        "xyz2linrgb",
+        "xyz2ycxcz",
+        "ycxcz2xyz",
+        "xyz2lab",
+        "lab2xyz",
+        "srgb2xyz",
+        "srgb2ycxcz",
+        "linrgb2ycxcz",
+        "srgb2lab",
+        "linrgb2lab",
+        "ycxcz2linrgb",
+        "lab2srgb",
+        "ycxcz2lab",
+    ],
+) -> Tensor:
     """
     Transforms inputs between different color spaces
 
