@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyOlimp human studies</title>
+    <style>
+        body {
+            background-color: gray; /* Set the background color to gray */
+            display: flex; /* Use flexbox to center the elements */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            height: 100vh; /* Full viewport height */
+            margin: 0; /* Remove default margin */
+            flex-direction: column; /* Stack elements vertically */
+        }
+        label {
+            margin-bottom: 8px; /* Space between label and input */
+            color: white; /* Label color */
+            font-size: 18px; /* Increase font size of label */
+        }
+        input[type="text"] {
+            padding: 10px; /* Add some padding */
+            font-size: 16px; /* Increase font size */
+            margin-bottom: 10px; /* Space between input and button */
+        }
+        button {
+            padding: 10px 20px; /* Button padding */
+            font-size: 16px; /* Button font size */
+            cursor: pointer; /* Change cursor on hover */
+        }
+    </style>
+    <script>
+    // utils
+    let $ = document.getElementById.bind(document);
+    const delay = (ms) => new Promise(c => setTimeout(c, ms));
+
+    // pages
+    async function ask_username() {
+        $("login").style.display = "";
+        $("test_div").style.display = "none";
+    }
+
+    async function create_test_page(page) {
+        if (page.start_pause) {
+            await delay(page.start_pause)
+        }
+    }
+
+    async function next_step() {
+        $("login_btn").addEventListener("click", () => {
+            localStorage.setItem("username", $("username_input").value);
+        })
+        const username = localStorage.getItem("username")
+        if (username === null) {
+            await ask_username()
+        } else {
+            const current_index = localStorage.getItem(`${window.location.pathname}`, 0)
+            $("login").style.display = "none";
+            $("test_div").style.display = "";
+            $("user_label").innerHTML = `Hi, ${username}`
+            const response = await fetch(`?page=${current_index}`);
+            const page = await response.json();
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", next_step);
+    </script>
+</head>
+<body>
+<div id="login" style="display: none;">
+    <label for="username_input">Username</label>
+    <input type="text" id="username_input" placeholder="Enter your username..." />
+    <button id="login_btn" type="button">Confirm</button>
+</div>
+<div id="test_div" style="display: none;">
+    <span id="user_label"></span>
+</div>
+</body>
+</html>
