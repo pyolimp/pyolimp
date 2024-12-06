@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}PyOlimp human studies</title>
+    <style>
+        body {
+            background-color: gray; /* Set the background color to gray */
+            display: flex; /* Use flexbox to center the elements */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            height: 100vh; /* Full viewport height */
+            margin: 0; /* Remove default margin */
+            flex-direction: column; /* Stack elements vertically */
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}:</h1>
+    <ul>
+        {% for href, text in links %}<ul><a href="{{ href }}">{{ text }}</a>{% endfor %}
+    </ul>
+</body>
+</html>

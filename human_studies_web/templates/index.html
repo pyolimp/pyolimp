@@ -36,39 +36,48 @@
     const delay = (ms) => new Promise(c => setTimeout(c, ms));
 
     // pages
+    function show_page(page_id) {
+        for (const page of document.body.children) {
+            page.style.display = page.id === page_id ? "" : "none";
+        }
+    }
     async function ask_username() {
-        $("login").style.display = "";
-        $("test_div").style.display = "none";
+        show_page("login");
     }
 
     async function create_test_page(page) {
+        show_page("test_div");
         if (page.start_pause) {
             await delay(page.start_pause)
         }
     }
 
     async function next_step() {
-        $("login_btn").addEventListener("click", () => {
-            localStorage.setItem("username", $("username_input").value);
-        })
         const username = localStorage.getItem("username")
         if (username === null) {
             await ask_username()
         } else {
-            const current_index = localStorage.getItem(`${window.location.pathname}`, 0)
-            $("login").style.display = "none";
-            $("test_div").style.display = "";
+            const current_index = localStorage.getItem(`${window.location.pathname}`) ?? 0;
             $("user_label").innerHTML = `Hi, ${username}`
-            const response = await fetch(`?page=${current_index}`);
+            const response = await fetch(`${window.location.pathname}/${current_index}?username={username}`);
             const page = await response.json();
         }
     }
 
-    document.addEventListener("DOMContentLoaded", next_step);
+    async function setup() {
+        $("login_btn").addEventListener("click", async () => {
+            localStorage.setItem("username", $("username_input").value);
+            await next_step();
+        });
+        await next_step();
+    }
+
+    document.addEventListener("DOMContentLoaded", setup);
     </script>
 </head>
 <body>
 <div id="login" style="display: none;">
+    {{ doc }}
     <label for="username_input">Username</label>
     <input type="text" id="username_input" placeholder="Enter your username..." />
     <button id="login_btn" type="button">Confirm</button>
