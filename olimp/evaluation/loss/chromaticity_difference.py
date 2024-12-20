@@ -49,14 +49,11 @@ def CD_map(
     return chromatic_diff
 
 
-class CD(Module):
+class CDBase(Module):
     _color_space: Literal["lab", "prolab"]
 
-    def __init__(
-        self, color_space: Literal["lab", "prolab"], lightness_weight: int = 0
-    ) -> None:
+    def __init__(self, lightness_weight: int = 0) -> None:
         super().__init__()
-        self._color_space = color_space
         self._lightness_weight = lightness_weight
 
     def forward(
@@ -81,3 +78,11 @@ class CD(Module):
                 )
             )
         return cd_maps
+
+
+class Lab(CDBase):
+    _color_space = "lab"
+
+
+class ProLab(CDBase):
+    _color_space = "prolab"
