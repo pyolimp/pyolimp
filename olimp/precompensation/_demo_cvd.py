@@ -57,16 +57,14 @@ def demo(
     assert img.shape[0] == 1
     img = img[0]
     ax1.imshow(img.permute(1, 2, 0))
-    ax1.set_title(f"Source ({img.min():.2f}, {img.max():.2f})")
+    ax1.set_title(f"Source ({img.min():g}, {img.max():g})")
     ax2.imshow(distortion(img)[0].permute(1, 2, 0), vmin=0.0, vmax=1.0)
-    ax2.set_title(f"CVD simulation ({img.min():.2f}, {img.max():.2f})")
+    ax2.set_title(f"CVD simulation ({img.min():g}, {img.max():g})")
 
     p_arr = precompensation[0].cpu().detach().numpy()
     assert p_arr.shape[0] == 1
     p_arr = p_arr[0]
-    ax3.set_title(
-        f"Precompensated: {name} ({p_arr.min():.2f}, {p_arr.max():.2f})"
-    )
+    ax3.set_title(f"Precompensated: {name} ({p_arr.min():g}, {p_arr.max():g})")
     if p_arr.ndim == 3:
         p_arr = p_arr.transpose(1, 2, 0)
     ax3.imshow(p_arr, vmin=0.0, vmax=1.0)
@@ -75,7 +73,7 @@ def demo(
     assert rp_arr.shape[0] == 1
     rp_arr = rp_arr[0]
     ax4.set_title(
-        f"Precompensated CVD simulation ({rp_arr.min():.2f}, {rp_arr.max():.2f})"
+        f"Precompensated CVD simulation ({rp_arr.min():g}, {rp_arr.max():g})"
     )
     if rp_arr.ndim == 3:
         rp_arr = rp_arr.transpose(1, 2, 0)
