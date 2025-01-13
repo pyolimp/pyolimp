@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "train: update json schema",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "olimp.precompensation.nn.train.train",
+            "args": [
+                "--update-schema",
+            ],
+            "justMyCode": false
+        },
+        {
             "name": "train: usrnet",
             "type": "debugpy",
             "request": "launch",

@@ -14,21 +14,20 @@
         ],
         "transforms": [
             {
-                "name": "Grayscale",
+                "name": "grayscale",
                 "num_output_channels": 3
             },
             {
-                "name": "Resize",
-                "size": [
-                    512,
-                    512
-                ]
+                "name": "resize",
+                "width": 512,
+                "height": 512
             },
             {
-                "name": "Float32"
+                "name": "float32"
             },
             {
-                "name": "Divide"
+                "name": "divide",
+                "value": 255
             }
         ]
     },

@@ -1,84 +1,93 @@
 from __future__ import annotations
-from typing import Annotated, Literal, Callable
-from pydantic import Field
+from typing import Annotated, Literal
+from pydantic import Field, ConfigDict
+from random import Random
 import torch
-from torch import Tensor
-from torchvision.transforms.v2 import (
-    Resize,
-    Grayscale,
-    Normalize,
-    InterpolationMode,
-)
-from .base import StrictModel
 
 
-class TransformsTransform(StrictModel):
-    pass
+# patch ballfish's typing to enable pydantic
+from typing_extensions import NotRequired
+from ballfish.transformation import Datum, Transformation, ArgDict
+import ballfish.transformation
+import ballfish.distribution
+
+ballfish.transformation.NotRequired = NotRequired
+ballfish.distribution.NotRequired = NotRequired
 
 
-class ResizeTransform(TransformsTransform):
-    name: Literal["Resize"]
-    size: list[int] = [512, 512]
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR
-
-    def transform(self):
-        return Resize(self.size, interpolation=self.interpolation)
+ArgDict.__pydantic_config__ = ConfigDict(extra="forbid", frozen=True)
 
 
-class GrayscaleTransform(TransformsTransform):
-    name: Literal["Grayscale"]
-    num_output_channels: int = 1
+class PSFNormalize(Transformation):
+    name = "psf_normalize"
 
-    def transform(self):
-        return Grayscale(self.num_output_channels)
+    class Args(ArgDict):
+        name: Literal["psf_normalize"]
 
-
-class DivideTransform(TransformsTransform):
-    name: Literal["Divide"]
-    value: float = 255.0
-
-    def transform(self):
-        return self
-
-    def __call__(self, tensor: Tensor) -> Tensor:
-        return tensor / self.value
+    def __call__(self, datum: Datum, random: Random):
+        assert datum.image is not None, "missing datum.image"
+        datum.image /= datum.image.sum(axis=(1, 2, 3), keepdim=True).view(
+            -1, 1, 1, 1
+        )
+        return datum
 
 
-class NormalizeTransform(TransformsTransform):
-    name: Literal["Normalize"]
-    mean: list[float]
-    std: list[float]
+class Float32Transform(Transformation):
+    name = "float32"
 
-    def transform(self):
-        return Normalize(self.mean, self.std)
+    class Args(ArgDict):
+        name: Literal["float32"]
 
-
-class Float32Transform(TransformsTransform):
-    name: Literal["Float32"]
-
-    def transform(self) -> Callable[[Tensor], Tensor]:
-        return lambda t: t.to(torch.float32)
+    def __call__(self, datum: Datum, random: Random):
+        assert datum.image is not None, "missing datum.image"
+        datum.image = datum.image.to(torch.float32)
+        return datum
 
 
-class PSFNormalizeTransform(TransformsTransform):
-    name: Literal["PSFNormalize"]
+class CopyTransform(Transformation):
+    """
+    Convenient method when no rasterization is needed.
+    Meant for internal use only.
+    """
 
-    def transform(self) -> Callable[[Tensor], Tensor]:
-        return self
+    name = "_copy"
 
-    def __call__(self, psf: Tensor) -> Tensor:
-        psf /= psf.sum(axis=(1, 2, 3), keepdim=True).view(-1, 1, 1, 1)
-        return psf
+    class Args(ArgDict):
+        name: Literal["_copy"]
+
+    def __call__(self, datum: Datum, random: Random):
+        assert datum.source is not None
+        assert datum.image is None, "missing datum.image"
+        datum.image = datum.source.clone()
+        return datum
 
 
-Transforms = list[
+class NormalizeTransform(Transformation):
+    name = "normalize"
+
+    class Args(ArgDict):
+        name: Literal["normalize"]
+        mean: list[float]
+        std: list[float]
+
+    def __init__(self, mean: list[float], std: list[float]):
+        from torchvision.transforms.v2 import Normalize
+
+        self._normalize = Normalize(mean, std)
+
+    def __call__(self, datum: Datum, random: Random):
+        assert datum.source is not None
+        datum.image = self._normalize(datum.image)
+        return datum
+
+
+BallfishTransforms = list[
     Annotated[
-        ResizeTransform
-        | GrayscaleTransform
-        | DivideTransform
-        | NormalizeTransform
-        | PSFNormalizeTransform
-        | Float32Transform,
-        Field(discriminator="name"),
+        ballfish.transformation.Args
+        | PSFNormalize.Args
+        | Float32Transform.Args
+        | CopyTransform.Args
+        | NormalizeTransform.Args,
+        Field(..., discriminator="name"),
     ]
 ]

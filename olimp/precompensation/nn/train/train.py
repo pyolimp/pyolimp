@@ -20,7 +20,6 @@ with Progress() as ci:
 
     ci.update(load_task, completed=50)
     from torch import nn, Tensor
-    from torchvision.transforms.v2 import Compose
 
     ci.update(load_task, completed=75)
     from torch.utils.data import Dataset, DataLoader
@@ -100,21 +99,18 @@ def random_split(
 
 def _evaluate_dataset(
     model: nn.Module,
-    dls: tuple[list[DataLoader[Tensor]], Compose],
+    dls: list[DataLoader[Tensor]],
     distortions_group: DistortionsGroup,
     loss_function: LossFunction,
 ):
     model_kwargs = {}
     device = next(model.parameters()).device
 
-    # dls = [img_dl[0]] + distortions_group.dataloaders
-    transforms = [dls[1]] + distortions_group.composees
-
     for batches in zip(*dls[0], strict=True):
         datums: list[Tensor] = []
-        for batch, transform in zip(batches, transforms):
+        for batch in batches:
             batch = batch.to(device)
-            datums.append(transform(batch))
+            datums.append(batch)
 
         inputs = model.preprocess(*datums)
 
@@ -126,6 +122,7 @@ def _evaluate_dataset(
             f"All models MUST return tuple "
             f"({model} returned {type(precompensated)})"
         )
+
         loss = loss_function(
             precompensated, datums, distortions_group.distortions_classes
         )
@@ -172,7 +169,6 @@ def _train_loop(
     epoch_task: TaskID,
     optimizer: torch.optim.optimizer.Optimizer,
     epoch_dir: Path,
-    img_transform: Compose,
     loss_function: LossFunction,
 ) -> None:
     train_statistics = TrainStatistics(patience=3)
@@ -190,7 +186,7 @@ def _train_loop(
         for loss in p.track(
             _evaluate_dataset(
                 model,
-                dls=(dls_train, img_transform),
+                dls=(dls_train,),
                 distortions_group=distortions_group,
                 loss_function=loss_function,
             ),
@@ -325,7 +321,6 @@ def _prepare_dataloaders(
 def train(
     model: nn.Module,
     img_dataset: Dataset[Tensor],
-    img_transform: Compose,
     random_seed: int,
     batch_size: int,
     sample_size: int,
@@ -336,6 +331,7 @@ def train(
     create_optimizer: Callable[[nn.Module], torch.optim.optimizer.Optimizer],
     loss_function: LossFunction,
     distortions_group: DistortionsGroup,
+    no_progress: bool,
 ) -> None:
     epoch_dir.mkdir(exist_ok=True, parents=True)
     torch.manual_seed(random_seed)
@@ -368,6 +364,7 @@ def train(
         TextColumn("[progress.completed]{task.completed}/{task.total}"),
         TimeRemainingColumn(),
         TextColumn("loss: {task.fields[loss]}"),
+        disable=no_progress,
     ) as p:
         epoch_task = p.add_task("Epoch...", total=epochs, loss="?")
 
@@ -382,7 +379,6 @@ def train(
                     epoch_task=epoch_task,
                     optimizer=optimizer,
                     epoch_dir=epoch_dir,
-                    img_transform=img_transform,
                     loss_function=loss_function,
                     distortions_group=distortions_group,
                 )
@@ -428,6 +424,12 @@ def main():
     parser.add_argument(
         "--update-schema",
         action="store_true",
+        help="create json schema file (schema.json)",
+    )
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="don't show progress bar, helpful when debugging with pdb",
     )
     args = parser.parse_args()
 
@@ -457,12 +459,11 @@ def main():
         distortions_group = config.load_distortions()
         model = config.model.get_instance()
         loss_function = config.loss_function.load(model)
-        img_dataset, img_transform = config.img.load()
+        img_dataset = config.img.load()
         create_optimizer = config.optimizer.load()
         train(
             model,
             img_dataset,
-            img_transform,
             random_seed=config.random_seed,
             batch_size=config.batch_size,
             train_frac=config.train_frac,
@@ -473,6 +474,7 @@ def main():
             create_optimizer=create_optimizer,
             loss_function=loss_function,
             distortions_group=distortions_group,
+            no_progress=args.no_progress,
         )
 
 
