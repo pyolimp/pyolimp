@@ -1,0 +1,82 @@
+{
+    "model": {
+        "name": "vdsr",
+        "path": "./olimp/weights/vdsr.pth"
+    },
+    "img": {
+        "datasets": [
+            {
+                "name": "SCA2023",
+                "subsets": [
+                    "Images/Real_images/Faces"
+                ]
+            }
+        ],
+        "transforms": [
+            {
+                "name": "projective4pt",
+                "x": {
+                    "name": "uniform",
+                    "a": -0.1,
+                    "b": 0.1
+                },
+                "y": {
+                    "name": "uniform",
+                    "a": -0.1,
+                    "b": 0.1
+                }
+            },
+            {
+                "name": "rotate",
+                "angle_deg": {
+                    "name": "uniform",
+                    "a": 0,
+                    "b": 364.99999
+                }
+            },
+            {
+                "name": "rasterize"
+            },
+            {
+                "name": "shading",
+                "value": {
+                    "name": "truncnorm",
+                    "a": -0.2,
+                    "b": 0.2
+                }
+            },
+            {
+                "name": "grayscale"
+            },
+            {
+                "name": "divide",
+                "value": 255
+            }
+        ]
+    },
+    "distortion": [
+        {
+            "name": "refraction_datasets",
+            "psf": {
+                "datasets": [
+                    {
+                        "name": "SCA2023",
+                        "subsets": [
+                            "PSFs/Narrow"
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "loss_function": {
+        "name": "MS_SSIM"
+    },
+    "batch_size": 4,
+    "sample_size": 120,
+    "optimizer": {
+        "name": "Adam",
+        "learning_rate": 0.0001,
+        "eps": 1e-8
+    }
+}

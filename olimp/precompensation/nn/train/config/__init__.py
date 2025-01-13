@@ -11,17 +11,19 @@ from .distortion import DistortionConfig
 
 from torch.utils.data import Dataset
 from torch import Tensor
-from torchvision.transforms.v2 import Compose
 from .....simulate import Distortion
 
 
 class DistortionsGroup(NamedTuple):
     datasets: list[Dataset[Tensor]]
-    composees: list[Compose]
     distortions_classes: list[type[Distortion]]
 
 
 class Config(StrictModel):
+    """
+    Root configuration class
+    """
+
     model: ModelConfig
     img: ImgDataloaderConfig
     distortion: list[DistortionConfig]
@@ -44,11 +46,9 @@ class Config(StrictModel):
 
     def load_distortions(self) -> DistortionsGroup:
         datasets: list[Dataset[Tensor]] = []
-        composees: list[Compose] = []
         distortions_classes: list[type[Distortion]] = []
         for distortion in self.distortion:
-            dataset, compose, distortion_cls = distortion.load()
+            dataset, distortion_cls = distortion.load()
             datasets.append(dataset)
-            composees.append(compose)
             distortions_classes.append(distortion_cls)
-        return DistortionsGroup(datasets, composees, distortions_classes)
+        return DistortionsGroup(datasets, distortions_classes)
