@@ -13,7 +13,9 @@
         "deutan",
         "DWDN",
         "grayscale",
+        "precompensated",
         "UNET",
-        "VDSR"
+        "VDSR",
+        "Zenodo"
     ]
 }
