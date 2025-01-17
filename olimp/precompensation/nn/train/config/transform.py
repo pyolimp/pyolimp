@@ -1,15 +1,21 @@
 from __future__ import annotations
-from typing import Annotated, Literal
+from typing import Annotated, Literal, TypedDict
+import typing
 from pydantic import Field, ConfigDict
 from random import Random
 import torch
 
 
 # patch ballfish's typing to enable pydantic
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, TypedDict as TETypedDict
+
+typing.TypedDict = TETypedDict  # monkeypatch for python 3.10
+
 from ballfish.transformation import Datum, Transformation, ArgDict
 import ballfish.transformation
 import ballfish.distribution
+
+typing.TypedDict = TypedDict  # undo monkeypatch
 
 ballfish.transformation.NotRequired = NotRequired
 ballfish.distribution.NotRequired = NotRequired
