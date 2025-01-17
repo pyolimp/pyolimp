@@ -255,7 +255,10 @@ def _as_dataloaders(
     sample_size: int,
 ) -> list[DataLoader[Tensor]] | None:
     dataloaders: list[DataLoader[Tensor]] = []
-    if any(len(dataset) == 0 for dataset in datasets) or not sample_size:
+    if not sample_size:
+        return None
+    if any(len(dataset) == 0 for dataset in datasets):
+        ci.log("[red] one of the datasets is empty. that is unexpected")
         return None
     for dataset in datasets:
         sampler = RandomSampler(dataset, num_samples=sample_size)
