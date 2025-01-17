@@ -290,6 +290,8 @@ def _prepare_dataloaders(
     datasets_test: list[Dataset[Tensor]] = []
 
     for dataset in [img_dataset] + distortions_group.datasets:
+        if not dataset:  # because `dg.datasets` can be empty
+            continue
         dataset_train, dataset_validation, dataset_test = random_split(
             dataset, train_frac, validation_frac
         )
