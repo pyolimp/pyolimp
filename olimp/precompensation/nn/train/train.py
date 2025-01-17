@@ -458,10 +458,18 @@ def main():
         ci.log("Current device: [bold red]CPU")
 
     with torch.device(device_str):
-        distortions_group = config.load_distortions()
-        model = config.model.get_instance()
-        loss_function = config.loss_function.load(model)
-        img_dataset = config.img.load()
+        with Progress() as progress:
+
+            def progress_callback(description: str, done: float):
+                progress.update(task1, completed=done, description=description)
+
+            task1 = progress.add_task("Dataset...", total=1.0)
+            distortions_group = config.load_distortions(progress_callback)
+            model = config.model.get_instance()
+            loss_function = config.loss_function.load(model)
+
+            img_dataset = config.img.load(progress_callback)
+            progress.update(task1, completed=1.0)
         create_optimizer = config.optimizer.load()
         train(
             model,

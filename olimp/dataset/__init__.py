@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import NewType
+from typing import NewType, Callable, TypeAlias
 from pathlib import Path
 from torch._prims_common import DeviceLikeType
 import numpy as np
@@ -8,6 +8,7 @@ from torchvision.io import read_image
 
 
 ImgPath = NewType("ImgPath", Path)
+ProgressCallback: TypeAlias = Callable[[str, float], None] | None
 
 
 def read_img_path(path: ImgPath, device: DeviceLikeType = "cpu") -> Tensor:

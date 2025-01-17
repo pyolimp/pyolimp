@@ -5,7 +5,7 @@ from pydantic import Field
 from .base import StrictModel
 from .optimizer import Optimizer, AdamConfig
 from .model import Model as ModelConfig
-from .dataset import ImgDataloaderConfig
+from .dataset import ImgDataloaderConfig, ProgressCallback
 from .loss_function import LossFunction
 from .distortion import DistortionConfig
 
@@ -44,11 +44,13 @@ class Config(StrictModel):
     )
     loss_function: LossFunction
 
-    def load_distortions(self) -> DistortionsGroup:
+    def load_distortions(
+        self, progress_callback: ProgressCallback
+    ) -> DistortionsGroup:
         datasets: list[Dataset[Tensor]] = []
         distortions_classes: list[type[Distortion]] = []
         for distortion in self.distortion:
-            dataset, distortion_cls = distortion.load()
+            dataset, distortion_cls = distortion.load(progress_callback)
             datasets.append(dataset)
             distortions_classes.append(distortion_cls)
         return DistortionsGroup(datasets, distortions_classes)
