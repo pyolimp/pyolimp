@@ -179,7 +179,9 @@ class BaseDataloaderConfig(StrictModel):
             [dataset.load() for dataset in self.datasets]
         )
         if self.transforms:
-            dataset = AugmentedDataset(dataset, self.transforms, self.size)
+            dataset = AugmentedDataset(
+                dataset, self.transforms, self.augmentation_factor
+            )
 
         return dataset
 
