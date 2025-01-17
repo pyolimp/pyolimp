@@ -106,7 +106,7 @@ def _evaluate_dataset(
     model_kwargs = {}
     device = next(model.parameters()).device
 
-    for batches in zip(*dls[0], strict=True):
+    for batches in zip(*dls, strict=True):
         datums: list[Tensor] = []
         for batch in batches:
             batch = batch.to(device)
@@ -186,7 +186,7 @@ def _train_loop(
         for loss in p.track(
             _evaluate_dataset(
                 model,
-                dls=(dls_train,),
+                dls=dls_train,
                 distortions_group=distortions_group,
                 loss_function=loss_function,
             ),
@@ -214,12 +214,10 @@ def _train_loop(
                 for loss in p.track(
                     _evaluate_dataset(
                         model,
-                        dls=(dls_validation, img_transform),
+                        dls=dls_validation,
                         distortions_group=distortions_group,
                         loss_function=loss_function,
                     ),
-                    total=len(dls_validation[0]),
-                    description="Validation...",
                     task_id=validating_task,
                 ):
                     validation_loss += loss.item()
@@ -400,7 +398,7 @@ def train(
                 for loss in p.track(
                     _evaluate_dataset(
                         model,
-                        dls=(dls_test, img_transform),
+                        dls=dls_test,
                         distortions_group=distortions_group,
                         loss_function=loss_function,
                     ),
