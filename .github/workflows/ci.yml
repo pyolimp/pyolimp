@@ -23,5 +23,5 @@ jobs:
           cache: 'pip'
       - uses: psf/black@stable
       - run: pip install -r requirements.txt
-      - run: python -m unittest
+      - run: python -m unittest -v
       - run: python -m olimp.precompensation.nn.train.train --update-schema
