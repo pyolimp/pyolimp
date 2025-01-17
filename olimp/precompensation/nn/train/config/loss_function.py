@@ -293,7 +293,6 @@ LossFunction = Annotated[
     | ColorBlindnessLossFunction
     | MultiScaleSSIMLossFunction
     | RMSLossFunction
-    | CDLossFunction
     | VSILossFunction,
     Field(..., discriminator="name"),
 ]
