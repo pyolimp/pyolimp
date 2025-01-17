@@ -448,6 +448,7 @@ def main():
 
     with args.config.open() as f:
         data = json5.load(f)
+    ci.console.print_json(data=data)
     config = Config(**data)
 
     if torch.cuda.is_available():
