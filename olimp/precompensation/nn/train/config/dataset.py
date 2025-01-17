@@ -10,12 +10,18 @@ from torch import Tensor
 import torch
 from .transform import BallfishTransforms
 from ballfish import create_augmentation, Datum
+from ...dataset import ProgressCallback
 
 
 class DatasetConfig(StrictModel):
     limit: int | None = Field(
         default=None, description="Load dataset, but only take first N images"
     )
+
+    def load(
+        self, progress_callback: ProgressCallback
+    ) -> TorchDataset[Tensor]:
+        raise NotImplementedError
 
 
 class SCA2023(DatasetConfig):
@@ -38,10 +44,12 @@ class SCA2023(DatasetConfig):
         ]
     ]
 
-    def load(self):
+    def load(self, progress_callback: ProgressCallback):
         from ...dataset.sca_2023 import SCA2023Dataset
 
-        return SCA2023Dataset(self.subsets, limit=self.limit)
+        return SCA2023Dataset(
+            self.subsets, limit=self.limit, progress_callback=progress_callback
+        )
 
 
 class Olimp(DatasetConfig):
@@ -129,10 +137,12 @@ class Olimp(DatasetConfig):
         ]
     ]
 
-    def load(self):
+    def load(self, progress_callback: ProgressCallback):
         from ...dataset.olimp import OlimpDataset
 
-        return OlimpDataset(self.subsets, limit=self.limit)
+        return OlimpDataset(
+            self.subsets, limit=self.limit, progress_callback=progress_callback
+        )
 
 
 class Directory(DatasetConfig):
@@ -140,7 +150,7 @@ class Directory(DatasetConfig):
     path: Path
     matches: list[str] = ["*.jpg", "*.jpeg", "*.png"]
 
-    def load(self):
+    def load(self, progress_callback: ProgressCallback):
         from ...dataset.directory import DirectoryDataset
 
         return DirectoryDataset(self.path, self.matches, limit=self.limit)
@@ -150,14 +160,18 @@ class CVD(DatasetConfig):
     name: Literal["CVD"]
     subsets: set[
         Literal[
-            "Color_cvd_D_experiment_100000", "Color_cvd_P_experiment_100000"
+            "Color_cvd_D_experiment_100000",
+            "Color_cvd_P_experiment_100000",
+            "*",
         ]
     ]
 
-    def load(self):
+    def load(self, progress_callback: ProgressCallback):
         from ...dataset.cvd import CVDDataset
 
-        return CVDDataset(self.subsets, limit=self.limit)
+        return CVDDataset(
+            self.subsets, limit=self.limit, progress_callback=progress_callback
+        )
 
 
 Dataset = Annotated[
@@ -174,9 +188,9 @@ class BaseDataloaderConfig(StrictModel):
         "to set augmentation_factor that will multiple original dataset size",
     )
 
-    def load(self):
+    def load(self, progress_callback: ProgressCallback):
         dataset = ConcatDataset[Tensor](
-            [dataset.load() for dataset in self.datasets]
+            [dataset.load(progress_callback) for dataset in self.datasets]
         )
         if self.transforms:
             dataset = AugmentedDataset(

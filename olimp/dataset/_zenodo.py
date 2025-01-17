@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import cast, Iterator, Literal, Callable, NewType
 from pathlib import Path
 import os
-from . import ImgPath
+from . import ImgPath, ProgressCallback
 
 
 SubPath = NewType("SubPath", str)
@@ -11,7 +11,7 @@ SubPath = NewType("SubPath", str)
 def _download_zenodo(
     root: Path,
     record: Literal[7848576, 13692233, 13881170],
-    progress_callback: Callable[[str, float], None] | None,
+    progress_callback: ProgressCallback,
 ) -> None:
     import requests
     from zipfile import ZipFile
@@ -105,7 +105,7 @@ def load_dataset(
         | tuple[Literal["CVD"], Literal[13881170]]
     ),
     subpaths: set[SubPath],
-    progress_callback: Callable[[str, float], None] | None = default_progress,
+    progress_callback: ProgressCallback = default_progress,
 ) -> dict[SubPath, list[ImgPath]]:
     dataset_name, record = dataset_name_and_record
     root_path = Path(os.environ.get("OLIMP_DATATEST", ".datasets")).absolute()

@@ -1,6 +1,5 @@
 from __future__ import annotations
-from typing import Callable
-from . import BaseZenodoDataset, ImgPath
+from . import BaseZenodoDataset, ImgPath, ProgressCallback
 from olimp.dataset.olimp import olimp as _olimp, Paths
 
 
@@ -8,7 +7,7 @@ class OlimpDataset(BaseZenodoDataset[Paths]):
     def create_dataset(
         self,
         categories: set[Paths],
-        progress_callback: Callable[[str, float], None] | None,
+        progress_callback: ProgressCallback,
     ) -> dict[Paths, list[ImgPath]]:
         return _olimp(
             categories=categories, progress_callback=progress_callback
