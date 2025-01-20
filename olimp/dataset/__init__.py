@@ -16,12 +16,10 @@ def read_img_path(path: ImgPath, device: DeviceLikeType = "cpu") -> Tensor:
     Default device is "cpu" because it's the torch way
     """
     if path.suffix == ".csv":
-        return fft.fftshift(
-            tensor(
-                np.loadtxt(path, delimiter=",", dtype=np.float32),
-                device=device,
-            ).unsqueeze(0)
-        )
+        return tensor(
+            np.loadtxt(path, delimiter=",", dtype=np.float32),
+            device=device,
+        ).unsqueeze(0)
     try:
         return read_image(str(path)).to(device=device)
     except Exception as e:
