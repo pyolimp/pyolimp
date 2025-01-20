@@ -460,7 +460,7 @@ def main():
         ci.log("Current device: [bold red]CPU")
 
     with torch.device(device_str):
-        with Progress() as progress:
+        with Progress(disable=args.no_progress) as progress:
 
             def progress_callback(description: str, done: float):
                 progress.update(task1, completed=done, description=description)
