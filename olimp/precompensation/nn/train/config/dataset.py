@@ -222,9 +222,7 @@ class AugmentedDataset(TorchDataset[Tensor]):
         tensor = self._inner_dataset[index % self._inner_dataset_size]
         with torch.device("cpu"):
             datum = self._augmentation(
-                Datum.from_tensor(
-                    tensor.unsqueeze(0).to(dtype=torch.float32) / 255.0
-                ),
+                Datum(source=tensor.unsqueeze(0).to(dtype=torch.float32)),
                 self._random,
             )
             assert datum.image is not None
