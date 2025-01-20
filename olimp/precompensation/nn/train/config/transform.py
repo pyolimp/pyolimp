@@ -32,6 +32,7 @@ class PSFNormalize(Transformation):
 
     def __call__(self, datum: Datum, random: Random):
         assert datum.image is not None, "missing datum.image"
+        datum.image = torch.fft.fftshift(datum.image)
         datum.image /= datum.image.sum(axis=(1, 2, 3), keepdim=True).view(
             -1, 1, 1, 1
         )
