@@ -234,13 +234,13 @@ class ImgDataloaderConfig(BaseDataloaderConfig):
     transforms: BallfishTransforms | None = [
         {"name": "grayscale"},
         {"name": "resize", "width": 512, "height": 512},
-        {"name": "float32"},
+        # {"name": "float32"}, converted to f32 when passed to `Datum``
         {"name": "divide", "value": 255.0},
     ]
 
 
 class PsfDataloaderConfig(BaseDataloaderConfig):
     transforms: BallfishTransforms | None = [
-        {"name": "float32"},
+        # {"name": "float32"}, converted to f32 when passed to `Datum`
         {"name": "psf_normalize"},
     ]
