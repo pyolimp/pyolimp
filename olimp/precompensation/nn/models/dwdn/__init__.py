@@ -4,6 +4,7 @@ from torch import nn, Tensor
 from typing import Any, TypeAlias
 
 from .model import DWDN
+from ..download_path import download_path, PyOlimpHF
 
 Inputs: TypeAlias = tuple[Tensor, Tensor]
 
@@ -22,8 +23,9 @@ class PrecompensationDWDN(DWDN):
         return (self.sigmoid(image),)
 
     @classmethod
-    def from_path(cls, path: str, **kwargs: Any):
+    def from_path(cls, path: PyOlimpHF, **kwargs: Any):
         model = cls(**kwargs)
+        path = download_path(path)
         state_dict = torch.load(
             path, map_location=torch.get_default_device(), weights_only=True
         )

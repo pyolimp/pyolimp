@@ -2,8 +2,10 @@ from __future__ import annotations
 import torch
 from torch import Tensor
 import segmentation_models_pytorch as smp
-import torchvision
+
+# import torchvision
 from olimp.processing import conv
+from .download_path import download_path, PyOlimpHF
 
 
 class PrecompensationUNETB0(smp.Unet):
@@ -24,8 +26,9 @@ class PrecompensationUNETB0(smp.Unet):
         )
 
     @classmethod
-    def from_path(cls, path: str, **kwargs):
+    def from_path(cls, path: PyOlimpHF, **kwargs):
         model = cls(**kwargs)
+        path = download_path(path)
         state_dict = torch.load(
             path, map_location=torch.get_default_device(), weights_only=True
         )
@@ -63,7 +66,7 @@ def _demo():
         progress: Callable[[float], None],
     ) -> torch.Tensor:
         model = PrecompensationUNETB0.from_path(
-            "./olimp/weights/unet-efficientnet-b0.pth"
+            "hf://RVI/unet-efficientnet-b0.pth"
         )
         with torch.inference_mode():
             psf = psf.to(torch.float32)

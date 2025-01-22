@@ -1,7 +1,7 @@
 {
     "model": {
         "name": "vdsr",
-        "path": "./olimp/weights/vdsr.pth"
+        "path": "hf://RVI/vdsr.pth"
     },
     "img": {
         "datasets": [

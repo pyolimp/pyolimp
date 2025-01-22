@@ -1,7 +1,7 @@
 {
     "model": {
         "name": "precompensationdwdn",
-        "path": "./olimp/weights/dwdn.pt"
+        "path": "hf://RVI/dwdn.pt"
     },
     "img": {
         "datasets": [

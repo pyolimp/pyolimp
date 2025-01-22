@@ -49,7 +49,7 @@ def demo(
             precompensation = opt_function(
                 img.to(device), distortion, callback
             )
-            cvd_procompensated = distortion(*precompensation)
+            cvd_precompensated = distortion(*precompensation)
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
         dpi=72, figsize=(12, 9), ncols=2, nrows=2
@@ -69,7 +69,7 @@ def demo(
         p_arr = p_arr.transpose(1, 2, 0)
     ax3.imshow(p_arr, vmin=0.0, vmax=1.0)
 
-    rp_arr = cvd_procompensated.cpu().detach().numpy()
+    rp_arr = cvd_precompensated.cpu().detach().numpy()
     assert rp_arr.shape[0] == 1
     rp_arr = rp_arr[0]
     ax4.set_title(
