@@ -13,8 +13,12 @@
         "deutan",
         "DWDN",
         "grayscale",
+        "Montalto",
+        "Olimp",
         "precompensated",
+        "pyolimp",
         "UNET",
+        "usrnet",
         "VDSR",
         "Zenodo"
     ]
