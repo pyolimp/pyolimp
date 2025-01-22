@@ -18,7 +18,18 @@ from rich.progress import (
 
 
 def demo(
-    name: Literal["Montalto", "Bregman Jumbo", "Huang", "Feng Xu"],
+    name: Literal[
+        "Montalto",
+        "Bregman Jumbo",
+        "Huang",
+        "Feng Xu",
+        "VAE",
+        "VDSR",
+        "UNET",
+        "CVAE",
+        "DWDN",
+        "USRNET",
+    ],
     opt_function: Callable[[Tensor, Tensor, Callable[[float], None]], Tensor],
     mono: bool = False,
     num_output_channels: int = 1,
@@ -55,8 +66,8 @@ def demo(
             callback: Callable[[float], None] = lambda c: progress.update(
                 task_p, completed=c
             )
-            (precompensation,) = opt_function(img.to(device), psf, callback)
-            retinal_procompensated = conv(precompensation, psf)
+            (precompensation_0,) = opt_function(img.to(device), psf, callback)
+            retinal_precompensated = conv(precompensation_0, psf)
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
         dpi=72, figsize=(12, 9), ncols=2, nrows=2
@@ -73,21 +84,19 @@ def demo(
     ax2.imshow(img, cmap="gray", vmin=0.0, vmax=1.0)
     ax2.set_title(f"Source ({img.min()}, {img.max()})")
 
-    p_arr = precompensation.cpu().detach().numpy()
+    p_arr = precompensation_0.detach().cpu().numpy()
     ax3.set_title(
         f"Procompensation: {name} ({p_arr.min():g}, {p_arr.max():g})"
     )
-    assert p_arr.shape[0] == 1
-    p_arr = p_arr[0]
     if p_arr.ndim == 3:
         p_arr = p_arr.transpose(1, 2, 0)
     ax3.imshow(p_arr, vmin=0.0, vmax=1.0, cmap="gray")
 
-    rp_arr = retinal_procompensated.cpu().detach().numpy()
-    assert rp_arr.shape[0] == 1
+    rp_arr = retinal_precompensated.cpu().detach().numpy()
+    assert rp_arr.shape[0] == 1, rp_arr.shape[0]
     rp_arr = rp_arr[0]
     ax4.set_title(
-        f"Retinal Procompensated ({rp_arr.min():g}, {rp_arr.max():g})"
+        f"Retinal Precompensated ({rp_arr.min():g}, {rp_arr.max():g})"
     )
     if rp_arr.ndim == 3:
         rp_arr = rp_arr.transpose(1, 2, 0)
