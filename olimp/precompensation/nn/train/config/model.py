@@ -10,7 +10,9 @@ class ModelConfig(StrictModel):
 
 class VDSR(ModelConfig):
     name: Literal["vdsr"]
-    path: str | None = None
+    path: str | None = Field(
+        None, examples=["hf://RVI/vdsr.pth", "~/.weights/vdsr.pth"]
+    )
 
     def get_instance(self):
         from ...models.vdsr import VDSR
@@ -22,7 +24,9 @@ class VDSR(ModelConfig):
 
 class VAE(ModelConfig):
     name: Literal["vae"]
-    path: str | None = None
+    path: str | None = Field(
+        None, examples=["hf://RVI/vae.pth", "~/.weights/vae.pth"]
+    )
 
     def get_instance(self):
         from ...models.vae import VAE
@@ -34,7 +38,9 @@ class VAE(ModelConfig):
 
 class CVAE(ModelConfig):
     name: Literal["cvae"]
-    path: str | None = None
+    path: str | None = Field(
+        None, examples=["hf://RVI/cvae.pth", "~/.weights/cvae.pth"]
+    )
 
     def get_instance(self):
         from ...models.cvae import CVAE
@@ -46,7 +52,13 @@ class CVAE(ModelConfig):
 
 class UNET_b0(ModelConfig):
     name: Literal["unet_b0"]
-    path: str | None = None
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/unet-efficientnet-b0.pth",
+            "~/.weights/unet-efficientnet-b0.pth",
+        ],
+    )
 
     def get_instance(self):
         from ...models.unet_efficient_b0 import PrecompensationUNETB0
@@ -58,7 +70,9 @@ class UNET_b0(ModelConfig):
 
 class PrecompensationUSRNet(ModelConfig):
     name: Literal["precompensationusrnet"]
-    path: str | None = None
+    path: str | None = Field(
+        None, examples=["hf://RVI/usrnet.pth", "~/.weights/usrnet.pth"]
+    )
 
     n_iter: int = 8
     h_nc: int = 64
@@ -85,7 +99,9 @@ class PrecompensationUSRNet(ModelConfig):
 class PrecompensationDWDN(ModelConfig):
     name: Literal["precompensationdwdn"]
     n_levels: int = 1
-    path: str | None = None
+    path: str | None = Field(
+        None, examples=["hf://RVI/dwdn.pt", "~/.weights/dwdn.pt"]
+    )
 
     def get_instance(self):
         from ...models.dwdn import PrecompensationDWDN
@@ -97,7 +113,13 @@ class PrecompensationDWDN(ModelConfig):
 
 class Generator_transformer_pathch4_844_48_3_nouplayer_server5(ModelConfig):
     name: Literal["Generator_transformer_pathch4_844_48_3_nouplayer_server5"]
-    path: str | None = None
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
 
     def get_instance(self):
         from ...models.cvd_swin.Generator_transformer_pathch4_844_48_3_nouplayer_server5 import (

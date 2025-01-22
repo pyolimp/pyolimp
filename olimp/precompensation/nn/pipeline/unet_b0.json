@@ -1,7 +1,7 @@
 {
     "model": {
         "name": "unet_b0",
-        "path": "./olimp/weights/unet-efficientnet-b0.pth"
+        "path": "hf://RVI/unet-efficientnet-b0.pth"
     },
     "img": {
         "datasets": [
@@ -21,7 +21,7 @@
                     {
                         "name": "SCA2023",
                         "subsets": [
-                            "PSFs/Narrow"
+                            "PSFs/Broad"
                         ]
                     }
                 ]

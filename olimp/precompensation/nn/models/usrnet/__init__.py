@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import Literal, TypeAlias
 import torch
 from torch import nn, Tensor
-import torchvision
 from .model import USRNet
+from ..download_path import download_path, PyOlimpHF
 
 Input: TypeAlias = tuple[Tensor, Tensor, int, Tensor]
 
@@ -73,8 +73,9 @@ class PrecompensationUSRNet(USRNet):
         return image, psf, scale_factor, sigma
 
     @classmethod
-    def from_path(cls, path: str, **kwargs):
+    def from_path(cls, path: PyOlimpHF, **kwargs):
         model = cls(**kwargs)
+        path = download_path(path)
         state_dict = torch.load(
             path, map_location=torch.get_default_device(), weights_only=True
         )

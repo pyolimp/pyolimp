@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from ....processing import conv
+from .download_path import download_path, PyOlimpHF
 
 # import torch.nn.functional as F
 
@@ -100,8 +101,9 @@ class CVAE(nn.Module):
         return decoded, mu, logvar
 
     @classmethod
-    def from_path(cls, path: str):
+    def from_path(cls, path: PyOlimpHF):
         model = cls()
+        path = download_path(path)
         state_dict = torch.load(
             path, map_location=torch.get_default_device(), weights_only=True
         )
@@ -128,7 +130,7 @@ def _demo():
         psf: Tensor,
         progress: Callable[[float], None],
     ) -> Tensor:
-        model = CVAE.from_path("./olimp/weights/cvae.pth")
+        model = CVAE.from_path("hf://RVI/cvae.pth")
         with torch.inference_mode():
             psf = psf.to(torch.float32)
             inputs = model.preprocess(image, psf)
