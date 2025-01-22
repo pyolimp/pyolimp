@@ -1,12 +1,11 @@
 from __future__ import annotations
-from typing import NamedTuple, TypedDict, Callable
+from typing import NamedTuple
 import torch
-import torch.nn.functional as F
-from olimp.processing import conv
-from olimp.precompensation.basic.huang import huang
 from olimp.evaluation.loss.piq import MultiScaleSSIMLoss
-from torch import Tensor
-from typing import Tuple
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+from torchvision.transforms.v2 import Resize
+from typing import NamedTuple, TypedDict
 
 
 class DebugInfo(TypedDict):
@@ -14,92 +13,109 @@ class DebugInfo(TypedDict):
     precomp: torch.Tensor
 
 
-class JiParametrs(NamedTuple):
-    lr_m: float = 1.0
-    lr_tau: float = 1e-2
-
+# Parameter storage class
+class JiParameters(NamedTuple):
+    rgb: bool = True
+    show_running: bool = True
+    device: str = "cpu"
+    lr: float = 1e-3
+    lr_m: float = 0.5
     m0: float = 1.0
-    gap: float = 1e-1
-    gap_iter: float = 1e-1  # stop criterian
-
-    ibf_param: float = 1e-3
-    alpha: float = 1e-1
-    num_of_iter: int = 100
-
-    partition_step: float = 1e-3
+    gap: float = 0.01
+    gap_iter: float = 0.001
+    ibf_param: float = 0.01
+    partition_step: float = 0.01
+    alpha: float = 0.0
+    num_of_iter: int = 1000
 
 
-def inverse_blur_filtering(
-    image: Tensor, psf: Tensor, k: float = 0.01
-) -> Tensor:
-    is_rgb = image.shape[1] == 3
+def conv(
+    image: torch.Tensor, kernel: torch.Tensor, rgb: bool, device: str
+) -> torch.Tensor:
+    if not isinstance(image, torch.Tensor):
+        image = torch.tensor(image / 255, dtype=torch.float32, device=device)
+    if not isinstance(kernel, torch.Tensor):
+        kernel = torch.tensor(kernel, dtype=torch.float32, device=device)
+        kernel = kernel / torch.sum(kernel.flatten())
 
-    if not is_rgb:
-        return huang(image, psf, k)
+    if rgb:
+        conv_image = torch.zeros_like(image, device=device)
+        for i in range(image.shape[1]):
+            conv_image[:, i, ...] = torch.real(
+                torch.fft.ifft2(
+                    torch.fft.fft2(image[:, i, ...]) * torch.fft.fft2(kernel)
+                )
+            )
+        return conv_image
+    else:
+        return torch.real(
+            torch.fft.ifft2(torch.fft.fft2(image) * torch.fft.fft2(kernel))
+        )
 
-    ibf = torch.zeros(image.shape)
-    for i in range(image.shape[1]):
-        ibf[:, i, ...] = huang(image[:, i, ...], psf, k)
-    return ibf.requires_grad_(True)
 
-
-def linear_normalize(image: Tensor) -> Tensor:
+def linear_normalise(image: torch.Tensor) -> torch.Tensor:
     return (image - torch.min(image)) / (torch.max(image) - torch.min(image))
 
 
-def histogram_maximum(image: Tensor, bins_number: int = 10000) -> Tensor:
-    image = linear_normalize(image)
-
-    hist = torch.histc(image, bins=bins_number, min=0, max=1)
-    mode = torch.argmax(hist) / bins_number
-
-    return mode
+def histogram_maximum(image: torch.Tensor) -> float:
+    img = linear_normalise(image)
+    num_of_bins = 10000
+    hist = torch.histc(img, bins=num_of_bins, min=0, max=1)
+    return torch.argmax(hist) / num_of_bins
 
 
-def equivalent_ringing_free(image: Tensor, m: Tensor, mode: Tensor) -> Tensor:
-    return torch.clip(m * (image - mode) + mode, min=0, max=1)
+def inverse_blur_filtering(
+    image: torch.Tensor, psf: torch.Tensor, param: float, rgb: bool
+) -> torch.Tensor:
+    def single_channel_filtering(
+        image: torch.Tensor, psf: torch.Tensor, param: float
+    ) -> torch.Tensor:
+        otf = torch.fft.fft2(psf)
+        mtf = torch.abs(otf)
+        num = torch.fft.fft2(image) * torch.pow(mtf, 2)
+        denum = otf * (torch.pow(mtf, 2) + param)
+        ratio = torch.zeros_like(num)
+        mask = denum != 0
+        ratio[mask] = torch.div(num[mask], denum[mask])
+        return torch.fft.ifft2(ratio).real
+
+    if not rgb:
+        return single_channel_filtering(image, psf, param)
+
+    result = torch.zeros_like(image)
+    for i in range(image.shape[1]):
+        result[:, i, ...] = single_channel_filtering(
+            image[:, i, ...], psf, param
+        )
+    return result
 
 
 def bezier_curve(
-    t: Tensor,
-    mode: Tensor,
-    m: Tensor,
-    tau_plus: Tensor,
-    tau_minus: Tensor,
-    P_minus: Tensor = torch.Tensor([0, 0]),
-    P_plus: Tensor = torch.Tensor([1, 1]),
-) -> Tuple[Tensor, Tensor]:
-    # Define theta
-    theta = torch.arctan(1 / m)
+    mode: float,
+    m: float,
+    tau_plus: float,
+    tau_minus: float,
+    partition: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    theta = torch.arctan(1 / torch.tensor(m))
+    Q_minus = [
+        mode - tau_minus * torch.sin(theta),
+        mode - tau_minus * torch.cos(theta),
+    ]
+    Q_plus = [
+        mode + tau_plus * torch.sin(theta),
+        mode + tau_plus * torch.cos(theta),
+    ]
+    P = [mode, mode]
+    t = partition
 
-    # Limits on tau_plus, tau_minus
-    # tau_plus = torch.clamp(tau_plus, 0, ((1 - mode) / torch.cos(theta.clone())).item())
-    # tau_minus = torch.clamp(tau_minus, 0, (mode / torch.cos(theta.clone())).item())
-
-    # Define Q and P
-    Q_minus = torch.Tensor(
-        [
-            mode - tau_minus * torch.sin(theta),
-            mode - tau_minus * torch.cos(theta),
-        ]
-    )
-    Q_plus = torch.Tensor(
-        [
-            mode + tau_plus * torch.sin(theta),
-            mode + tau_plus * torch.cos(theta),
-        ]
-    )
-
-    P = torch.Tensor([mode, mode])
-
-    # Calculate curve
     Bx_minus = (
-        torch.pow(1 - t, 2) * P_minus[0]
+        torch.pow(1 - t, 2) * 0
         + 2 * t * (1 - t) * Q_minus[0]
         + torch.pow(t, 2) * P[0]
     )
     By_minus = (
-        torch.pow(1 - t, 2) * P_minus[1]
+        torch.pow(1 - t, 2) * 0
         + 2 * t * (1 - t) * Q_minus[1]
         + torch.pow(t, 2) * P[1]
     )
@@ -107,190 +123,122 @@ def bezier_curve(
     Bx_plus = (
         torch.pow(1 - t, 2) * P[0]
         + 2 * t * (1 - t) * Q_plus[0]
-        + torch.pow(t, 2) * P_plus[0]
+        + torch.pow(t, 2) * 1
     )
     By_plus = (
         torch.pow(1 - t, 2) * P[1]
         + 2 * t * (1 - t) * Q_plus[1]
-        + torch.pow(t, 2) * P_plus[1]
+        + torch.pow(t, 2) * 1
     )
 
-    Bx = torch.concatenate([Bx_minus, Bx_plus])
-    By = torch.concatenate([By_minus, By_plus])
+    Bx = torch.cat([Bx_minus, Bx_plus])
+    By = torch.cat([By_minus, By_plus])
 
     return Bx, By
 
 
 def mapping_function(
-    t: Tensor,
-    image: Tensor,
-    m: Tensor,
-    tau_plus: Tensor,
-    tau_minus: Tensor,
-    mode: Tensor,
-) -> Tensor:
-    # Bezier curve
-    Bx, By = bezier_curve(t, mode, m, tau_plus, tau_minus)
-    length = Bx.size(dim=0)
-
-    # Use torch.searchsorted to find which interval each pixel belongs to
+    image: torch.Tensor,
+    m: float,
+    tau_plus: float,
+    tau_minus: float,
+    mode: float,
+    partition: torch.Tensor,
+) -> torch.Tensor:
+    Bx, By = bezier_curve(mode, m, tau_plus, tau_minus, partition)
     indices = torch.searchsorted(Bx, image, right=False)
-
-    # Clip indices to ensure they are within the valid range
-    indices = torch.clamp(indices, 0, length - 1)
-
-    # Use the indices to select the corresponding By values
-    res = By[indices]
-
-    return res
+    indices = torch.clamp(indices, 0, len(Bx) - 1)
+    return By[indices]
 
 
-def ji(
-    image: Tensor,
-    psf: Tensor,
-    parameters: JiParametrs = JiParametrs(),
-) -> Tensor:
-    t = torch.arange(0, 1, parameters.partition_step)
+def precompensation_iteration(
+    image: torch.Tensor, psf: torch.Tensor, params: JiParameters
+) -> torch.Tensor:
+    partition = torch.arange(0, 1, params.partition_step, device=params.device)
+    ibf = inverse_blur_filtering(image, psf, params.ibf_param, params.rgb)
+    ibf = linear_normalise(ibf)
+    mode = histogram_maximum(ibf)
 
-    loss_func = MultiScaleSSIMLoss()
-    prev_total_loss = torch.tensor(float("inf"))
+    m0 = torch.tensor([params.m0], device=params.device, requires_grad=True)
+    tau_plus0 = torch.tensor([0.25], device=params.device, requires_grad=True)
+    tau_minus0 = torch.tensor([0.25], device=params.device, requires_grad=True)
 
-    loss_step: list[float] = []
+    optimizer_m = torch.optim.Adam([m0], lr=params.lr_m)
+    optimizer_tau = torch.optim.Adam([tau_plus0, tau_minus0], lr=params.lr)
 
-    # Calculating inverse blur and it normalisation
-    inverse_blur = inverse_blur_filtering(image, psf, parameters.ibf_param)
-    ibf_linear_normalise = linear_normalize(inverse_blur)
+    loss_func = MultiScaleSSIMLoss().to(params.device)
 
-    # Calculate mode
-    mode = histogram_maximum(ibf_linear_normalise)
+    prev_loss_tau = torch.tensor(float("inf"))
+    prev_loss_m = torch.tensor(float("inf"))
 
-    m0 = torch.tensor([parameters.m0]).requires_grad_(True)
-    tau_plus0 = torch.tensor([0.25]).requires_grad_(True)
-    tau_minus0 = torch.tensor([0.25]).requires_grad_(True)
-
-    for k in range(parameters.num_of_iter):  # type: ignore
-        # Solving tau-subproblem with fixed m
-        prev_loss = torch.tensor(float("inf"))
-
-        tau_plus = tau_plus0.clone().detach().requires_grad_(True)
-        tau_minus = tau_minus0.clone().detach().requires_grad_(True)
-        optimizer_tau = torch.optim.Adam(
-            [tau_plus, tau_minus], lr=parameters.lr_tau
-        )
-
-        for i in range(1000):  # type: ignore
+    for _ in tqdm(range(params.num_of_iter)):
+        for _ in range(1000):
             optimizer_tau.zero_grad()
-
-            # Tone mapped image
             mapped = mapping_function(
-                t, ibf_linear_normalise, m0, tau_plus, tau_minus, mode
+                ibf,
+                m0.item(),
+                tau_plus0.item(),
+                tau_minus0.item(),
+                mode,
+                partition,
             )
-
-            mapped_conv = conv(mapped, psf)
-
-            # MS-SSIM + original image
-            loss = loss_func(
-                mapped_conv,
-                image,
-            )
-
+            loss = loss_func(mapped, image)
             loss.backward()
-            optimizer_tau.step()  # type: ignore
+            optimizer_tau.step()
 
-            if torch.abs(prev_loss - loss).item() < parameters.gap:
+            if torch.abs(prev_loss_tau - loss).item() < params.gap:
                 break
 
-            prev_loss = loss
+            prev_loss_tau = loss
 
-            # Update tau
-            # tau_plus0 = tau_plus.detach()
-            # tau_minus0 = tau_minus.detach()
-
-            theta = torch.arctan(1 / m0)
-
-            tau_plus0 = torch.clamp(
-                tau_plus.clone().detach(),
-                0,
-                ((1 - mode) / torch.cos(theta.clone())).item(),
+        for _ in range(1000):
+            optimizer_m.zero_grad()
+            mapped = mapping_function(
+                ibf,
+                m0.item(),
+                tau_plus0.item(),
+                tau_minus0.item(),
+                mode,
+                partition,
             )
-            tau_minus0 = torch.clamp(
-                tau_minus.clone().detach(),
-                0,
-                (mode / torch.cos(theta.clone())).item(),
-            )
+            loss = loss_func(mapped, image)
+            loss.backward()
+            optimizer_m.step()
 
-            # Solving m-subproblem with fixed tau
-            prev_loss = torch.tensor(float("inf"))
-
-            m = torch.tensor(
-                m0.clone().detach(), dtype=torch.float32, requires_grad=True
-            )
-            optimizer_m = torch.optim.Adam([m], lr=parameters.lr_m)  # type: ignore
-
-            for i in range(1000):  # type: ignore
-                optimizer_m.zero_grad()
-
-                # Tone mapped image
-                mapped = mapping_function(
-                    t, ibf_linear_normalise, m, tau_plus0, tau_minus0, mode
-                )
-                mapped_conv = conv(mapped, psf)
-
-                loss = loss_func(mapped_conv, image)
-
-                loss.backward()
-                optimizer_m.step()  # type: ignore
-
-                if torch.abs(prev_loss - loss).item() < parameters.gap:
-                    break
-
-                prev_loss = loss
-
-            # Update m
-            m0 = m.detach()
-            loss_step.append(loss.item())
-
-            print(loss.item())
-
-            # Stop criteria
-            if abs(prev_total_loss - loss.item()) < parameters.gap_iter:
+            if torch.abs(prev_loss_m - loss).item() < params.gap_iter:
                 break
 
-            prev_total_loss = loss.item()
+            prev_loss_m = loss
 
-        m = m0
-        mode = mode.detach()
-        tau_plus = tau_plus0.detach()
-        tau_minus = tau_minus0.detach()
-
-        return mapped
+    return mapping_function(
+        ibf, m0.item(), tau_plus0.item(), tau_minus0.item(), mode, partition
+    )
 
 
 if __name__ == "__main__":
     import numpy as np
-
     import torchvision
-    from olimp.processing import conv
-    from torchvision.transforms.v2 import Resize, Grayscale
-
-    import matplotlib.pyplot as plt
 
     psf_info = np.load("/home/alkzir/projects/pyolimp/tests/test_data/psf.npz")
-    img = torchvision.io.read_image(
-        "/home/alkzir/projects/pyolimp/tests/test_data/horse.jpg"
+    img = (
+        torchvision.io.read_image(
+            "/home/alkzir/projects/pyolimp/tests/test_data/horse.jpg"
+        )
+        / 255.0
     )
-    img = img / 255.0
-    img = Resize((512, 512))(img)
-    img = img.unsqueeze(0).requires_grad_(True)
+    img = Resize((512, 512))(img).unsqueeze(0).requires_grad_(True)
 
     psf = (
-        torch.fft.fftshift(torch.tensor(psf_info["psf"]).to(torch.float32))
+        torch.fft.fftshift(torch.tensor(psf_info["psf"]).float())
         .unsqueeze(0)
         .unsqueeze(0)
-    ).requires_grad_(True)
+        .requires_grad_(True)
+    )
 
-    print(psf.shape)
-    print(img.shape)
+    params = JiParameters()
+    precompensated = precompensation_iteration(img, psf, params)
 
-    plt.imshow(ji(img, psf, JiParametrs())[0][0])
+    plt.imshow(
+        precompensated.permute(0, 2, 3, 1)[0].cpu().numpy(), vmin=0, vmax=1
+    )
     plt.show()
