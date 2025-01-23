@@ -4,7 +4,7 @@ from torch import nn
 from torch import Tensor
 
 # import torchvision
-from olimp.processing import conv
+from olimp.processing import fft_conv
 from .download_path import download_path, PyOlimpHF
 
 
@@ -67,7 +67,7 @@ class VDSR(nn.Module):
         # image = torchvision.transforms.Grayscale()(image)
         # img_gray = torchvision.transforms.Resize((512, 512))(image)
         # img_gray = image.to(torch.float32)
-        img_blur = conv(image, psf)
+        img_blur = fft_conv(image, psf)
 
         return torch.cat(
             [

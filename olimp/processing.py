@@ -13,7 +13,7 @@ def resize_kernel(
     return resized_kernel
 
 
-def conv(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
+def fft_conv(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
     assert image.dtype == torch.float32, image.dtype
     assert kernel.dtype == torch.float32, kernel.dtype
     assert (

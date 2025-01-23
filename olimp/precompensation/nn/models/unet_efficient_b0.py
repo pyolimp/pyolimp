@@ -4,7 +4,7 @@ from torch import Tensor
 import segmentation_models_pytorch as smp
 
 # import torchvision
-from olimp.processing import conv
+from olimp.processing import fft_conv
 from .download_path import download_path, PyOlimpHF
 
 
@@ -38,7 +38,7 @@ class PrecompensationUNETB0(smp.Unet):
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
         # img_gray = image.to(torch.float32)[None, ...]
         # img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
-        img_blur = conv(image, psf)
+        img_blur = fft_conv(image, psf)
 
         return torch.cat(
             [

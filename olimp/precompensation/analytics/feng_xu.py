@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable
 import torch
 from torch import Tensor
-from olimp.processing import conv, scale_value
+from olimp.processing import fft_conv, scale_value
 
 
 def feng_xu(image: Tensor, psf: Tensor, lambda_val: float = 7.0) -> Tensor:
@@ -41,7 +41,7 @@ def _demo():
     ) -> torch.Tensor:
         ret = feng_xu(image, psf, lambda_val=2)
         progress(0.8)
-        ret = conv(scale_value(ret), psf)
+        ret = fft_conv(scale_value(ret), psf)
         progress(1.0)
         return ret
 

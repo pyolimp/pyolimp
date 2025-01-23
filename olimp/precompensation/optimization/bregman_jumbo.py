@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import NamedTuple, TypedDict, Callable
 import torch
 import torch.nn.functional as F
-from olimp.processing import conv
+from olimp.processing import fft_conv
 
 
 class DebugInfo(TypedDict):
@@ -94,7 +94,7 @@ def bregman_jumbo(
         mx = torch.maximum(grad_norm - 1 / gam, torch.zeros(image.shape))
         self_g_x, self_g_y = torch.mul(sgn_x, mx), torch.mul(sgn_y, mx)
 
-        u = conv(p_prev, psf) + b_z
+        u = fft_conv(p_prev, psf) + b_z
         self_z = torch.minimum(
             torch.maximum(t, u - lam / beta), u + lam / beta
         )
@@ -105,7 +105,7 @@ def bregman_jumbo(
         for i in range(5000):
             optimizer_p.zero_grad()
             p_clipped = _clip(self_p)
-            e = z - conv(p_clipped, psf) - b_z
+            e = z - fft_conv(p_clipped, psf) - b_z
             gd_x, gd_y = _grad(p_clipped)
 
             # func_l2 = torch.sum(torch.square(e))
@@ -142,7 +142,7 @@ def bregman_jumbo(
 
         grad_x, grad_y = _grad(p_prev)
         b_x, b_y = b_x + grad_x - g_x, b_y + grad_y - g_y
-        b_z = b_z + conv(p_prev, psf) - z
+        b_z = b_z + fft_conv(p_prev, psf) - z
         progress(0.2 + (k / 19) * 0.8)
     progress(1.0)
     return self_p

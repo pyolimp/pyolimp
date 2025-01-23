@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import NamedTuple, TypedDict, Callable
 import torch
 import torch.nn.functional as F
-from olimp.processing import conv
+from olimp.processing import fft_conv
 
 
 class DebugInfo(TypedDict):
@@ -67,7 +67,7 @@ def montalto(
         if parameters.progress is not None:
             parameters.progress(i / 5000)
         optimizer.zero_grad()
-        e = conv(precomp, psf) - image
+        e = fft_conv(precomp, psf) - image
 
         func_l1 = torch.sum(_tv_func(precomp))
         func_l2 = torch.linalg.norm(e.flatten())
