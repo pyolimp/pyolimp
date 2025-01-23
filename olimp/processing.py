@@ -1,5 +1,16 @@
 from __future__ import annotations
 import torch
+import torch.nn.functional as F
+
+
+def resize_kernel(
+    kernel: torch.Tensor, target_size: tuple[int, int]
+) -> torch.Tensor:
+    resized_kernel = F.interpolate(
+        kernel, size=target_size, mode="bilinear", align_corners=True
+    )
+
+    return resized_kernel
 
 
 def conv(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
