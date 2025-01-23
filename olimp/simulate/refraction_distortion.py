@@ -2,7 +2,7 @@ import torch
 from torch import Tensor
 
 from olimp.simulate import Distortion
-from olimp.processing import conv
+from olimp.processing import fft_conv
 
 
 class RefractionDistortion(Distortion):
@@ -11,4 +11,4 @@ class RefractionDistortion(Distortion):
         self.psf = psf
 
     def __call__(self, image: Tensor) -> Tensor:
-        return conv(image, self.psf)
+        return fft_conv(image, self.psf)

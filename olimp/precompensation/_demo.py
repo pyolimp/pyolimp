@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
 import torchvision
-from olimp.processing import conv, resize_kernel
+from olimp.processing import fft_conv, resize_kernel
 from torchvision.transforms.v2 import Resize, Grayscale
 from pathlib import Path
 
@@ -72,7 +72,7 @@ def demo(
             (precompensation_0,) = opt_function(
                 img.to(device), psf_shifted, callback
             )
-            retinal_precompensated = conv(precompensation_0, psf_shifted)
+            retinal_precompensated = fft_conv(precompensation_0, psf_shifted)
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
         dpi=72, figsize=(12, 9), ncols=2, nrows=2

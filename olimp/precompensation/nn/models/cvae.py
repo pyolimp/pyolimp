@@ -3,7 +3,7 @@ from typing import TypeAlias
 import torch
 import torch.nn as nn
 from torch import Tensor
-from ....processing import conv
+from olimp.processing import fft_conv
 from .download_path import download_path, PyOlimpHF
 
 # import torch.nn.functional as F
@@ -112,7 +112,7 @@ class CVAE(nn.Module):
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
         image_low_contrast = (image * (0.7 - 0.3)) + 0.3
-        retinal_original = conv(image_low_contrast, psf)
+        retinal_original = fft_conv(image_low_contrast, psf)
         x = torch.cat([image_low_contrast, retinal_original, psf], dim=1)
         y = torch.ones(x.size(0), 1)
         return x, y
