@@ -72,7 +72,7 @@ def _demo():
             psf = psf.to(torch.float32)
             inputs = model.preprocess(image, psf)
             progress(0.1)
-            precompensation = model(inputs)
+            (precompensation,) = model(inputs)
             progress(1.0)
             return precompensation
 

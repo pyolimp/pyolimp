@@ -10,3 +10,7 @@ schema.json
 *.pickle
 # created by `python -m venv .venv`
 /.venv
+# sphinx output
+/docs/build
+# get_images.py output
+/docs/source/_static
