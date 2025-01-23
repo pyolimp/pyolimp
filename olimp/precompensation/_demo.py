@@ -7,6 +7,7 @@ from torch import Tensor
 import torchvision
 from olimp.processing import conv
 from torchvision.transforms.v2 import Resize, Grayscale
+from pathlib import Path
 
 from rich.progress import (
     Progress,
@@ -34,6 +35,7 @@ def demo(
     mono: bool = False,
     num_output_channels: int = 1,
 ):
+    root = Path(__file__).parents[2]
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -43,9 +45,9 @@ def demo(
         task_l = progress.add_task("Load data", total=3)
         task_p = progress.add_task(name, total=1.0)
 
-        psf_info = np.load("./tests/test_data/psf.npz")
+        psf_info = np.load(root / "tests/test_data/psf.npz")
         progress.advance(task_l)
-        img = torchvision.io.read_image("./tests/test_data/horse.jpg")
+        img = torchvision.io.read_image(root / "tests/test_data/horse.jpg")
         progress.advance(task_l)
         img = img / 255.0
         img = Resize((512, 512))(img)
