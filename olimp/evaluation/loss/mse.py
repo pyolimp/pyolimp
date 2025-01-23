@@ -22,7 +22,7 @@ class MSE(Module):
             y (torch.Tensor): Second input tensor.
 
         Returns:
-            torch.Tensor: The computed MSE value. If invert is True, returns `1 - MSE`.
+            torch.Tensor: The computed MSE value.
         """
         mse_value = torch.mean((x - y) ** 2)
         return mse_value
