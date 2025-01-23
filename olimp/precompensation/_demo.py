@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
 import torchvision
-from olimp.processing import conv
+from olimp.processing import conv, resize_kernel
 from torchvision.transforms.v2 import Resize, Grayscale
 from pathlib import Path
 
@@ -61,15 +61,18 @@ def demo(
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         with torch.device(device):
-            psf = torch.fft.fftshift(
-                torch.tensor(psf_info["psf"]).to(torch.float32)
-            )[None, None, ...]
+            psf = torch.tensor(psf_info["psf"]).to(torch.float32)
+            psf = resize_kernel(psf[None, None, ...], img.shape[-2:])
+            psf /= psf.sum()
+            psf_shifted = torch.fft.fftshift(psf)
 
             callback: Callable[[float], None] = lambda c: progress.update(
                 task_p, completed=c
             )
-            (precompensation_0,) = opt_function(img.to(device), psf, callback)
-            retinal_precompensated = conv(precompensation_0, psf)
+            (precompensation_0,) = opt_function(
+                img.to(device), psf_shifted, callback
+            )
+            retinal_precompensated = conv(precompensation_0, psf_shifted)
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
         dpi=72, figsize=(12, 9), ncols=2, nrows=2
