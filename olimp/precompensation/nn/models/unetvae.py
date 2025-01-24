@@ -146,7 +146,7 @@ def _demo():
     from ..._demo import demo
     from typing import Callable
 
-    def demo_vae(
+    def demo_unetvae(
         image: Tensor,
         psf: Tensor,
         progress: Callable[[float], None],
@@ -160,7 +160,7 @@ def _demo():
             progress(1.0)
             return precompensation
 
-    demo("UNETVAE", demo_vae, mono=True)
+    demo("UNETVAE", demo_unetvae, mono=True)
 
 
 if __name__ == "__main__":
