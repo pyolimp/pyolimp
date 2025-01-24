@@ -50,6 +50,20 @@ class CVAE(ModelConfig):
         return CVAE()
 
 
+class UNETVAE(ModelConfig):
+    name: Literal["unetvae"]
+    path: str | None = Field(
+        None, examples=["hf://RVI/unetvae.pth", "~/.weights/unetvae.pth"]
+    )
+
+    def get_instance(self):
+        from ...models.unetvae import UNETVAE
+
+        if self.path is not None:
+            return UNETVAE.from_path(path=self.path)
+        return UNETVAE()
+
+
 class UNET_b0(ModelConfig):
     name: Literal["unet_b0"]
     path: str | None = Field(
@@ -138,6 +152,7 @@ Model = Annotated[
     VDSR
     | VAE
     | CVAE
+    | UNETVAE
     | UNET_b0
     | PrecompensationUSRNet
     | PrecompensationDWDN
