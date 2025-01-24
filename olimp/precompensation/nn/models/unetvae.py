@@ -160,7 +160,7 @@ def _demo():
             progress(1.0)
             return precompensation
 
-    demo("VAE", demo_vae, mono=True)
+    demo("UNETVAE", demo_vae, mono=True)
 
 
 if __name__ == "__main__":
