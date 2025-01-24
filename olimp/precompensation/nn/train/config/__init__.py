@@ -29,9 +29,7 @@ class Config(StrictModel):
     distortion: list[DistortionConfig]
     random_seed: int = 47
     batch_size: int = 1
-    sample_size: int = Field(
-        default=1000, description="Number of items for one epoch"
-    )
+    sample_size: int = Field(1000, description="Number of items for one epoch")
     train_frac: float = 0.8
     validation_frac: float = 0.2
     epoch_dir: Path = Field(
@@ -39,10 +37,14 @@ class Config(StrictModel):
         description="Where to save .pth files",
     )
     optimizer: Optimizer = AdamConfig(name="Adam")
-    epochs: int = Field(
-        default=50, description="Maximal number of epochs to run"
-    )
+    epochs: int = Field(50, description="Maximal number of epochs to run")
     loss_function: LossFunction
+    # stop criterion
+    patience: int = Field(
+        default=10,
+        description="The number of epochs the model "
+        "is allowed to go without improving",
+    )
 
     def load_distortions(
         self, progress_callback: ProgressCallback

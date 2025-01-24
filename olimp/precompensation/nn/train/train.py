@@ -130,7 +130,7 @@ def _evaluate_dataset(
 
 
 class TrainStatistics:
-    def __init__(self, patience: int = 10):
+    def __init__(self, patience: int):
         self.train_loss: list[float] = []
         self.validation_loss: list[float] = []
         self.best_train_loss = float("inf")
@@ -155,8 +155,9 @@ class TrainStatistics:
 
         self.train_loss
 
-    def should_stop_early(self) -> bool:
-        return self.epochs_no_improve >= self._patience
+    def should_stop_early(self) -> str | None:
+        if self.epochs_no_improve >= self._patience:
+            return "no improvements for {self.epochs_no_improve} epochs"
 
 
 def _train_loop(
@@ -167,11 +168,12 @@ def _train_loop(
     dls_validation: list[DataLoader[Tensor]] | None,
     distortions_group: DistortionsGroup,
     epoch_task: TaskID,
-    optimizer: torch.optim.optimizer.Optimizer,
+    optimizer: torch.optim.Optimizer,
     epoch_dir: Path,
     loss_function: LossFunction,
+    patience: int,
 ) -> None:
-    train_statistics = TrainStatistics(patience=3)
+    train_statistics = TrainStatistics(patience=patience)
     model_name = type(model).__name__
 
     for epoch in p.track(range(epochs), task_id=epoch_task):
@@ -244,8 +246,8 @@ def _train_loop(
             best_validation_path.unlink(missing_ok=True)
             best_validation_path.hardlink_to(cur_epoch_path)
 
-        if train_statistics.should_stop_early():
-            p.console.log("Stop early")
+        if reason := train_statistics.should_stop_early():
+            p.console.log(f"Stop early: {reason}")
             break
 
 
@@ -331,10 +333,11 @@ def train(
     validation_frac: float,
     epochs: int,
     epoch_dir: Path,
-    create_optimizer: Callable[[nn.Module], torch.optim.optimizer.Optimizer],
+    create_optimizer: Callable[[nn.Module], torch.optim.Optimizer],
     loss_function: LossFunction,
     distortions_group: DistortionsGroup,
     no_progress: bool,
+    patience: int,
 ) -> None:
     epoch_dir.mkdir(exist_ok=True, parents=True)
     torch.manual_seed(random_seed)
@@ -384,6 +387,7 @@ def train(
                     epoch_dir=epoch_dir,
                     loss_function=loss_function,
                     distortions_group=distortions_group,
+                    patience=patience,
                 )
             except KeyboardInterrupt:
                 p.log("training stopped by user (Ctrl+C)")
@@ -487,6 +491,7 @@ def main():
             loss_function=loss_function,
             distortions_group=distortions_group,
             no_progress=args.no_progress,
+            patience=config.patience,
         )
 
 
