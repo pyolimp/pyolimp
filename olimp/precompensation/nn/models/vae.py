@@ -23,6 +23,7 @@ class VAE(nn.Module):
             nn.Conv2d(256, 512, 3, stride=2, padding=1),
             nn.ReLU(),
             nn.Conv2d(512, 1024, 3, stride=2, padding=1),
+            nn.AdaptiveAvgPool2d(8),
             nn.ReLU(),
         )
 
