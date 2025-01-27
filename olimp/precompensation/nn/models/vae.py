@@ -23,7 +23,7 @@ class VAE(nn.Module):
             nn.Conv2d(256, 512, 3, stride=2, padding=1),
             nn.ReLU(),
             nn.Conv2d(512, 1024, 3, stride=2, padding=1),
-            nn.AdaptiveAvgPool2d(8),
+            nn.AdaptiveAvgPool2d((8, 8)),
             nn.ReLU(),
         )
 
@@ -76,6 +76,7 @@ class VAE(nn.Module):
         return mu + eps * std
 
     def forward(self, x: Tensor):
+        input_size = x.shape[-2:]
         encoded = self.encoder(x)
         encoded = encoded.view(encoded.size(0), -1)
 
@@ -87,6 +88,7 @@ class VAE(nn.Module):
         decoded = self.decoder_input(z)
         decoded = decoded.view(-1, 1024, 8, 8)
         decoded = self.decoder(decoded)
+        decoded = torch.nn.functional.interpolate(decoded, size=input_size, mode='nearest')
         return decoded, mu, logvar
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
