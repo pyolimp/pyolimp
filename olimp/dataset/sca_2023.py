@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Literal, TypeVar, cast, Callable
+from typing import Literal, TypeVar, cast
 from ._zenodo import load_dataset, SubPath, default_progress
-from . import read_img_path, ImgPath
+from . import read_img_path, ImgPath, ProgressCallback
 
 Paths = Literal[
     "Images",
@@ -23,7 +23,7 @@ T = TypeVar("T", bound=Paths)
 
 def sca_2023(
     categories: set[T],
-    progress_callback: Callable[[str, float], None] | None = default_progress,
+    progress_callback: ProgressCallback = default_progress,
 ) -> dict[T, list[ImgPath]]:
     dataset = load_dataset(
         ("SCA-2023", 7848576),

@@ -20,7 +20,6 @@ with Progress() as ci:
 
     ci.update(load_task, completed=50)
     from torch import nn, Tensor
-    from torchvision.transforms.v2 import Compose
 
     ci.update(load_task, completed=75)
     from torch.utils.data import Dataset, DataLoader
@@ -100,21 +99,18 @@ def random_split(
 
 def _evaluate_dataset(
     model: nn.Module,
-    dls: tuple[list[DataLoader[Tensor]], Compose],
+    dls: list[DataLoader[Tensor]],
     distortions_group: DistortionsGroup,
     loss_function: LossFunction,
 ):
     model_kwargs = {}
     device = next(model.parameters()).device
 
-    # dls = [img_dl[0]] + distortions_group.dataloaders
-    transforms = [dls[1]] + distortions_group.composees
-
-    for batches in zip(*dls[0], strict=True):
+    for batches in zip(*dls, strict=True):
         datums: list[Tensor] = []
-        for batch, transform in zip(batches, transforms):
+        for batch in batches:
             batch = batch.to(device)
-            datums.append(transform(batch))
+            datums.append(batch)
 
         inputs = model.preprocess(*datums)
 
@@ -126,6 +122,7 @@ def _evaluate_dataset(
             f"All models MUST return tuple "
             f"({model} returned {type(precompensated)})"
         )
+
         loss = loss_function(
             precompensated, datums, distortions_group.distortions_classes
         )
@@ -133,7 +130,7 @@ def _evaluate_dataset(
 
 
 class TrainStatistics:
-    def __init__(self, patience: int = 10):
+    def __init__(self, patience: int):
         self.train_loss: list[float] = []
         self.validation_loss: list[float] = []
         self.best_train_loss = float("inf")
@@ -158,8 +155,9 @@ class TrainStatistics:
 
         self.train_loss
 
-    def should_stop_early(self) -> bool:
-        return self.epochs_no_improve >= self._patience
+    def should_stop_early(self) -> str | None:
+        if self.epochs_no_improve >= self._patience:
+            return "no improvements for {self.epochs_no_improve} epochs"
 
 
 def _train_loop(
@@ -170,12 +168,12 @@ def _train_loop(
     dls_validation: list[DataLoader[Tensor]] | None,
     distortions_group: DistortionsGroup,
     epoch_task: TaskID,
-    optimizer: torch.optim.optimizer.Optimizer,
+    optimizer: torch.optim.Optimizer,
     epoch_dir: Path,
-    img_transform: Compose,
     loss_function: LossFunction,
+    patience: int,
 ) -> None:
-    train_statistics = TrainStatistics(patience=3)
+    train_statistics = TrainStatistics(patience=patience)
     model_name = type(model).__name__
 
     for epoch in p.track(range(epochs), task_id=epoch_task):
@@ -190,7 +188,7 @@ def _train_loop(
         for loss in p.track(
             _evaluate_dataset(
                 model,
-                dls=(dls_train, img_transform),
+                dls=dls_train,
                 distortions_group=distortions_group,
                 loss_function=loss_function,
             ),
@@ -218,12 +216,10 @@ def _train_loop(
                 for loss in p.track(
                     _evaluate_dataset(
                         model,
-                        dls=(dls_validation, img_transform),
+                        dls=dls_validation,
                         distortions_group=distortions_group,
                         loss_function=loss_function,
                     ),
-                    total=len(dls_validation[0]),
-                    description="Validation...",
                     task_id=validating_task,
                 ):
                     validation_loss += loss.item()
@@ -250,8 +246,8 @@ def _train_loop(
             best_validation_path.unlink(missing_ok=True)
             best_validation_path.hardlink_to(cur_epoch_path)
 
-        if train_statistics.should_stop_early():
-            p.console.log("Stop early")
+        if reason := train_statistics.should_stop_early():
+            p.console.log(f"Stop early: {reason}")
             break
 
 
@@ -261,7 +257,10 @@ def _as_dataloaders(
     sample_size: int,
 ) -> list[DataLoader[Tensor]] | None:
     dataloaders: list[DataLoader[Tensor]] = []
-    if any(len(dataset) == 0 for dataset in datasets) or not sample_size:
+    if not sample_size:
+        return None
+    if any(len(dataset) == 0 for dataset in datasets):
+        ci.log("[red] one of the datasets is empty. that is unexpected")
         return None
     for dataset in datasets:
         sampler = RandomSampler(dataset, num_samples=sample_size)
@@ -294,6 +293,8 @@ def _prepare_dataloaders(
     datasets_test: list[Dataset[Tensor]] = []
 
     for dataset in [img_dataset] + distortions_group.datasets:
+        if not dataset:  # because `dg.datasets` can be empty
+            continue
         dataset_train, dataset_validation, dataset_test = random_split(
             dataset, train_frac, validation_frac
         )
@@ -325,7 +326,6 @@ def _prepare_dataloaders(
 def train(
     model: nn.Module,
     img_dataset: Dataset[Tensor],
-    img_transform: Compose,
     random_seed: int,
     batch_size: int,
     sample_size: int,
@@ -333,9 +333,11 @@ def train(
     validation_frac: float,
     epochs: int,
     epoch_dir: Path,
-    create_optimizer: Callable[[nn.Module], torch.optim.optimizer.Optimizer],
+    create_optimizer: Callable[[nn.Module], torch.optim.Optimizer],
     loss_function: LossFunction,
     distortions_group: DistortionsGroup,
+    no_progress: bool,
+    patience: int,
 ) -> None:
     epoch_dir.mkdir(exist_ok=True, parents=True)
     torch.manual_seed(random_seed)
@@ -368,6 +370,7 @@ def train(
         TextColumn("[progress.completed]{task.completed}/{task.total}"),
         TimeRemainingColumn(),
         TextColumn("loss: {task.fields[loss]}"),
+        disable=no_progress,
     ) as p:
         epoch_task = p.add_task("Epoch...", total=epochs, loss="?")
 
@@ -382,9 +385,9 @@ def train(
                     epoch_task=epoch_task,
                     optimizer=optimizer,
                     epoch_dir=epoch_dir,
-                    img_transform=img_transform,
                     loss_function=loss_function,
                     distortions_group=distortions_group,
+                    patience=patience,
                 )
             except KeyboardInterrupt:
                 p.log("training stopped by user (Ctrl+C)")
@@ -402,7 +405,7 @@ def train(
                 for loss in p.track(
                     _evaluate_dataset(
                         model,
-                        dls=(dls_test, img_transform),
+                        dls=dls_test,
                         distortions_group=distortions_group,
                         loss_function=loss_function,
                     ),
@@ -428,6 +431,12 @@ def main():
     parser.add_argument(
         "--update-schema",
         action="store_true",
+        help="create json schema file (schema.json)",
+    )
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="don't show progress bar, helpful when debugging with pdb",
     )
     args = parser.parse_args()
 
@@ -444,6 +453,7 @@ def main():
 
     with args.config.open() as f:
         data = json5.load(f)
+    ci.console.print_json(data=data)
     config = Config(**data)
 
     if torch.cuda.is_available():
@@ -454,15 +464,22 @@ def main():
         ci.log("Current device: [bold red]CPU")
 
     with torch.device(device_str):
-        distortions_group = config.load_distortions()
-        model = config.model.get_instance()
-        loss_function = config.loss_function.load(model)
-        img_dataset, img_transform = config.img.load()
+        with Progress(disable=args.no_progress) as progress:
+
+            def progress_callback(description: str, done: float):
+                progress.update(task1, completed=done, description=description)
+
+            task1 = progress.add_task("Dataset...", total=1.0)
+            distortions_group = config.load_distortions(progress_callback)
+            model = config.model.get_instance()
+            loss_function = config.loss_function.load(model)
+
+            img_dataset = config.img.load(progress_callback)
+            progress.update(task1, completed=1.0)
         create_optimizer = config.optimizer.load()
         train(
             model,
             img_dataset,
-            img_transform,
             random_seed=config.random_seed,
             batch_size=config.batch_size,
             train_frac=config.train_frac,
@@ -473,6 +490,8 @@ def main():
             create_optimizer=create_optimizer,
             loss_function=loss_function,
             distortions_group=distortions_group,
+            no_progress=args.no_progress,
+            patience=config.patience,
         )
 
 

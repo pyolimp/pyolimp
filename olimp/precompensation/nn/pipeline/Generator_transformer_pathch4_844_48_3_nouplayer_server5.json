@@ -1,4 +1,7 @@
 {
+    "model": {
+        "name": "Generator_transformer_pathch4_844_48_3_nouplayer_server5"
+    },
     "img": {
         "datasets": [
             {
@@ -8,27 +11,37 @@
         ],
         "transforms": [
             {
-                "name": "Resize",
-                "size": [
-                    256,
-                    256
-                ],
+                "name": "resize",
+                "width": 256,
+                "height": 256,
                 "interpolation": "bicubic"
             },
             {
-                "name": "Float32"
+                "name": "float32"
             },
             {
-                "name": "Normalize",
+                "name": "normalize",
                 "mean": [0.5, 0.5, 0.5],
                 "std": [0.5, 0.5, 0.5]
             }
 
         ]
     },
-    "model": {
-        "name": "Generator_transformer_pathch4_844_48_3_nouplayer_server5"
-    },
+    "distortion": [
+        {
+            "name": "refraction_datasets",
+            "psf": {
+                "datasets": [
+                    {
+                        "name": "SCA2023",
+                        "subsets": [
+                            "PSFs/Narrow"
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
     "loss_function": {
         "name": "ColorBlindnessLoss",
         "type": "deutan"

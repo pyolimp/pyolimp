@@ -1,8 +1,19 @@
 from __future__ import annotations
 import torch
+import torch.nn.functional as F
 
 
-def conv(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
+def resize_kernel(
+    kernel: torch.Tensor, target_size: tuple[int, int]
+) -> torch.Tensor:
+    resized_kernel = F.interpolate(
+        kernel, size=target_size, mode="bilinear", align_corners=True
+    )
+
+    return resized_kernel
+
+
+def fft_conv(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
     assert image.dtype == torch.float32, image.dtype
     assert kernel.dtype == torch.float32, kernel.dtype
     assert (

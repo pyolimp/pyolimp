@@ -11,9 +11,7 @@ def _demo():
         psf: torch.Tensor,
         progress: Callable[[float], None],
     ) -> torch.Tensor:
-        model = PrecompensationUSRNet.from_path(
-            path="./olimp/weights/usrnet.pth"
-        )
+        model = PrecompensationUSRNet.from_path(path="hf://RVI/usrnet.pth")
         with torch.inference_mode():
             psf = psf.to(torch.float32)
             inputs = model.preprocess(
@@ -21,7 +19,7 @@ def _demo():
             )
 
             progress(0.1)
-            precompensation = model(inputs)
+            (precompensation,) = model(inputs)
             progress(1.0)
             return precompensation
 

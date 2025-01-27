@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Literal, TypeVar, cast, Callable
+from typing import Literal, TypeVar, cast
 from ._zenodo import load_dataset, SubPath, default_progress
-from . import read_img_path, ImgPath
+from . import read_img_path, ImgPath, ProgressCallback
 
 Paths = Literal[
     "Color_cvd_D_experiment_100000", "Color_cvd_P_experiment_100000", "*"
@@ -12,7 +12,7 @@ T = TypeVar("T", bound=Paths)
 
 def cvd(
     categories: set[T],
-    progress_callback: Callable[[str, float], None] | None = default_progress,
+    progress_callback: ProgressCallback = default_progress,
 ) -> dict[T, list[ImgPath]]:
     dataset = load_dataset(
         ("CVD", 13881170),

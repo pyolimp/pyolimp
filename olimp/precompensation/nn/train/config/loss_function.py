@@ -238,20 +238,54 @@ class RMSLossFunction(StrictModel):
         return _create_simple_loss(rms)
 
 
-class CDLossFunction(StrictModel):
-    name: Literal["CD"]
-    color_space: Literal["lab", "prolab"]
+class LabLossFunction(StrictModel):
+    name: Literal["Lab"]
     lightness_weight: int = 0
 
     def load(self, _model: Any):
-        from .....evaluation.loss.cd import CD
+        from .....evaluation.loss.chromaticity_difference import Lab
 
-        cd = CD(
-            color_space=self.color_space,
+        lab = Lab(
             lightness_weight=self.lightness_weight,
         )
 
-        return _create_simple_loss(cd)
+        return _create_simple_loss(lab)
+
+
+class ProLabLossFunction(StrictModel):
+    name: Literal["ProLab"]
+    lightness_weight: int = 0
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.chromaticity_difference import ProLab
+
+        prolab = ProLab(
+            lightness_weight=self.lightness_weight,
+        )
+
+        return _create_simple_loss(prolab)
+
+
+class VSILossFunction(StrictModel):
+    name: Literal["VSI"]
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.vsi import VSI
+
+        vsi = VSI()
+
+        return _create_simple_loss(vsi)
+
+
+class SOkLabLossFunction(StrictModel):
+    name: Literal["SOkLab"]
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.s_oklab import SOkLab
+
+        s_oklab = SOkLab()
+
+        return _create_simple_loss(s_oklab)
 
 
 LossFunction = Annotated[
@@ -259,6 +293,6 @@ LossFunction = Annotated[
     | ColorBlindnessLossFunction
     | MultiScaleSSIMLossFunction
     | RMSLossFunction
-    | CDLossFunction,
+    | VSILossFunction,
     Field(..., discriminator="name"),
 ]

@@ -2,8 +2,10 @@ from __future__ import annotations
 import torch
 from torch import nn
 from torch import Tensor
-import torchvision
-from olimp.processing import conv
+
+# import torchvision
+from olimp.processing import fft_conv
+from .download_path import download_path, PyOlimpHF
 
 
 class ConvReLU(nn.Module):
@@ -41,8 +43,9 @@ class VDSR(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     @classmethod
-    def from_path(cls, path: str):
+    def from_path(cls, path: PyOlimpHF):
         model = cls()
+        path = download_path(path)
         state_dict = torch.load(
             path, map_location=torch.get_default_device(), weights_only=True
         )
@@ -64,7 +67,7 @@ class VDSR(nn.Module):
         # image = torchvision.transforms.Grayscale()(image)
         # img_gray = torchvision.transforms.Resize((512, 512))(image)
         # img_gray = image.to(torch.float32)
-        img_blur = conv(image, psf)
+        img_blur = fft_conv(image, psf)
 
         return torch.cat(
             [
@@ -88,7 +91,7 @@ def _demo():
         psf: Tensor,
         progress: Callable[[float], None],
     ) -> Tensor:
-        model = VDSR.from_path("./olimp/weights/vdsr.pth")
+        model = VDSR.from_path("hf://RVI/vdsr.pth")
         with torch.inference_mode():
             psf = psf.to(torch.float32)
             inputs = model.preprocess(image, psf)

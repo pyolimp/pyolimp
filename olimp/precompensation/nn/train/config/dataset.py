@@ -1,25 +1,27 @@
 from __future__ import annotations
 from typing import Annotated, Literal
+from random import Random
 from pydantic import Field
 from pathlib import Path
 from .base import StrictModel
-from torchvision.transforms.v2 import Compose
+
 from torch.utils.data import ConcatDataset, Dataset as TorchDataset
 from torch import Tensor
-from .transform import (
-    Transforms,
-    GrayscaleTransform,
-    ResizeTransform,
-    PSFNormalizeTransform,
-    Float32Transform,
-    DivideTransform,
-)
+import torch
+from .transform import BallfishTransforms
+from ballfish import create_augmentation, Datum
+from ...dataset import ProgressCallback
 
 
 class DatasetConfig(StrictModel):
     limit: int | None = Field(
         default=None, description="Load dataset, but only take first N images"
     )
+
+    def load(
+        self, progress_callback: ProgressCallback
+    ) -> TorchDataset[Tensor]:
+        raise NotImplementedError
 
 
 class SCA2023(DatasetConfig):
@@ -42,10 +44,12 @@ class SCA2023(DatasetConfig):
         ]
     ]
 
-    def load(self):
+    def load(self, progress_callback: ProgressCallback):
         from ...dataset.sca_2023 import SCA2023Dataset
 
-        return SCA2023Dataset(self.subsets, limit=self.limit)
+        return SCA2023Dataset(
+            self.subsets, limit=self.limit, progress_callback=progress_callback
+        )
 
 
 class Olimp(DatasetConfig):
@@ -133,10 +137,12 @@ class Olimp(DatasetConfig):
         ]
     ]
 
-    def load(self):
+    def load(self, progress_callback: ProgressCallback):
         from ...dataset.olimp import OlimpDataset
 
-        return OlimpDataset(self.subsets, limit=self.limit)
+        return OlimpDataset(
+            self.subsets, limit=self.limit, progress_callback=progress_callback
+        )
 
 
 class Directory(DatasetConfig):
@@ -144,7 +150,7 @@ class Directory(DatasetConfig):
     path: Path
     matches: list[str] = ["*.jpg", "*.jpeg", "*.png"]
 
-    def load(self):
+    def load(self, progress_callback: ProgressCallback):
         from ...dataset.directory import DirectoryDataset
 
         return DirectoryDataset(self.path, self.matches, limit=self.limit)
@@ -154,14 +160,18 @@ class CVD(DatasetConfig):
     name: Literal["CVD"]
     subsets: set[
         Literal[
-            "Color_cvd_D_experiment_100000", "Color_cvd_P_experiment_100000"
+            "Color_cvd_D_experiment_100000",
+            "Color_cvd_P_experiment_100000",
+            "*",
         ]
     ]
 
-    def load(self):
+    def load(self, progress_callback: ProgressCallback):
         from ...dataset.cvd import CVDDataset
 
-        return CVDDataset(self.subsets, limit=self.limit)
+        return CVDDataset(
+            self.subsets, limit=self.limit, progress_callback=progress_callback
+        )
 
 
 Dataset = Annotated[
@@ -170,35 +180,67 @@ Dataset = Annotated[
 
 
 class BaseDataloaderConfig(StrictModel):
-    transforms: Transforms
+    transforms: BallfishTransforms | None
     datasets: list[Dataset]
+    augmentation_factor: int = Field(
+        default=1,
+        description="When transformations augment the dataset, it is helpful "
+        "to set augmentation_factor that will multiple original dataset size",
+    )
 
-    @staticmethod
-    def noop(input: Tensor) -> Tensor:
-        return input
-
-    def load(self):
-        all_transforms = [t.transform() for t in self.transforms]
-        if not all_transforms:
-            all_transforms.append(self.noop)
-        transforms = Compose(all_transforms)
-        dataset = ConcatDataset[TorchDataset[Tensor]](
-            [dataset.load() for dataset in self.datasets]
+    def load(self, progress_callback: ProgressCallback):
+        dataset = ConcatDataset[Tensor](
+            [dataset.load(progress_callback) for dataset in self.datasets]
         )
-        return dataset, transforms
+        if self.transforms:
+            dataset = AugmentedDataset(
+                dataset, self.transforms, self.augmentation_factor
+            )
+
+        return dataset
+
+
+class AugmentedDataset(TorchDataset[Tensor]):
+    def __init__(
+        self,
+        inner_dataset: TorchDataset[Tensor],
+        augmentation: BallfishTransforms,
+        augmentation_factor: int = 1,
+    ) -> None:
+        self._inner_dataset = inner_dataset
+        if not any(item["name"] == "rasterize" for item in augmentation):
+            augmentation.insert(0, {"name": "_copy"})
+        self._augmentation = create_augmentation(augmentation)
+        self._random = Random(b"helloseed")
+        self._inner_dataset_size = len(inner_dataset)
+        self._size = self._inner_dataset_size * augmentation_factor
+
+    def __len__(self) -> int:
+        return self._size
+
+    def __getitem__(self, index: int) -> Tensor:
+        tensor = self._inner_dataset[index % self._inner_dataset_size]
+        with torch.device("cpu"):
+            datum = self._augmentation(
+                Datum(source=tensor.unsqueeze(0).to(dtype=torch.float32)),
+                self._random,
+            )
+            assert datum.image is not None
+            datum.image = torch.maximum(datum.image, torch.tensor(0.0))
+        return datum.image.squeeze(0)
 
 
 class ImgDataloaderConfig(BaseDataloaderConfig):
-    transforms: Transforms = [
-        GrayscaleTransform(name="Grayscale"),
-        ResizeTransform(name="Resize"),
-        Float32Transform(name="Float32"),
-        DivideTransform(name="Divide"),
+    transforms: BallfishTransforms | None = [
+        {"name": "grayscale"},
+        {"name": "resize", "width": 512, "height": 512},
+        # {"name": "float32"}, converted to f32 when passed to `Datum``
+        {"name": "divide", "value": 255.0},
     ]
 
 
 class PsfDataloaderConfig(BaseDataloaderConfig):
-    transforms: Transforms = [
-        Float32Transform(name="Float32"),
-        PSFNormalizeTransform(name="PSFNormalize"),
+    transforms: BallfishTransforms | None = [
+        # {"name": "float32"}, converted to f32 when passed to `Datum`
+        {"name": "psf_normalize"},
     ]

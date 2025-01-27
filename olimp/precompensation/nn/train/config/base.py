@@ -8,3 +8,4 @@ class StrictModel(BaseModel):
 
     class Config:
         extra = "forbid"
+        frozen = True  # why would anyone change the config?

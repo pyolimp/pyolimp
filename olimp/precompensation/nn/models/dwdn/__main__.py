@@ -10,7 +10,7 @@ def _demo():
     def demo_dwdn(
         image: Tensor, psf: Tensor, progress: Callable[[float], None]
     ) -> Tensor:
-        model = PrecompensationDWDN.from_path(path="./olimp/weights/dwdn.pt")
+        model = PrecompensationDWDN.from_path(path="hf://RVI/dwdn.pt")
 
         with torch.inference_mode():
             inputs = model.preprocess(image, psf.to(torch.float32))

@@ -2,8 +2,10 @@ from __future__ import annotations
 import torch
 from torch import nn
 from torch import Tensor
-import torchvision
-from olimp.processing import conv
+
+# import torchvision
+from olimp.processing import fft_conv
+from .download_path import download_path, PyOlimpHF
 
 
 class VAE(nn.Module):
@@ -62,8 +64,9 @@ class VAE(nn.Module):
         )
 
     @classmethod
-    def from_path(cls, path: str):
+    def from_path(cls, path: PyOlimpHF):
         model = cls()
+        path = download_path(path)
         state_dict = torch.load(
             path, map_location=torch.get_default_device(), weights_only=True
         )
@@ -94,7 +97,7 @@ class VAE(nn.Module):
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
         # img_gray = image.to(torch.float32)[None, ...]
         # img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
-        img_blur = conv(image, psf)
+        img_blur = fft_conv(image, psf)
 
         return torch.cat(
             [
@@ -118,7 +121,7 @@ def _demo():
         psf: Tensor,
         progress: Callable[[float], None],
     ) -> Tensor:
-        model = VAE.from_path("./olimp/weights/vae.pth")
+        model = VAE.from_path("hf://RVI/vae.pth")
         with torch.inference_mode():
             psf = psf.to(torch.float32)
             inputs = model.preprocess(image, psf)

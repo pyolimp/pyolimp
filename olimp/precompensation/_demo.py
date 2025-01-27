@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
 import torchvision
-from olimp.processing import conv
+from olimp.processing import fft_conv, resize_kernel
 from torchvision.transforms.v2 import Resize, Grayscale
+from pathlib import Path
 
 from rich.progress import (
     Progress,
@@ -18,11 +19,23 @@ from rich.progress import (
 
 
 def demo(
-    name: Literal["Montalto", "Bregman Jumbo", "Huang", "Feng Xu"],
+    name: Literal[
+        "Montalto",
+        "Bregman Jumbo",
+        "Huang",
+        "Feng Xu",
+        "VAE",
+        "VDSR",
+        "UNET",
+        "CVAE",
+        "DWDN",
+        "USRNET",
+    ],
     opt_function: Callable[[Tensor, Tensor, Callable[[float], None]], Tensor],
     mono: bool = False,
     num_output_channels: int = 1,
 ):
+    root = Path(__file__).parents[2]
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -32,10 +45,11 @@ def demo(
         task_l = progress.add_task("Load data", total=3)
         task_p = progress.add_task(name, total=1.0)
 
-        psf_info = np.load("./tests/test_data/psf.npz")
+        psf_info = np.load(root / "tests/test_data/psf.npz")
         progress.advance(task_l)
         img = torchvision.io.read_image("./tests/test_data/horse.jpg")
         # img = torchvision.io.read_image("./tests/test_data/73.png")
+        img = torchvision.io.read_image(root / "tests/test_data/horse.jpg")
         progress.advance(task_l)
         img = img / 255.0
         # img = Resize((512, 512))(img)
@@ -49,15 +63,18 @@ def demo(
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         with torch.device(device):
-            psf = torch.fft.fftshift(
-                torch.tensor(psf_info["psf"]).to(torch.float32)
-            )[None, None, ...]
+            psf = torch.tensor(psf_info["psf"]).to(torch.float32)
+            psf = resize_kernel(psf[None, None, ...], img.shape[-2:])
+            psf /= psf.sum()
+            psf_shifted = torch.fft.fftshift(psf)
 
             callback: Callable[[float], None] = lambda c: progress.update(
                 task_p, completed=c
             )
-            (precompensation,) = opt_function(img.to(device), psf, callback)
-            retinal_procompensated = conv(precompensation, psf)
+            (precompensation_0,) = opt_function(
+                img.to(device), psf_shifted, callback
+            )
+            retinal_precompensated = fft_conv(precompensation_0, psf_shifted)
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
         dpi=72, figsize=(12, 9), ncols=2, nrows=2
@@ -74,21 +91,19 @@ def demo(
     ax2.imshow(img, cmap="gray", vmin=0.0, vmax=1.0)
     ax2.set_title(f"Source ({img.min()}, {img.max()})")
 
-    p_arr = precompensation.cpu().detach().numpy()
+    p_arr = precompensation_0.detach().cpu().numpy()
     ax3.set_title(
         f"Procompensation: {name} ({p_arr.min():g}, {p_arr.max():g})"
     )
-    assert p_arr.shape[0] == 1
-    p_arr = p_arr[0]
     if p_arr.ndim == 3:
         p_arr = p_arr.transpose(1, 2, 0)
     ax3.imshow(p_arr, vmin=0.0, vmax=1.0, cmap="gray")
 
-    rp_arr = retinal_procompensated.cpu().detach().numpy()
-    assert rp_arr.shape[0] == 1
+    rp_arr = retinal_precompensated.cpu().detach().numpy()
+    assert rp_arr.shape[0] == 1, rp_arr.shape[0]
     rp_arr = rp_arr[0]
     ax4.set_title(
-        f"Retinal Procompensated ({rp_arr.min():g}, {rp_arr.max():g})"
+        f"Retinal Precompensated ({rp_arr.min():g}, {rp_arr.max():g})"
     )
     if rp_arr.ndim == 3:
         rp_arr = rp_arr.transpose(1, 2, 0)
