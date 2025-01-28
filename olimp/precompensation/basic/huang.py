@@ -13,6 +13,9 @@ def huang(image: Tensor, psf: Tensor, k: float = 0.01) -> Tensor:
         image.shape[-2:] == psf.shape[-2:]
     ), f"Expected equal shapes, got: image={image.shape}, psf={psf.shape}"
 
+    if psf.shape[1] == 1 and image.shape[1] > 1:
+        psf = psf.expand(-1, image.shape[1], -1, -1)
+
     k = min(max(1e-7, k), 0.025)
 
     otf = torch.fft.fftn(psf, dim=(-2, -1))
