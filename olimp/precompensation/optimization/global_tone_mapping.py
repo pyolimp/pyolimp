@@ -15,19 +15,19 @@ class DebugInfo(TypedDict):
 
 
 class GTMParameters(NamedTuple):
-    x1: Tensor = torch.tensor([-1.1], requires_grad=True)
-    x2: Tensor = torch.tensor([1.1], requires_grad=True)
-    y1: Tensor = torch.tensor([0.1], requires_grad=True)
-    y2: Tensor = torch.tensor([0.9], requires_grad=True)
-    loss_func: Callable[[Tensor, Tensor], Tensor] = MultiScaleSSIMLoss()
-    optimizer_tonemapping: Callable = torch.optim.Adam
+    x1: float = -1.1
+    x2: float = 1.1
+    y1: float = 0.1
+    y2: float = 0.9
+    loss_func: Callable[[Tensor, Tensor], Tensor] | None = None
+    optimizer_tonemapping: type[torch.optim.Optimizer] | None = None
     k: float = 0.01
     lr: float = 0.01
     iterations: int = 500
     gap: float = 0.001
     progress: Callable[[float], None] | None = None
     debug: None | DebugInfo = None  # Pass dictionary for debugging
-    history_loss: list[float] = []
+    history_loss: list[float] | None = None  # []
 
 
 def apply_global_tone_mapping(
@@ -41,9 +41,7 @@ def apply_global_tone_mapping(
     # Identify ranges for precomp
     below_x1 = torch.lt(precomp, x1)
     above_x2 = torch.gt(precomp, x2)
-    between_x1_x2 = torch.logical_and(
-        torch.ge(precomp, x1), torch.le(precomp, x2)
-    )
+    between_x1_x2 = ~(below_x1 | above_x2)
 
     # Compute tone mapping for different ranges with stability improvements
     mapped_below_x1 = y1 * torch.exp(1 - (y2 / (y1 + eps)) / ((x2 - x1) + eps))
@@ -81,27 +79,36 @@ def precompensation_global_tone_mapping(
     psf: Tensor,
     params: GTMParameters,
 ) -> Tensor:
-    optimizer = params.optimizer_tonemapping(
-        [params.x1, params.x2, params.y1, params.y2], lr=params.lr
+    x1 = torch.tensor([params.x1], requires_grad=True)
+    x2 = torch.tensor([params.x2], requires_grad=True)
+    y1 = torch.tensor([params.y1], requires_grad=True)
+    y2 = torch.tensor([params.y2], requires_grad=True)
+    history_loss = [] if params.history_loss is None else params.history_loss
+    loss_func = (
+        MultiScaleSSIMLoss() if params.loss_func is None else params.loss_func
+    )
+    optimizer_tonemapping = (
+        torch.optim.Adam
+        if params.optimizer_tonemapping is None
+        else params.optimizer_tonemapping
     )
 
+    optimizer = optimizer_tonemapping([x1, x2, y1, y2], lr=params.lr)
     precomp = huang(img, psf, k=params.k)
 
     for i in range(params.iterations):
         optimizer.zero_grad()
 
-        params.x1.data.clamp_(max=params.x2.item() - 0.01)
-        params.x2.data.clamp_(min=params.x1.item() + 0.01)
-        params.y1.data.clamp_(min=0.01, max=0.99)
-        params.y2.data.clamp_(min=0.01, max=0.99)
+        x1.data.clamp_(max=x2.item() - 0.01)  # trick torch with .data
+        x2.data.clamp_(min=x1.item() + 0.01)
+        y1.data.clamp_(min=0.01, max=0.99)
+        y2.data.clamp_(min=0.01, max=0.99)
 
-        precomp_normaliz = apply_global_tone_mapping(
-            precomp, params.x1, params.x2, params.y1, params.y2
-        )
+        precomp_normalized = apply_global_tone_mapping(precomp, x1, x2, y1, y2)
 
-        precomp_normaliz_retinal = fft_conv(precomp_normaliz, psf)
+        precomp_normaliz_retinal = fft_conv(precomp_normalized, psf)
 
-        loss = params.loss_func(precomp_normaliz_retinal, img)
+        loss = loss_func(precomp_normaliz_retinal, img)
 
         loss.backward()
         optimizer.step()
@@ -112,21 +119,18 @@ def precompensation_global_tone_mapping(
         if params.progress is not None:
             params.progress(i / params.iterations)
 
-        params.history_loss.append(loss.item())
-        if len(params.history_loss) > 10:  # Сравниваем последние 10 итераций
-            params.history_loss.pop(0)
-            avg_change = sum(
-                abs(params.history_loss[i] - params.history_loss[i - 1])
-                for i in range(1, len(params.history_loss))
-            ) / (len(params.history_loss) - 1)
-            if avg_change < params.gap:
+        history_loss.append(loss.item())
+        if len(history_loss) > 50:
+            max_change = max(history_loss) - min(history_loss)
+            if max_change < params.gap:
                 print(
                     f"Optimization stopped at iteration {i} due to low average loss change."
                 )
                 break
+            history_loss.pop(0)
 
     # Return the final optimized precompensation
-    return precomp_normaliz
+    return precomp_normalized
 
 
 def _demo():
@@ -138,10 +142,10 @@ def _demo():
         progress: Callable[[float], None],
     ) -> torch.Tensor:
         return precompensation_global_tone_mapping(
-            image, psf, GTMParameters(progress=progress)
+            image, psf, GTMParameters(progress=progress, lr=0.05)
         )
 
-    demo("Global tone mapping", demo_global_tone_mapping, mono=True)
+    demo("Global tone mapping", demo_global_tone_mapping, mono=False)
 
 
 if __name__ == "__main__":
