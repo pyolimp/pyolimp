@@ -41,33 +41,6 @@ def histogram_maximum(image: torch.Tensor) -> float:
     hist = torch.histc(img, bins=num_of_bins, min=0, max=1)
     return torch.argmax(hist) / num_of_bins
 
-
-def inverse_blur_filtering(
-    image: torch.Tensor, psf: torch.Tensor, param: float, rgb: bool
-) -> torch.Tensor:
-    def single_channel_filtering(
-        image: torch.Tensor, psf: torch.Tensor, param: float
-    ) -> torch.Tensor:
-        otf = torch.fft.fft2(psf)
-        mtf = torch.abs(otf)
-        num = torch.fft.fft2(image) * torch.pow(mtf, 2)
-        denum = otf * (torch.pow(mtf, 2) + param)
-        ratio = torch.zeros_like(num)
-        mask = denum != 0
-        ratio[mask] = torch.div(num[mask], denum[mask])
-        return torch.fft.ifft2(ratio).real
-
-    if not rgb:
-        return single_channel_filtering(image, psf, param)
-
-    result = torch.zeros_like(image)
-    for i in range(image.shape[1]):
-        result[:, i, ...] = single_channel_filtering(
-            image[:, i, ...], psf, param
-        )
-    return result
-
-
 # def equivalent_ringing_free(image: torch.Tensor, m, mode) -> torch.Tensor:
 #         return torch.clip(m * (image - mode) + mode, min = 0, max = 1)
 
@@ -138,7 +111,7 @@ def precompensation_iteration(
     image: torch.Tensor, psf: torch.Tensor, params: JiParameters
 ) -> torch.Tensor:
     partition = torch.arange(0, 1, params.partition_step, device=params.device)
-    ibf = inverse_blur_filtering(image, psf, params.ibf_param, params.rgb)
+    ibf = huang(image, psf, params.ibf_param)
     ibf = linear_normalise(ibf)
     mode = histogram_maximum(ibf)
 
@@ -153,7 +126,7 @@ def precompensation_iteration(
     if params.debug is not None:
         params.debug["loss_step"] = loss_step
 
-    for i in tqdm(range(params.num_of_iter)):
+    for i in range(params.num_of_iter):
         if params.progress is not None:
             params.progress(i / params.num_of_iter)
 
@@ -266,7 +239,7 @@ def ji_ye(
     image: torch.Tensor, psf: torch.Tensor, params: JiParameters
 ) -> torch.Tensor:
     partition = torch.arange(0, 1, params.partition_step, device=params.device)
-    ibf = inverse_blur_filtering(image, psf, params.ibf_param, params.rgb)
+    ibf = huang(image, psf, params.ibf_param, params.rgb)
     ibf = linear_normalise(ibf)
     mode = histogram_maximum(ibf)
 
