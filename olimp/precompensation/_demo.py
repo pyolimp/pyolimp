@@ -30,6 +30,7 @@ def demo(
         "CVAE",
         "DWDN",
         "USRNET",
+        "UNETVAE",
     ],
     opt_function: Callable[[Tensor, Tensor, Callable[[float], None]], Tensor],
     mono: bool = False,

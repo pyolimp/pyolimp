@@ -7,6 +7,7 @@ PyOlimpHF = (
         "hf://RVI/cvd_swin.pth",
         "hf://RVI/dwdn.pt",
         "hf://RVI/unet-efficientnet-b0.pth",
+        "hf://RVI/unetvae.pth",
         "hf://RVI/usrnet.pth",
         "hf://RVI/vae.pth",
         "hf://RVI/vdsr.pth",

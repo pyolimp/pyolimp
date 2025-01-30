@@ -35,6 +35,7 @@ def main() -> None:
             "olimp.precompensation.nn.models.unet_efficient_b0",
             "unet_efficient_b0",
         ),
+        ("olimp.precompensation.nn.models.unetvae", "unetvae"),
         ("olimp.precompensation.nn.models.dwdn.__main__", "dwdn"),
         # ("olimp.precompensation.nn.models.cvd_swin", "cvd_swin"), not implemented yet
     ):

@@ -35,7 +35,8 @@ class VaeLossFunction(StrictModel):
         assert type(model).__name__ in (
             "VAE",
             "CVAE",
-        ), f"Vae loss only work with (C)Vae model, not {model}"
+            "UNETVAE",
+        ), f"Vae loss only work with (C,UNET)Vae model, not {model}"
 
         def f(
             model_output: list[Tensor],

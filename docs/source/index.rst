@@ -65,6 +65,11 @@ vae
 
 .. image:: _static/vae.svg
 
+unetvae
+~~~
+
+.. image:: _static/unetvae.svg
+
 vdsr
 ~~~~
 
