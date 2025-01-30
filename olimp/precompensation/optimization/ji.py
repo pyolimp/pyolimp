@@ -27,6 +27,7 @@ class JiParameters(NamedTuple):
     partition_step: float = 0.01
     alpha: float = 0.0
     num_of_iter: int = 100
+    loss_func: None = None
     progress: Callable[[float], None] | None = None
     debug: None | DebugInfo = None  # pass dict to log
 
@@ -43,7 +44,6 @@ def histogram_maximum(image: torch.Tensor) -> float:
 
 # def equivalent_ringing_free(image: torch.Tensor, m, mode) -> torch.Tensor:
 #         return torch.clip(m * (image - mode) + mode, min = 0, max = 1)
-
 
 def bezier_curve(
     mode: float,
@@ -106,8 +106,7 @@ def mapping_function(
     indices = torch.clamp(indices, 0, length - 1)
     return By[indices]
 
-
-def precompensation_iteration(
+def ji(
     image: torch.Tensor, psf: torch.Tensor, params: JiParameters
 ) -> torch.Tensor:
     partition = torch.arange(0, 1, params.partition_step, device=params.device)
@@ -119,7 +118,13 @@ def precompensation_iteration(
     tau_plus0 = torch.tensor([0.25], device=params.device)
     tau_minus0 = torch.tensor([0.25], device=params.device)
 
-    loss_func = MultiScaleSSIMLoss().to(params.device)
+    def loss_func(x: torch.Tensor, y: torch.Tensor, m: torch.Tensor):
+        if params.loss_func is None:
+            loss_ji = MSE()
+            return loss_ji(x, y) + params.alpha / m
+        else:
+            return params.loss_func(x, y)
+  
     prev_total_loss = torch.tensor(float("inf"), device=params.device)
 
     loss_step = []
@@ -158,7 +163,7 @@ def precompensation_iteration(
             )
 
             mapped_conv = fft_conv(mapped, psf)
-            loss = loss_func(mapped_conv, image)
+            loss = loss_func(mapped_conv, image, m0)
 
             loss.backward(retain_graph=True)
             optimizer_tau.step()
@@ -207,7 +212,7 @@ def precompensation_iteration(
             )
 
             mapped_conv = fft_conv(mapped, psf)
-            loss = loss_func(mapped_conv, image)
+            loss = loss_func(mapped_conv, image, m)
 
             loss.backward(retain_graph=True)
             optimizer_m.step()
@@ -233,135 +238,6 @@ def precompensation_iteration(
         params.progress(1.0)
 
     return mapping_function(ibf, m0, tau_plus0, tau_minus0, mode, partition)
-
-
-def ji_ye(
-    image: torch.Tensor, psf: torch.Tensor, params: JiParameters
-) -> torch.Tensor:
-    partition = torch.arange(0, 1, params.partition_step, device=params.device)
-    ibf = huang(image, psf, params.ibf_param, params.rgb)
-    ibf = linear_normalise(ibf)
-    mode = histogram_maximum(ibf)
-
-    m0 = torch.tensor([params.m0], device=params.device)
-    tau_plus0 = torch.tensor([0.25], device=params.device)
-    tau_minus0 = torch.tensor([0.25], device=params.device)
-
-    loss_func = MSE()
-    prev_total_loss = torch.tensor(float("inf"), device=params.device)
-
-    loss_step = []
-    if params.debug is not None:
-        params.debug["loss_step"] = loss_step
-
-    for i in tqdm(range(params.num_of_iter)):
-        if params.progress is not None:
-            params.progress(i / params.num_of_iter)
-
-        # Solving tau subproblem with fixed m
-        prev_loss_tau = torch.tensor(float("inf"))
-
-        tau_plus = torch.tensor(
-            tau_plus0.clone().detach(),
-            device=params.device,
-            requires_grad=True,
-        )
-        tau_minus = torch.tensor(
-            tau_minus0.clone().detach(),
-            device=params.device,
-            requires_grad=True,
-        )
-        optimizer_tau = torch.optim.Adam([tau_plus, tau_minus], lr=params.lr)
-
-        for _ in range(1000):
-            optimizer_tau.zero_grad()
-
-            mapped = mapping_function(
-                ibf,
-                m0,
-                tau_plus,
-                tau_minus,
-                mode,
-                partition,
-            )
-
-            mapped_conv = fft_conv(mapped, psf)
-            loss = loss_func(mapped_conv, image)
-
-            loss.backward(retain_graph=True)
-            optimizer_tau.step()
-
-            if torch.abs(prev_loss_tau - loss).item() < params.gap:
-                break
-
-            prev_loss_tau = loss
-
-        # Updating params
-
-        theta = torch.arctan(1 / m0)
-
-        tau_plus0 = torch.clamp(
-            tau_plus.clone().detach(),
-            0,
-            ((1 - mode) / torch.cos(theta.clone())).item(),
-        )
-        tau_minus0 = torch.clamp(
-            tau_minus.clone().detach(),
-            0,
-            (mode / torch.cos(theta.clone())).item(),
-        )
-
-        # Solving m-subproblem with fixed tau
-        prev_loss_m = torch.tensor(float("inf"))
-
-        m = torch.tensor(
-            m0.clone().detach(),
-            dtype=torch.float32,
-            device=params.device,
-            requires_grad=True,
-        )
-        optimizer_m = torch.optim.Adam([m], lr=params.lr_m)
-
-        for _ in range(1000):
-            optimizer_m.zero_grad()
-
-            mapped = mapping_function(
-                ibf,
-                m,
-                tau_plus0,
-                tau_minus0,
-                mode,
-                partition,
-            )
-
-            mapped_conv = fft_conv(mapped, psf)
-            loss = loss_func(mapped_conv, image) + params.alpha / m
-
-            loss.backward(retain_graph=True)
-            optimizer_m.step()
-
-            if torch.abs(prev_loss_m - loss).item() < params.gap:
-                break
-
-            prev_loss_m = loss
-
-        # Update m
-        m0 = m.detach()
-
-        loss_step.append(prev_loss_m.item())
-
-        if abs(prev_total_loss - prev_loss_m.item()) < params.gap_iter:
-            break
-
-        prev_total_loss = prev_loss_m.item()
-
-        # print("m = ", m0.item(), "tau_plus = ", tau_plus0.item(), "tau_minus = ", tau_minus0.item(), "loss = ", loss.item(), '\n')
-
-    if params.progress is not None:
-        params.progress(1.0)
-
-    return mapping_function(ibf, m0, tau_plus0, tau_minus0, mode, partition)
-
 
 def _demo():
     from .._demo import demo
@@ -371,50 +247,10 @@ def _demo():
         psf: torch.Tensor,
         progress: Callable[[float], None],
     ) -> torch.Tensor:
-        return ji_ye(image, psf, JiParameters(progress=progress, alpha=10))
+        return ji(image, psf, JiParameters(progress=progress, alpha=1, loss_func=MultiScaleSSIMLoss()))
 
-    demo("Ji Ye", demo_ji, mono=True)
+    demo("Ji Ye", demo_ji)
 
 
 if __name__ == "__main__":
     _demo()
-
-# if __name__ == "__main__":
-#     import numpy as np
-#     import torchvision
-
-#     # psf_info = np.load("/home/alkzir/projects/pyolimp/tests/test_data/psf.npz")
-#     # img = (
-#     #     torchvision.io.read_image(
-#     #         "/home/alkzir/projects/pyolimp/tests/test_data/horse.jpg"
-#     #     )
-#     #     / 255.0
-#     # )
-
-#     psf_info = np.load("C:/data/small_psf.npy", allow_pickle=True)
-#     img = (
-#         torchvision.io.read_image(
-#             "C:/data/images/animals/1 (53).jpg",
-#             mode = torchvision.io.ImageReadMode.GRAY
-#         )
-#         / 255.0
-#     )
-
-#     img = Resize((512, 512))(img).unsqueeze(0).requires_grad_(True)
-
-#     psf = (
-#         torch.fft.fftshift(torch.tensor(psf_info[0]["psf"]).float())
-#         .unsqueeze(0)
-#         .unsqueeze(0)
-#         .requires_grad_(True)
-#     )
-
-#     psf = psf / torch.sum(psf)
-
-#     params = JiParameters(rgb=False)
-#     precompensated = precompensation_iteration(img, psf, params)
-
-#     plt.imshow(
-#         precompensated.permute(0, 2, 3, 1)[0].cpu().numpy(), vmin=0, vmax=1, cmap = 'gray'
-#     )
-#     plt.show()
