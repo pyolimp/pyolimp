@@ -18,6 +18,7 @@
         "precompensated",
         "pyolimp",
         "UNET",
+        "UNETVAE",
         "usrnet",
         "VDSR",
         "Zenodo"
