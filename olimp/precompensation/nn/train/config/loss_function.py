@@ -54,12 +54,10 @@ class VaeLossFunction(StrictModel):
 
 
 Degree: TypeAlias = Literal[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-CBType: TypeAlias = Literal["protan", "deutan"]
 
 
 class ColorBlindnessLossFunction(StrictModel):
     name: Literal["ColorBlindnessLoss"]
-    type: CBType
     degree: Degree = 100
     lambda_ssim: Annotated[float, confloat(ge=0, le=1)] = 0.25
     global_points: int = 3000
@@ -68,15 +66,23 @@ class ColorBlindnessLossFunction(StrictModel):
         from .....evaluation.loss.color_blindness_loss import (
             ColorBlindnessLoss,
         )
+        from .....simulate.color_blindness_distortion import (
+            ColorBlindnessDistortion,
+        )
 
         cbl = ColorBlindnessLoss(
-            cb_type=self.type,
-            degree=self.degree,
             lambda_ssim=self.lambda_ssim,
             global_points=self.global_points,
         )
 
-        def f(model_output: list[Tensor], datums: list[Tensor]) -> Tensor:
+        def f(
+            model_output: list[Tensor],
+            datums: list[Tensor],
+            distortions: list[type[Distortion]],
+        ) -> Tensor:
+            (cbd,) = distortions
+            assert isinstance(cbd, ColorBlindnessDistortion)
+            cbl.set_cb_type(cbd.blindness_type.lower(), self.degree)
             (image,) = datums
             assert image.ndim == 4, image.ndim
             (precompensated,) = model_output

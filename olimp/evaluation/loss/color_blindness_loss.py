@@ -175,17 +175,10 @@ def _global_contrast_img_l1(
 class ColorBlindnessLoss:
     def __init__(
         self,
-        cb_type: CBType,
-        degree: Degree,
         lambda_ssim: float = 0.25,
         global_points: int = 3000,  # number of points to use to find global contrast
     ) -> None:
-        self._cb_type = cb_type
         self._global_points = global_points
-        t_tensor = (
-            torch.tensor(CVD_MATRIX[cb_type][degree]).type(torch.float32).T
-        )
-        self.t_tensor = t_tensor.unsqueeze(0)
 
         self._trans_compose1: Callable[[Tensor], Tensor] = Compose(
             [Normalize((-1.0, -1.0, -1.0), (2.0, 2.0, 2.0))]
@@ -199,6 +192,13 @@ class ColorBlindnessLoss:
         self._contrast_loss = ContrastLoss()
         self._ssim_loss_funtion = SSIMLoss(kernel_size=11)
         self._lambda_ssim = lambda_ssim
+
+    def set_cb_type(self, cb_type: CBType, degree: Degree = 100) -> None:
+        self._cb_type = cb_type
+        t_tensor = (
+            torch.tensor(CVD_MATRIX[cb_type][degree]).type(torch.float32).T
+        )
+        self.t_tensor = t_tensor.unsqueeze(0)
 
     def _cvd_simulation_tensors(
         self,
