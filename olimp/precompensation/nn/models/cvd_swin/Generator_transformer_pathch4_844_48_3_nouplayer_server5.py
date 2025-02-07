@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 from timm.models.layers import trunc_normal_
+from ..download_path import download_path, PyOlimpHF
 
 
 class Generator_transformer_pathch4_844_48_3_nouplayer_server5(nn.Module):
@@ -369,7 +370,11 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(nn.Module):
         return flops
 
     @classmethod
-    def from_path(cls, path: str = "./olimp/weights/cvd_swin.pth"):
+    def from_path(
+        cls,
+        path: PyOlimpHF = "hf://CVD/cvd_swin.pth",
+    ):
+        path = download_path(path)
         state_dict = torch.load(
             path,
             map_location=torch.get_default_device(),
