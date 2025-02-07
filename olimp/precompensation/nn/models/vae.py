@@ -9,6 +9,11 @@ from .download_path import download_path, PyOlimpHF
 
 
 class VAE(nn.Module):
+    """
+    .. image:: ../../../../_static/vae.svg
+       :class: full-width
+    """
+
     def __init__(self):
         super().__init__()
 

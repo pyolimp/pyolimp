@@ -10,70 +10,20 @@ Welcome to PyOlimp's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
-Datasets
---------
-
-Evaluation
-----------
-
-Precompensation
----------------
-
-Bregman Jumbo
-~~~~~~~~~~~~~
-
-.. image:: _static/bregman_jumbo.svg
-
-cvae
-~~~~
-
-.. image:: _static/cvae.svg
-
-dwdn
-~~~~
-
-.. image:: _static/dwdn.svg
-
-Feng_xu
-~~~~~~~
-
-.. image:: _static/feng_xu.svg
-
-Huang
-~~~~~
-
-.. image:: _static/huang.svg
-
-Montalto
-~~~~~~~~
-
-.. image:: _static/montalto.svg
-
-Tennenholtz Zachevsky
-~~~~~~~~~~~~~~~~~~~~~
-
-.. image:: _static/tennenholtz_zachevsky.svg
-
-unet_efficient_b0
-~~~~~~~~~~~~~~~~~
-
-.. image:: _static/unet_efficient_b0.svg
-
-vae
-~~~
-
-.. image:: _static/vae.svg
-
-unetvae
-~~~
-
-.. image:: _static/unetvae.svg
-
-vdsr
-~~~~
-
-.. image:: _static/vdsr.svg
+   olimp/processing
+   olimp/evaluation/loss
+   olimp/simulate
+   olimp/precompensation/basic
+   olimp/precompensation/analytics
+   olimp/precompensation/optimization
+   olimp/precompensation/nn/models/vae
+   olimp/precompensation/nn/models/unetvae
+   olimp/precompensation/nn/models/cvae
+   olimp/precompensation/nn/models/cvd_swin
+   olimp/precompensation/nn/models/dwdn
+   olimp/precompensation/nn/models/vdsr
+   olimp/precompensation/nn/models/unet_efficient_b0
+   olimp/precompensation/nn/models/usrnet
 
 
 Indices and tables

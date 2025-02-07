@@ -79,6 +79,10 @@ def precompensation_global_tone_mapping(
     psf: Tensor,
     params: GTMParameters,
 ) -> Tensor:
+    """
+    .. image:: ../../_static/global_tone_mapping.svg
+       :class: full-width
+    """
     x1 = torch.tensor([params.x1], requires_grad=True)
     x2 = torch.tensor([params.x2], requires_grad=True)
     y1 = torch.tensor([params.y1], requires_grad=True)
@@ -145,7 +149,7 @@ def _demo():
             image, psf, GTMParameters(progress=progress, lr=0.05)
         )
 
-    demo("Global tone mapping", demo_global_tone_mapping, mono=False)
+    demo("Global Tone Mapping", demo_global_tone_mapping, mono=False)
 
 
 if __name__ == "__main__":

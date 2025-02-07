@@ -19,7 +19,11 @@ release = "0.1.0"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.napoleon",
+]
 
 templates_path = ["_templates"]
 exclude_patterns = []
@@ -30,6 +34,12 @@ exclude_patterns = []
 
 html_theme = "alabaster"
 html_static_path = ["_static"]
+
+# see https://alabaster.readthedocs.io/en/latest/customization.html#theme-options
+html_theme_options = {
+    "sidebar_width": "17em",
+    "page_width": "90%",
+}
 
 sys.path.insert(1, str(root))
 

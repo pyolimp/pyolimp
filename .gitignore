@@ -13,4 +13,4 @@ schema.json
 # sphinx output
 /docs/build
 # get_images.py output
-/docs/source/_static
+/docs/source/_static/*.svg

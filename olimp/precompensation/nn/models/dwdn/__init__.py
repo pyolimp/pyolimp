@@ -10,6 +10,11 @@ Inputs: TypeAlias = tuple[Tensor, Tensor]
 
 
 class PrecompensationDWDN(DWDN):
+    """
+    .. image:: ../../../../_static/dwdn.svg
+       :class: full-width
+    """
+
     def __init__(self, n_levels: int = 2, scale: float = 1.0):
         super().__init__(n_levels=n_levels, scale=scale)
         self.sigmoid = nn.Sigmoid()
