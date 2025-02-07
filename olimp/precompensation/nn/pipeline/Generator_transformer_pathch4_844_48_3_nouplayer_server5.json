@@ -30,7 +30,7 @@
     "distortion": [
         {
             "name": "cvd",
-            "blindness_type": "DEUTAN"
+            "blindness_type": "deutan"
         }
     ],
     "loss_function": {

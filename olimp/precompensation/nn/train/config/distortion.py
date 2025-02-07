@@ -18,7 +18,7 @@ class RefractionDistortionConfig(StrictModel):
 
 class ColorBlindnessDistortionConfig(StrictModel):
     name: Literal["cvd"]
-    blindness_type: Literal["DEUTAN", "PROTAN"]
+    blindness_type: Literal["deutan", "protan"]
 
     def load(self, progress_callback: ProgressCallback):
         from .....simulate.color_blindness_distortion import (

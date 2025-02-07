@@ -82,7 +82,7 @@ class ColorBlindnessLossFunction(StrictModel):
         ) -> Tensor:
             (cbd,) = distortions
             assert isinstance(cbd, ColorBlindnessDistortion)
-            cbl.set_cb_type(cbd.blindness_type.lower(), self.degree)
+            cbl.set_cb_type(cbd.blindness_type, self.degree)
             (image,) = datums
             assert image.ndim == 4, image.ndim
             (precompensated,) = model_output
