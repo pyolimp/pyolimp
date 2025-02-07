@@ -9,6 +9,11 @@ from .download_path import download_path, PyOlimpHF
 
 
 class UNETVAE(nn.Module):
+    """
+    .. image:: ../../../../_static/unetvae.svg
+       :class: full-width
+    """
+
     def __init__(self):
         super().__init__()
 

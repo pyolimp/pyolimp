@@ -6,6 +6,9 @@ import torch.nn.functional as F
 def resize_kernel(
     kernel: torch.Tensor, target_size: tuple[int, int]
 ) -> torch.Tensor:
+    """
+    Rescales kernel to `target_size`
+    """
     resized_kernel = F.interpolate(
         kernel, size=target_size, mode="bilinear", align_corners=True
     )
@@ -14,6 +17,10 @@ def resize_kernel(
 
 
 def fft_conv(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
+    """
+    FFT base method for fast convolution. Input types are expected to be
+    `float32` and size must be equal
+    """
     assert image.dtype == torch.float32, image.dtype
     assert kernel.dtype == torch.float32, kernel.dtype
     assert (
@@ -30,6 +37,9 @@ def scale_value(
     min_val: float = 0.0,
     max_val: float = 1.0,
 ) -> torch.Tensor:
+    """
+    Rescale values making minimum equal `min_val` and maximum equal `max_val`
+    """
     black, white = arr.min(), arr.max()
     if black == white:
         mul = 0.0

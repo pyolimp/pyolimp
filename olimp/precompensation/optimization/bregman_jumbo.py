@@ -44,6 +44,10 @@ def bregman_jumbo(
     psf: torch.Tensor,
     parameters: BregmanJumboParameters = BregmanJumboParameters(),
 ) -> torch.Tensor:
+    """
+    .. image:: ../../_static/bregman_jumbo.svg
+       :class: full-width
+    """
     # Parameters
     lr = parameters.lr
     gap = parameters.gap

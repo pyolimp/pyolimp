@@ -38,6 +38,10 @@ def main() -> None:
         ("olimp.precompensation.nn.models.unetvae", "unetvae"),
         ("olimp.precompensation.nn.models.dwdn.__main__", "dwdn"),
         # ("olimp.precompensation.nn.models.cvd_swin", "cvd_swin"), not implemented yet
+        (
+            "olimp.precompensation.optimization.global_tone_mapping",
+            "global_tone_mapping",
+        ),
     ):
         save_demo(root, module, name)
 

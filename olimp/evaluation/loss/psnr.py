@@ -3,7 +3,7 @@ from __future__ import annotations
 from torch.nn import Module
 import torch
 from torch import Tensor
-from mse import MSE
+from .mse import MSE
 
 
 class PSNR(Module):

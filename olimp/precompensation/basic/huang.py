@@ -7,7 +7,10 @@ from olimp.processing import scale_value
 
 def huang(image: Tensor, psf: Tensor, k: float = 0.01) -> Tensor:
     """
-    Inverse blur filtering. Suports multi channel image
+    Inverse blur filtering. Supports multi channel images.
+
+    .. image:: ../../_static/huang.svg
+       :class: full-width
     """
     assert (
         image.shape[-2:] == psf.shape[-2:]

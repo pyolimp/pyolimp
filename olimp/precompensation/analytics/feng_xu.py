@@ -6,6 +6,10 @@ from olimp.processing import fft_conv, scale_value
 
 
 def feng_xu(image: Tensor, psf: Tensor, lambda_val: float = 7.0) -> Tensor:
+    """
+    .. image:: ../../_static/feng_xu.svg
+       :class: full-width
+    """
     f1 = torch.tensor([[[[1, -1]]]])
     f2 = torch.tensor([[[[1], [-1]]]])
 

@@ -10,9 +10,6 @@ class MSE(Module):
     Mean Squared Error (MSE) metric implemented as a PyTorch module.
     """
 
-    def __init__(self) -> None:
-        super(MSE, self).__init__()  # type: ignore
-
     def forward(self, x: Tensor, y: Tensor) -> Tensor:
         """
         Computes the Mean Squared Error (MSE) between two tensors.

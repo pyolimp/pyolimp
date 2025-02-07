@@ -13,8 +13,13 @@ Input: TypeAlias = tuple[Tensor, int]
 
 
 class CVAE(nn.Module):
+    """
+    .. image:: ../../../../_static/cvae.svg
+       :class: full-width
+    """
+
     def __init__(self, num_classes: int = 1):
-        super(CVAE, self).__init__()
+        super().__init__()
 
         self.num_classes = num_classes
 
