@@ -16,7 +16,19 @@ class RefractionDistortionConfig(StrictModel):
         return dataset, RefractionDistortion
 
 
+class ColorBlindnessDistortionConfig(StrictModel):
+    name: Literal["cvd"]
+    blindness_type: Literal["DEUTAN", "PROTAN"]
+
+    def load(self, progress_callback: ProgressCallback):
+        from .....simulate.color_blindness_distortion import (
+            ColorBlindnessDistortion,
+        )
+
+        return None, ColorBlindnessDistortion(self.blindness_type)
+
+
 DistortionConfig = Annotated[
-    RefractionDistortionConfig,
+    RefractionDistortionConfig | ColorBlindnessDistortionConfig,
     Field(..., discriminator="name"),
 ]
