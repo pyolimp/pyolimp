@@ -4,12 +4,13 @@ from typing import Literal
 PyOlimpHF = (
     Literal[
         "hf://RVI/cvae.pth",
-        "hf://RVI/cvd_swin.pth",
         "hf://RVI/dwdn.pt",
         "hf://RVI/unet-efficientnet-b0.pth",
+        "hf://RVI/unetvae.pth",
         "hf://RVI/usrnet.pth",
         "hf://RVI/vae.pth",
         "hf://RVI/vdsr.pth",
+        "hf://CVD/cvd_swin.pth",
         "hf://CVD/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
         "hf://CVD/Generator_transformer_pathch4_1_1.pth",
         "hf://CVD/Generator_transformer_pathch4_8_3_48_3.pth",

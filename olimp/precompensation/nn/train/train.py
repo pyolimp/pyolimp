@@ -235,13 +235,15 @@ def _train_loop(
         torch.save(model.state_dict(), cur_epoch_path)
 
         if train_statistics.is_best_train:
-            best_train_path = cur_epoch_path.with_name("best_train.pth")
+            best_train_path = cur_epoch_path.with_name(
+                f"{model_name}_best_train.pth"
+            )
             best_train_path.unlink(missing_ok=True)
             best_train_path.hardlink_to(cur_epoch_path)
 
         if train_statistics.is_best_validation:
             best_validation_path = cur_epoch_path.with_name(
-                "best_validation.pth"
+                f"{model_name}_best_validation.pth"
             )
             best_validation_path.unlink(missing_ok=True)
             best_validation_path.hardlink_to(cur_epoch_path)

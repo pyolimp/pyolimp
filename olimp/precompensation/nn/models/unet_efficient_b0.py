@@ -9,6 +9,11 @@ from .download_path import download_path, PyOlimpHF
 
 
 class PrecompensationUNETB0(smp.Unet):
+    """
+    .. image:: ../../../../_static/vdsr.svg
+       :class: full-width
+    """
+
     def __init__(
         self,
         encoder_name: str = "efficientnet-b0",

@@ -10,7 +10,7 @@ from .download_path import download_path, PyOlimpHF
 
 class ConvReLU(nn.Module):
     def __init__(self, channels: int) -> None:
-        super(ConvReLU, self).__init__()
+        super().__init__()
         self.conv = nn.Conv2d(
             channels, channels, (3, 3), (1, 1), (1, 1), bias=False
         )
@@ -24,6 +24,11 @@ class ConvReLU(nn.Module):
 
 
 class VDSR(nn.Module):
+    """
+    .. image:: ../../../../_static/vdsr.svg
+       :class: full-width
+    """
+
     def __init__(self) -> None:
         super().__init__()
         # Input layer

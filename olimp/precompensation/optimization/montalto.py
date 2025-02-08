@@ -41,6 +41,10 @@ def montalto(
     psf: torch.Tensor,
     parameters: MontaltoParameters = MontaltoParameters(),
 ) -> torch.Tensor:
+    """
+    .. image:: ../../_static/montalto.svg
+       :class: full-width
+    """
     # Parametrs
     lr = parameters.lr
 

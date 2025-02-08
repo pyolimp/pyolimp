@@ -7,15 +7,15 @@ from olimp.simulate import Distortion
 
 
 class ColorBlindnessDistortion(Distortion):
-    blindness_type: Literal["PROTAN", "DEUTAN"]
+    blindness_type: Literal["protan", "deutan"]
 
     def __init__(
         self,
-        blindness_type: Literal["PROTAN", "DEUTAN"],
+        blindness_type: Literal["protan", "deutan"],
     ) -> None:
         assert blindness_type in [
-            "PROTAN",
-            "DEUTAN",
+            "protan",
+            "deutan",
         ], "no such distortion"
         self.blindness_type = blindness_type
 
@@ -81,7 +81,7 @@ class ColorBlindnessDistortion(Distortion):
     @staticmethod
     def _simulate(
         image: Tensor,
-        blindness_type: Literal["PROTAN", "DEUTAN"],
+        blindness_type: Literal["protan", "deutan"],
     ) -> Tensor:
         protan_Vienot = torch.tensor(
             [[0.0, 1.06481845, -0.06481845], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
@@ -92,11 +92,11 @@ class ColorBlindnessDistortion(Distortion):
             device=image.device,
         )
 
-        if blindness_type in ("PROTAN", "DEUTAN"):
+        if blindness_type in ("protan", "deutan"):
             lms = ColorBlindnessDistortion._convert_from_sRGB(image)
-            if blindness_type == "PROTAN":
+            if blindness_type == "protan":
                 dichromat_LMS = lms @ protan_Vienot.T
-            elif blindness_type == "DEUTAN":
+            elif blindness_type == "deutan":
                 dichromat_LMS = lms @ deutan_Vienot.T
             sRGB = ColorBlindnessDistortion._convert_from_LMS(dichromat_LMS)
             sRGB = torch.clip(sRGB, 0, 1)

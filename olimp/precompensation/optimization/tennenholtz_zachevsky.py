@@ -87,6 +87,9 @@ def tennenholtz_zachevsky(
 ) -> tuple[Tensor]:
     """
     Tennenholtz-Zachevsky Natural Contrast Enhancement color blindness precompensation.
+
+    .. image:: ../../_static/tennenholtz_zachevsky.svg
+       :class: full-width
     """
     from skimage.color import rgb2hsv, hsv2rgb
 
@@ -173,7 +176,7 @@ def _demo():
             ),
         )
 
-    distortion = ColorBlindnessDistortion("PROTAN")
+    distortion = ColorBlindnessDistortion("protan")
     demo(
         "Tennenholtz-Zachevsky",
         demo_tennenholtz_zachevsky,

@@ -29,21 +29,12 @@
     },
     "distortion": [
         {
-            "name": "refraction_datasets",
-            "psf": {
-                "datasets": [
-                    {
-                        "name": "SCA2023",
-                        "subsets": [
-                            "PSFs/Narrow"
-                        ]
-                    }
-                ]
-            }
+            "name": "cvd",
+            "blindness_type": "deutan"
         }
     ],
     "loss_function": {
-        "name": "ColorBlindnessLoss",
-        "type": "deutan"
-    }
+        "name": "ColorBlindnessLoss"
+    },
+    "batch_size": 4
 }
