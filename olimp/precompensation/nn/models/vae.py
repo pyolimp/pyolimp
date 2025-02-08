@@ -9,8 +9,10 @@ from .download_path import download_path, PyOlimpHF
 
 
 class VAE(nn.Module):
-    def __init__(self):
+    def __init__(self, image_size=(512, 512), latent_dimension=128):
         super().__init__()
+        # Image cast size
+        self.image_size = image_size
 
         # Encoder
         self.encoder = nn.Sequential(
@@ -25,16 +27,18 @@ class VAE(nn.Module):
             nn.Conv2d(256, 512, 3, stride=2, padding=1),
             nn.ReLU(),
             nn.Conv2d(512, 1024, 3, stride=2, padding=1),
-            nn.AdaptiveAvgPool2d((8, 8)),
             nn.ReLU(),
         )
 
-        # Assuming input image size is 512x512
-        self.fc_mu = nn.Linear(1024 * 8 * 8, 128)
-        self.fc_logvar = nn.Linear(1024 * 8 * 8, 128)
+        # Latent space dimension
+        self.latent_dimension = latent_dimension
+
+        # Assuming input image size is image_size
+        self.fc_mu = nn.Linear(1024 * 8 * 8, self.latent_dimension)
+        self.fc_logvar = nn.Linear(1024 * 8 * 8, self.latent_dimension)
 
         # Decoder
-        self.decoder_input = nn.Linear(128, 1024 * 8 * 8)
+        self.decoder_input = nn.Linear(self.latent_dimension, 1024 * 8 * 8)
 
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(
@@ -80,6 +84,7 @@ class VAE(nn.Module):
 
     def forward(self, x: Tensor):
         input_size = x.shape[-2:]
+        x = torch.nn.functional.interpolate(x, size=self.image_size, mode='nearest')
         encoded = self.encoder(x)
         encoded = encoded.view(encoded.size(0), -1)
 
