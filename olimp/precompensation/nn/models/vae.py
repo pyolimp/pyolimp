@@ -84,7 +84,9 @@ class VAE(nn.Module):
 
     def forward(self, x: Tensor):
         input_size = x.shape[-2:]
-        x = torch.nn.functional.interpolate(x, size=self.image_size, mode='nearest')
+        x = torch.nn.functional.interpolate(
+            x, size=self.image_size, mode="nearest"
+        )
         encoded = self.encoder(x)
         encoded = encoded.view(encoded.size(0), -1)
 
@@ -96,7 +98,9 @@ class VAE(nn.Module):
         decoded = self.decoder_input(z)
         decoded = decoded.view(-1, 1024, 8, 8)
         decoded = self.decoder(decoded)
-        decoded = torch.nn.functional.interpolate(decoded, size=input_size, mode='nearest')
+        decoded = torch.nn.functional.interpolate(
+            decoded, size=input_size, mode="nearest"
+        )
         return decoded, mu, logvar
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
