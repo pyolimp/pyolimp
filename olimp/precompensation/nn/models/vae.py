@@ -6,6 +6,7 @@ from torch import Tensor
 # import torchvision
 from olimp.processing import fft_conv
 from .download_path import download_path, PyOlimpHF
+import math
 
 
 class VAE(nn.Module):
@@ -14,14 +15,21 @@ class VAE(nn.Module):
        :class: full-width
     """
 
-    def __init__(self, image_size=(512, 512), latent_dimension=128):
+    def __init__(self, input_size=3, output_size=1, image_size=(444, 710), latent_dimension=128):
         super().__init__()
+
         # Image cast size
         self.image_size = image_size
 
+        # Input channels size
+        self.input_size = input_size
+
+        # Output channels size
+        self.output_size = output_size
+
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 32, 3, stride=2, padding=1),
+            nn.Conv2d(self.input_size, 32, 3, stride=2, padding=1),
             nn.ReLU(),
             nn.Conv2d(32, 64, 3, stride=2, padding=1),
             nn.ReLU(),
@@ -39,11 +47,12 @@ class VAE(nn.Module):
         self.latent_dimension = latent_dimension
 
         # Assuming input image size is image_size
-        self.fc_mu = nn.Linear(1024 * 8 * 8, self.latent_dimension)
-        self.fc_logvar = nn.Linear(1024 * 8 * 8, self.latent_dimension)
+        self.latent_shape = (math.ceil(self.image_size[0] / 64), math.ceil(self.image_size[1] / 64))
+        self.fc_mu = nn.Linear(1024 * self.latent_shape[0] * self.latent_shape[1], self.latent_dimension)
+        self.fc_logvar = nn.Linear(1024 * self.latent_shape[0] * self.latent_shape[1], self.latent_dimension)
 
         # Decoder
-        self.decoder_input = nn.Linear(self.latent_dimension, 1024 * 8 * 8)
+        self.decoder_input = nn.Linear(self.latent_dimension, 1024 * self.latent_shape[0] * self.latent_shape[1])
 
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(
@@ -67,7 +76,7 @@ class VAE(nn.Module):
             ),
             nn.ReLU(),
             nn.ConvTranspose2d(
-                32, 1, 3, stride=2, padding=1, output_padding=1
+                32, self.output_size, 3, stride=2, padding=1, output_padding=1
             ),
             nn.Sigmoid(),
         )
@@ -88,10 +97,6 @@ class VAE(nn.Module):
         return mu + eps * std
 
     def forward(self, x: Tensor):
-        input_size = x.shape[-2:]
-        x = torch.nn.functional.interpolate(
-            x, size=self.image_size, mode="nearest"
-        )
         encoded = self.encoder(x)
         encoded = encoded.view(encoded.size(0), -1)
 
@@ -101,11 +106,8 @@ class VAE(nn.Module):
         z = self.reparameterize(mu, logvar)
 
         decoded = self.decoder_input(z)
-        decoded = decoded.view(-1, 1024, 8, 8)
+        decoded = decoded.view(-1, 1024, self.latent_shape[0], self.latent_shape[1])
         decoded = self.decoder(decoded)
-        decoded = torch.nn.functional.interpolate(
-            decoded, size=input_size, mode="nearest"
-        )
         return decoded, mu, logvar
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
