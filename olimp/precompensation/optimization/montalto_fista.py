@@ -71,19 +71,19 @@ def FISTA(
     debug: DebugInfo | None = None,
 ) -> torch.Tensor:
     """
-        Universal FISTA algorithm for minimizing the function F(x) = f(x) + g(x).
+    Universal FISTA algorithm for minimizing the function F(x) = f(x) + g(x).
 
-        :param fx: Function to compute f(x) (smooth part).
-        :param gx: Function to compute g(x) (non-smooth part).
-        :param gradf: Function to compute the gradient of f(x).
-        :param proxg: Proximal operator for g, i.e., proxg(z, lr) ≈ argminₓ { ½∥x - z∥² + lr * g(x) }.
-        :param x0: Initial approximation.
-        :param lr: Step size (learning rate).
-        :param max_iter: Maximum number of iterations.
-        :param gap: Stopping criterion based on the change in the objective function value.
-        :param progress: Callback function for tracking progress (values from 0.0 to 1.0).
-        :param debug: Dictionary for storing debugging information.
-        :return: The computed solution x.
+    :param fx: Function to compute f(x) (smooth part).
+    :param gx: Function to compute g(x) (non-smooth part).
+    :param gradf: Function to compute the gradient of f(x).
+    :param proxg: Proximal operator for g, i.e., proxg(z, lr) ≈ argminₓ { ½∥x - z∥² + lr * g(x) }.
+    :param x0: Initial approximation.
+    :param lr: Step size (learning rate).
+    :param max_iter: Maximum number of iterations.
+    :param gap: Stopping criterion based on the change in the objective function value.
+    :param progress: Callback function for tracking progress (values from 0.0 to 1.0).
+    :param debug: Dictionary for storing debugging information.
+    :return: The computed solution x.
     """
 
     y = x0.clone()
