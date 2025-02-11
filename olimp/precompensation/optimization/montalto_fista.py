@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import NamedTuple, TypedDict, Callable
 import torch
-import torch.nn.functional as F
 from olimp.processing import fft_conv
 
 
@@ -30,34 +29,30 @@ def _tv_prox(
     p2 = torch.zeros_like(z[..., :-1, :])  # Вертикальные разности
     L = 0.25  # Шаг, согласно Beck & Teboulle
 
+    div_p = torch.zeros_like(z)
     for _ in range(num_iter):
+        # Градиент по отношению к первообразной переменной
+        grad = div_p - z / lambda_
+
+        # Обновление двойственных переменных
+        grad_p1 = grad[..., :-1] - grad[..., 1:]
+        grad_p1 *= L
+        p1 += grad_p1
+        p1 = torch.clamp(p1, -lambda_, lambda_, out=p1)
+
+        grad_p2 = grad[..., :-1, :] - grad[..., 1:, :]
+        grad_p2 *= L
+        p2 += grad_p2
+        p2 = torch.clamp(p2, -lambda_, lambda_, out=p2)
+
+        div_p[:] = 0.0
         # Вычисляем дивергенцию p
-        div_p = torch.zeros_like(z)
         # Горизонтальная дивергенция
         div_p[..., :-1] += p1
         div_p[..., 1:] -= p1
         # Вертикальная дивергенция
         div_p[..., :-1, :] += p2
         div_p[..., 1:, :] -= p2
-
-        # Градиент по отношению к первообразной переменной
-        grad = div_p - z / lambda_
-
-        # Обновление двойственных переменных
-        grad_p1 = grad[..., :-1] - grad[..., 1:]
-        p1 = p1 + L * grad_p1
-        p1 = torch.clamp(p1, -lambda_, lambda_)
-
-        grad_p2 = grad[..., :-1, :] - grad[..., 1:, :]
-        p2 = p2 + L * grad_p2
-        p2 = torch.clamp(p2, -lambda_, lambda_)
-
-    # Вычисляем финальную дивергенцию для получения решения
-    div_p = torch.zeros_like(z)
-    div_p[..., :-1] += p1
-    div_p[..., 1:] -= p1
-    div_p[..., :-1, :] += p2
-    div_p[..., 1:, :] -= p2
 
     x = z - lambda_ * div_p
     return x
