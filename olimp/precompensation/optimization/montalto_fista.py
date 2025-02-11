@@ -24,17 +24,17 @@ class MontaltoParameters(NamedTuple):
 def _tv_prox(
     z: torch.Tensor, lambda_: float, num_iter: int = 10
 ) -> torch.Tensor:
-    """Проксимальный оператор для анизотропного TV (метод двойственных переменных)."""
-    p1 = torch.zeros_like(z[..., :-1])  # Горизонтальные разности
-    p2 = torch.zeros_like(z[..., :-1, :])  # Вертикальные разности
-    L = 0.25  # Шаг, согласно Beck & Teboulle
+    """Proximal operator for anisotropic TV (method of dual functions)."""
+    p1 = torch.zeros_like(z[..., :-1])  # Horizontal differences
+    p2 = torch.zeros_like(z[..., :-1, :])  # Vertical differences
+    L = 0.25  # Step, according to Beck & Teboullee
 
     div_p = torch.zeros_like(z)
     for _ in range(num_iter):
-        # Градиент по отношению к первообразной переменной
+        # Gradient with respect to the primitive variable
         grad = div_p - z / lambda_
 
-        # Обновление двойственных переменных
+        # Updating Dual Variables
         grad_p1 = grad[..., :-1] - grad[..., 1:]
         grad_p1 *= L
         p1 += grad_p1
@@ -46,11 +46,11 @@ def _tv_prox(
         p2 = torch.clamp(p2, -lambda_, lambda_, out=p2)
 
         div_p[:] = 0.0
-        # Вычисляем дивергенцию p
-        # Горизонтальная дивергенция
+        # Calculate the divergence p
+        # Horizontal divergence
         div_p[..., :-1] += p1
         div_p[..., 1:] -= p1
-        # Вертикальная дивергенция
+        # Vertical divergence
         div_p[..., :-1, :] += p2
         div_p[..., 1:, :] -= p2
 
@@ -71,20 +71,21 @@ def FISTA(
     debug: DebugInfo | None = None,
 ) -> torch.Tensor:
     """
-    Универсальный алгоритм FISTA для минимизации функции F(x) = f(x) + g(x).
+        Universal FISTA algorithm for minimizing the function F(x) = f(x) + g(x).
 
-    :param fx: Функция для вычисления f(x) (гладкая часть).
-    :param gx: Функция для вычисления g(x) (несглаженная часть).
-    :param gradf: Функция для вычисления градиента f(x).
-    :param proxg: Проксимальный оператор для g, т. е. proxg(z, lr) ≈ argminₓ { ½∥x - z∥² + lr * g(x) }.
-    :param x0: Начальное приближение.
-    :param lr: Шаг (learning rate).
-    :param max_iter: Максимальное число итераций.
-    :param gap: Критерий останова по изменению значения целевой функции.
-    :param progress: Функция обратного вызова для отслеживания прогресса (значения от 0.0 до 1.0).
-    :param debug: Словарь для хранения отладочной информации.
-    :return: Найденное решение x.
+        :param fx: Function to compute f(x) (smooth part).
+        :param gx: Function to compute g(x) (non-smooth part).
+        :param gradf: Function to compute the gradient of f(x).
+        :param proxg: Proximal operator for g, i.e., proxg(z, lr) ≈ argminₓ { ½∥x - z∥² + lr * g(x) }.
+        :param x0: Initial approximation.
+        :param lr: Step size (learning rate).
+        :param max_iter: Maximum number of iterations.
+        :param gap: Stopping criterion based on the change in the objective function value.
+        :param progress: Callback function for tracking progress (values from 0.0 to 1.0).
+        :param debug: Dictionary for storing debugging information.
+        :return: The computed solution x.
     """
+
     y = x0.clone()
     x_prev = x0.clone()
     t = 1.0
@@ -94,19 +95,19 @@ def FISTA(
         if progress is not None:
             progress(i / max_iter)
 
-        # Градиентный шаг: вычисляем grad f в точке y
+        # Gradient step: calculate grad f at point y
         grad = gradf(y)
         z = y - lr * grad
 
-        # Проксимальный шаг: применяем prox оператор для g
+        # Proximal step: apply prox operator to g
         x_new = proxg(z, lr)
 
-        # FISTA-ускорение (момент)
+        # FISTA-acceleration (torque)
         t_new = (1 + (1 + 4 * t**2) ** 0.5) / 2
         gamma = (t - 1) / t_new
         y_new = x_new + gamma * (x_new - x_prev)
 
-        # Вычисляем значение целевой функции для отслеживания
+        # Calculate the value of the objective function for tracking
         loss = fx(x_new) + gx(x_new)
         loss_steps.append(loss.item())
 
@@ -114,11 +115,11 @@ def FISTA(
             debug["loss_step"] = loss_steps
             debug["precomp"] = x_new.clone()
 
-        # Критерий останова
+        # Stopping Criteria
         if i > 0 and abs(loss_steps[-2] - loss_steps[-1]) < gap:
             break
 
-        # Обновляем переменные для следующей итерации
+        # Update variables for the next iteration
         x_prev = x_new.clone()
         y = y_new.clone()
         t = t_new
@@ -135,17 +136,17 @@ def montalto(
     parameters: MontaltoParameters = MontaltoParameters(),
 ) -> torch.Tensor:
     """
-    Деконволюция изображения по методу Монтальто с использованием FISTA и TV-регуляризации.
+    Montalto image deconvolution using FISTA and TV regularization.
     """
     theta = parameters.theta
     tau = parameters.tau
     Lambda = parameters.Lambda
     c_high, c_low = parameters.c_high, parameters.c_low
 
-    # Начальное приближение (масштабированное изображение)
+    # Initial approximation (scaled image)
     t_init = image * (c_high - c_low) + c_low
 
-    # Определяем гладкую часть f(x)
+    # Determine the smooth part of f(x)
     def fx(x: torch.Tensor) -> torch.Tensor:
         e = fft_conv(x, psf) - image
         func_l2 = torch.linalg.norm(e.flatten())
@@ -154,25 +155,25 @@ def montalto(
         )
         return func_l2 + tau * func_borders
 
-    # Градиент f(x) вычисляем с помощью autograd
+    # Gradient f(x) is calculated using autogradd
     def gradf(x: torch.Tensor) -> torch.Tensor:
         x_temp = x.clone().detach().requires_grad_(True)
         f_val = fx(x_temp)
         f_val.backward()
         return x_temp.grad
 
-    # Несглаженная часть g(x) = theta * TV(x)
+    # Unsmoothed part g(x) = theta * TV(x)
     def gx(x: torch.Tensor) -> torch.Tensor:
         tv_h = torch.sum(torch.abs(x[..., :-1] - x[..., 1:]))
         tv_v = torch.sum(torch.abs(x[..., :-1, :] - x[..., 1:, :]))
         return theta * (tv_h + tv_v)
 
-    # Проксимальный оператор для g: решает
+    # Proximal operator for g: solves
     # proxg(z, lr) = argminₓ { ½∥x - z∥² + lr * theta * TV(x) }
     def proxg(z: torch.Tensor, step: float) -> torch.Tensor:
         return _tv_prox(z, step * theta)
 
-    # Запускаем универсальный алгоритм FISTA
+    # Running the universal FISTA algorithm
     x_opt = FISTA(
         fx,
         gx,
