@@ -148,7 +148,7 @@ def montalto(
 
     # Determine the smooth part of f(x)
     def fx(x: torch.Tensor) -> torch.Tensor:
-        e = fft_conv(x, psf) - image
+        e = fft_conv(x, psf) - t_init
         func_l2 = torch.linalg.norm(e.flatten())
         func_borders = torch.sum(
             torch.exp(-Lambda * x) + torch.exp(-Lambda * (1 - x))
