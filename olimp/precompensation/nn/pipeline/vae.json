@@ -7,27 +7,8 @@
             {
                 "name": "SCA2023",
                 "subsets": [
-                    "Images/Real_images/Faces",
-                    "Images/Real_images/Urban"
+                    "Images/Real_images/Faces"
                 ]
-            }
-        ],
-        "transforms": [
-            {
-                "name": "grayscale",
-                "num_output_channels": 1
-            },
-            {
-                "name": "resize",
-                "width": 512,
-                "height": 512
-            },
-            {
-                "name": "float32"
-            },
-            {
-                "name": "divide",
-                "value": 255
             }
         ]
     },
@@ -41,23 +22,6 @@
                         "subsets": [
                             "PSFs/Narrow"
                         ]
-                    }
-                ],
-                "transforms": [
-                    {
-                        "name": "psf_normalize"
-                    },
-                    {
-                        "name": "resize",
-                        "width": 512,
-                        "height": 512
-                    },
-                    {
-                        "name": "grayscale",
-                        "num_output_channels": 1
-                    },
-                    {
-                        "name": "float32"
                     }
                 ]
             }
