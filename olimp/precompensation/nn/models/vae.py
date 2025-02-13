@@ -6,7 +6,6 @@ from torch import Tensor
 # import torchvision
 from olimp.processing import fft_conv
 from .download_path import download_path, PyOlimpHF
-import math
 
 
 class VAE(nn.Module):
@@ -47,7 +46,9 @@ class VAE(nn.Module):
         self.latent_dimension = latent_dimension
 
         # Assuming input image size is image_size
-        self.latent_shape = (math.ceil(self.image_size[0] / 64), math.ceil(self.image_size[1] / 64))
+        output_sizes = torch.tensor([self.image_size[0] / 64, self.image_size[1] / 64])
+        self.latent_shape = tuple(torch.ceil(output_sizes).int().tolist())
+
         self.fc_mu = nn.Linear(1024 * self.latent_shape[0] * self.latent_shape[1], self.latent_dimension)
         self.fc_logvar = nn.Linear(1024 * self.latent_shape[0] * self.latent_shape[1], self.latent_dimension)
 
@@ -97,6 +98,7 @@ class VAE(nn.Module):
         return mu + eps * std
 
     def forward(self, x: Tensor):
+        target_size = x.shape[-2:]
         encoded = self.encoder(x)
         encoded = encoded.view(encoded.size(0), -1)
 
@@ -108,6 +110,7 @@ class VAE(nn.Module):
         decoded = self.decoder_input(z)
         decoded = decoded.view(-1, 1024, self.latent_shape[0], self.latent_shape[1])
         decoded = self.decoder(decoded)
+        decoded = torch.nn.functional.interpolate(decoded, size=target_size, mode='bilinear', align_corners=False)
         return decoded, mu, logvar
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:

@@ -14,13 +14,13 @@
         ],
         "transforms": [
             {
-                "name": "grayscale",
-                "num_output_channels": 1
-            },
-            {
                 "name": "resize",
                 "width": 710,
                 "height": 444
+            },
+            {
+                "name": "grayscale",
+                "num_output_channels": 1
             },
             {
                 "name": "float32"
@@ -45,19 +45,12 @@
                 ],
                 "transforms": [
                     {
-                        "name": "psf_normalize"
-                    },
-                    {
                         "name": "resize",
                         "width": 710,
                         "height": 444
                     },
                     {
-                        "name": "grayscale",
-                        "num_output_channels": 1
-                    },
-                    {
-                        "name": "float32"
+                        "name": "psf_normalize"
                     }
                 ]
             }
