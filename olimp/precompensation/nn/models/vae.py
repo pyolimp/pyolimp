@@ -14,7 +14,7 @@ class VAE(nn.Module):
        :class: full-width
     """
 
-    def __init__(self, input_size=3, output_size=1, image_size=(444, 710), latent_dimension=128):
+    def __init__(self, input_size=3, output_size=1, image_size=(512, 512), latent_dimension=128):
         super().__init__()
 
         # Image cast size

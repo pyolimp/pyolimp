@@ -50,7 +50,7 @@ def demo(
         psf_info = np.load(root / "tests/test_data/psf.npz")
         progress.advance(task_l)
         img = torchvision.io.read_image(
-            root / "tests/test_data/horse_long.jpg"
+            root / "tests/test_data/horse.jpg"
         )
         progress.advance(task_l)
         img = img / 255.0
