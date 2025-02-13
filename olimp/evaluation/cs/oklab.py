@@ -42,11 +42,19 @@ LMS_TO_LAB_INV = torch.tensor(
 
 class Oklab:
     def from_XYZ(self, color: Tensor) -> Tensor:
-        lms = torch.tensordot(color, XYZ_TO_LMS, dims=1)
+        lms = torch.tensordot(
+            color, XYZ_TO_LMS.to(device=color.device), dims=1
+        )
         lms_cubic_root = torch.pow(lms, 1 / 3)
-        return torch.tensordot(lms_cubic_root, LMS_TO_LAB, dims=1)
+        return torch.tensordot(
+            lms_cubic_root, LMS_TO_LAB.to(device=color.device), dims=1
+        )
 
     def to_XYZ(self, color: Tensor) -> Tensor:
-        lab = torch.tensordot(color, LMS_TO_LAB_INV, dims=1)
+        lab = torch.tensordot(
+            color, LMS_TO_LAB_INV.to(device=color.device), dims=1
+        )
         lab_cube = lab**3.0
-        return torch.tensordot(lab_cube, XYZ_TO_LMS_INV, dims=1)
+        return torch.tensordot(
+            lab_cube, XYZ_TO_LMS_INV.to(device=color.device), dims=1
+        )

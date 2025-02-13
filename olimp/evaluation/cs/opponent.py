@@ -27,7 +27,9 @@ class Opponent:
     )
 
     def from_XYZ(self, color: Tensor) -> Tensor:
-        return torch.tensordot(color, self.M, dims=1)
+        return torch.tensordot(color, self.M.to(device=color.device), dims=1)
 
     def to_XYZ(self, color: Tensor) -> Tensor:
-        return torch.tensordot(color, self.Minv, dims=1)
+        return torch.tensordot(
+            color, self.Minv.to(device=color.device), dims=1
+        )
