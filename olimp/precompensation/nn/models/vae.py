@@ -14,7 +14,13 @@ class VAE(nn.Module):
        :class: full-width
     """
 
-    def __init__(self, input_size=3, output_size=1, image_size=(512, 512), latent_dimension=128):
+    def __init__(
+        self,
+        input_size=3,
+        output_size=1,
+        image_size=(512, 512),
+        latent_dimension=128,
+    ):
         super().__init__()
 
         # Image cast size
@@ -46,14 +52,25 @@ class VAE(nn.Module):
         self.latent_dimension = latent_dimension
 
         # Assuming input image size is image_size
-        output_sizes = torch.tensor([self.image_size[0] / 64, self.image_size[1] / 64])
+        output_sizes = torch.tensor(
+            [self.image_size[0] / 64, self.image_size[1] / 64]
+        )
         self.latent_shape = tuple(torch.ceil(output_sizes).int().tolist())
 
-        self.fc_mu = nn.Linear(1024 * self.latent_shape[0] * self.latent_shape[1], self.latent_dimension)
-        self.fc_logvar = nn.Linear(1024 * self.latent_shape[0] * self.latent_shape[1], self.latent_dimension)
+        self.fc_mu = nn.Linear(
+            1024 * self.latent_shape[0] * self.latent_shape[1],
+            self.latent_dimension,
+        )
+        self.fc_logvar = nn.Linear(
+            1024 * self.latent_shape[0] * self.latent_shape[1],
+            self.latent_dimension,
+        )
 
         # Decoder
-        self.decoder_input = nn.Linear(self.latent_dimension, 1024 * self.latent_shape[0] * self.latent_shape[1])
+        self.decoder_input = nn.Linear(
+            self.latent_dimension,
+            1024 * self.latent_shape[0] * self.latent_shape[1],
+        )
 
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(
@@ -108,9 +125,13 @@ class VAE(nn.Module):
         z = self.reparameterize(mu, logvar)
 
         decoded = self.decoder_input(z)
-        decoded = decoded.view(-1, 1024, self.latent_shape[0], self.latent_shape[1])
+        decoded = decoded.view(
+            -1, 1024, self.latent_shape[0], self.latent_shape[1]
+        )
         decoded = self.decoder(decoded)
-        decoded = torch.nn.functional.interpolate(decoded, size=target_size, mode='bilinear', align_corners=False)
+        decoded = torch.nn.functional.interpolate(
+            decoded, size=target_size, mode="bilinear", align_corners=False
+        )
         return decoded, mu, logvar
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
