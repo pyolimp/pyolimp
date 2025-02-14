@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 from torchvision.transforms.v2 import Normalize
 from torchvision.transforms import Compose
+from ..cs import D65 as D65_sRGB
 from ..cs.cielab import CIELAB
 from ..cs.srgb import sRGB
 from .ssim import ContrastLoss, SSIMLoss
@@ -123,33 +124,18 @@ CVD_MATRIX = {
 
 def _srgb2lab(srgb: Tensor) -> Tensor:
     srgb = (srgb / 255.0).clip(min=0, max=1.0)
-    D65_sRGB = torch.tensor([0.95047, 1.0, 1.08883])
-    return (
-        CIELAB(D65_sRGB)
-        .from_XYZ(sRGB().to_XYZ(srgb.permute(0, 2, 3, 1)))
-        .permute(0, 3, 1, 2)
-    )
+    return CIELAB(D65_sRGB).from_XYZ(sRGB().to_XYZ(srgb))
 
 
 def _lab2srgb(lab: Tensor) -> Tensor:
-    D65_sRGB = torch.tensor([0.95047, 1.0, 1.08883])
     return (
-        sRGB()
-        .from_XYZ(
-            CIELAB(D65_sRGB)
-            .to_XYZ(lab.permute(0, 2, 3, 1))
-            .clip(min=0.0, max=1.0)
-        )
-        .permute(0, 3, 1, 2)
+        sRGB().from_XYZ(CIELAB(D65_sRGB).to_XYZ(lab).clip(min=0.0, max=1.0))
     ) * 255
 
 
 def _global_contrast_img_l1(
     img: Tensor, img2: Tensor, points_number: int = 5
 ) -> tuple[Tensor, Tensor]:
-    img = img.permute(0, 2, 3, 1)
-    img2 = img2.permute(0, 2, 3, 1)
-
     hight, width = img.shape[1], img.shape[2]
 
     rand_hight = torch.randint(0, hight, (points_number,))

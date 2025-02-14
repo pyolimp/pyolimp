@@ -1,6 +1,8 @@
 from __future__ import annotations
 from unittest import TestCase
-from olimp.evaluation.loss import ms_ssim, RMS, CD
+from olimp.evaluation.loss.chromaticity_difference import Lab as CD
+from olimp.evaluation.loss.rms import RMS
+from olimp.evaluation.loss.piq import MultiScaleSSIMLoss
 import torch
 
 
@@ -11,7 +13,7 @@ class TestMSSSIM(TestCase):
         target = torch.zeros((1, 3, 256, 256))
 
         # Calculate the MS-SSIM loss
-        loss = ms_ssim(pred, target)
+        loss = MultiScaleSSIMLoss()(pred, target)
 
         # Assert that the loss is zero
         self.assertEqual(loss, 0)
@@ -22,7 +24,7 @@ class TestMSSSIM(TestCase):
         target = torch.ones((1, 3, 256, 256))
 
         # Calculate the MS-SSIM loss
-        loss = ms_ssim(pred, target)
+        loss = MultiScaleSSIMLoss()(pred, target)
 
         # Assert that the loss is non-zero
         self.assertNotEqual(loss, 0)
@@ -35,7 +37,7 @@ class TestRMS(TestCase):
         target = torch.zeros((1, 3, 256, 256))
 
         # Calculate the RMS loss
-        loss = RMS(pred, target, "lab")
+        loss = RMS("lab")(pred, target)
 
         # Assert that the loss is zero
         self.assertEqual(loss, 0)
@@ -48,7 +50,7 @@ class TestRMS(TestCase):
         target = torch.rand(1, 3, 256, 256, generator=rng)
 
         # Calculate the RMS loss
-        loss = RMS(pred, target, "lab")
+        loss = RMS("lab")(pred, target)
 
         # Assert that the loss is non-zero
         self.assertNotEqual(loss, 0)
@@ -61,7 +63,7 @@ class TestCD(TestCase):
         target = torch.zeros((1, 3, 256, 256))
 
         # Calculate the CD loss
-        loss = CD(pred, target, "lab")
+        loss = CD()(pred, target)
 
         # Assert that the loss is zero
         self.assertEqual(loss, 0)
@@ -70,9 +72,10 @@ class TestCD(TestCase):
         # Create an empty zero image and an image with all ones
         pred = torch.zeros((1, 3, 256, 256))
         target = torch.ones((1, 3, 256, 256))
+        target[:, 0, 0:32, 0:32] = 0.5
 
         # Calculate the CD loss
-        loss = CD(pred, target, "lab")
+        loss = CD()(pred, target)
 
         # Assert that the loss is non-zero
         self.assertNotEqual(loss, 0)

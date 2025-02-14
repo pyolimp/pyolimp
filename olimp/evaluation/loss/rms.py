@@ -5,6 +5,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
+from ..cs import D65 as D65_sRGB
 from ..cs.srgb import sRGB
 from ..cs.cielab import CIELAB
 from ..cs.prolab import ProLab
@@ -17,7 +18,7 @@ def generate_random_neighbors(
     step: int = 10,
     sigma_rate: float = 0.25,
 ) -> Tensor:
-    height, width, _ = img1.shape
+    _channels, height, width = img1.shape
     dst_height, dst_width = height // step, width // step
 
     sigma = torch.tensor([height * sigma_rate, width * sigma_rate])
@@ -55,21 +56,19 @@ def projective_transformation(points: Tensor, proj_matrix: Tensor) -> Tensor:
 
 
 def srgb2prolab(srgb: Tensor) -> Tensor:
-    D65_sRGB = torch.tensor([0.95047, 1.0, 1.08883])
     return ProLab(D65_sRGB).from_XYZ(sRGB().to_XYZ(srgb))
 
 
 def srgb2lab(srgb: Tensor) -> Tensor:
-    D65_sRGB = torch.tensor([0.95047, 1.0, 1.08883])
     return CIELAB(D65_sRGB).from_XYZ(sRGB().to_XYZ(srgb))
 
 
 def pixel_contrasts(
     image: Tensor, pixel: tuple[int, int], neighbors: tuple[Tensor, ...]
 ) -> Tensor:
-    pixel_value = image[pixel]
-    neighbor_values = image[neighbors]
-    contrasts = torch.norm(pixel_value - neighbor_values, dim=1)
+    pixel_value = image[:, pixel[0], pixel[1]]
+    neighbor_values = image[:, neighbors[0], neighbors[1]]
+    contrasts = torch.norm(pixel_value[:, None] - neighbor_values, dim=1)
     return contrasts
 
 
@@ -81,7 +80,7 @@ def RMS_map(
     step: int = 10,
     sigma_rate: float = 0.25,
 ) -> Tensor:
-    height, width, _ = img1.shape
+    _channels, height, width = img1.shape
     dst_height, dst_width = height // step, width // step
 
     neighbors = generate_random_neighbors(
@@ -149,8 +148,8 @@ class RMS(Module):
         for idx in range(img1.shape[0]):
             rms_maps[idx] = torch.mean(
                 RMS_map(
-                    img1[idx].permute(1, 2, 0),
-                    img2[idx].permute(1, 2, 0),
+                    img1[idx],
+                    img2[idx],
                     self._color_space,
                     self._n_pixel_neighbors,
                     self._step,
