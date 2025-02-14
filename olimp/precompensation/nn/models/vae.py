@@ -2,6 +2,7 @@ from __future__ import annotations
 import torch
 from torch import nn
 from torch import Tensor
+import math
 
 # import torchvision
 from olimp.processing import fft_conv
@@ -16,8 +17,8 @@ class VAE(nn.Module):
 
     def __init__(
         self,
-        input_size=3,
-        output_size=1,
+        input_channel=3,
+        output_channel=1,
         image_size=(512, 512),
         latent_dimension=128,
     ):
@@ -26,15 +27,9 @@ class VAE(nn.Module):
         # Image cast size
         self.image_size = image_size
 
-        # Input channels size
-        self.input_size = input_size
-
-        # Output channels size
-        self.output_size = output_size
-
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Conv2d(self.input_size, 32, 3, stride=2, padding=1),
+            nn.Conv2d(input_channel, 32, 3, stride=2, padding=1),
             nn.ReLU(),
             nn.Conv2d(32, 64, 3, stride=2, padding=1),
             nn.ReLU(),
@@ -48,29 +43,15 @@ class VAE(nn.Module):
             nn.ReLU(),
         )
 
-        # Latent space dimension
-        self.latent_dimension = latent_dimension
-
         # Assuming input image size is image_size
-        output_sizes = torch.tensor(
-            [self.image_size[0] / 64, self.image_size[1] / 64]
-        )
-        self.latent_shape = tuple(torch.ceil(output_sizes).int().tolist())
+        w, h = self.image_size[0] / 64, self.image_size[1] / 64
+        self.latent_shape = (math.ceil(w), math.ceil(h))
 
-        self.fc_mu = nn.Linear(
-            1024 * self.latent_shape[0] * self.latent_shape[1],
-            self.latent_dimension,
-        )
-        self.fc_logvar = nn.Linear(
-            1024 * self.latent_shape[0] * self.latent_shape[1],
-            self.latent_dimension,
-        )
+        self.fc_mu = nn.Linear(1024 * self.latent_shape[0] * self.latent_shape[1], latent_dimension)
+        self.fc_logvar = nn.Linear(1024 * self.latent_shape[0] * self.latent_shape[1], latent_dimension)
 
         # Decoder
-        self.decoder_input = nn.Linear(
-            self.latent_dimension,
-            1024 * self.latent_shape[0] * self.latent_shape[1],
-        )
+        self.decoder_input = nn.Linear(latent_dimension, 1024 * self.latent_shape[0] * self.latent_shape[1])
 
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(
@@ -94,7 +75,7 @@ class VAE(nn.Module):
             ),
             nn.ReLU(),
             nn.ConvTranspose2d(
-                32, self.output_size, 3, stride=2, padding=1, output_padding=1
+                32, output_channel, 3, stride=2, padding=1, output_padding=1
             ),
             nn.Sigmoid(),
         )
@@ -115,7 +96,6 @@ class VAE(nn.Module):
         return mu + eps * std
 
     def forward(self, x: Tensor):
-        target_size = x.shape[-2:]
         encoded = self.encoder(x)
         encoded = encoded.view(encoded.size(0), -1)
 
@@ -130,7 +110,7 @@ class VAE(nn.Module):
         )
         decoded = self.decoder(decoded)
         decoded = torch.nn.functional.interpolate(
-            decoded, size=target_size, mode="bilinear", align_corners=False
+            decoded, size=self.image_size, mode="bilinear", align_corners=False
         )
         return decoded, mu, logvar
 
