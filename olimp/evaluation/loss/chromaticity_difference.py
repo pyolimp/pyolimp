@@ -4,18 +4,17 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
+from ..cs import D65 as D65_sRGB
 from ..cs.srgb import sRGB
 from ..cs.cielab import CIELAB
-from ..cs.prolab import ProLab
+from ..cs.prolab import ProLab as ProLabCS
 
 
 def srgb2prolab(srgb: Tensor) -> Tensor:
-    D65_sRGB = torch.tensor([0.95047, 1.0, 1.08883])
-    return ProLab(D65_sRGB).from_XYZ(sRGB().to_XYZ(srgb))
+    return ProLabCS(D65_sRGB).from_XYZ(sRGB().to_XYZ(srgb))
 
 
 def srgb2lab(srgb: Tensor) -> Tensor:
-    D65_sRGB = torch.tensor([0.95047, 1.0, 1.08883])
     return CIELAB(D65_sRGB).from_XYZ(sRGB().to_XYZ(srgb))
 
 
@@ -33,17 +32,17 @@ def CD_map(
 
     elif color_space == "prolab":
         lab1 = srgb2prolab(img1)
-        lab1[:, :, 0][lab1[:, :, 0] == 0] = 1
-        lab1[:, :, 1] = lab1[:, :, 1] / lab1[:, :, 0]
-        lab1[:, :, 2] = lab1[:, :, 2] / lab1[:, :, 0]
+        lab1[0, :, :][lab1[0, :, :] == 0] = 1.0
+        lab1[1, :, :] = lab1[1, :, :] / lab1[0, :, :]
+        lab1[2, :, :] = lab1[2, :, :] / lab1[0, :, :]
 
         lab2 = srgb2prolab(img2)
-        lab2[:, :, 0][lab2[:, :, 0] == 0] = 1
-        lab2[:, :, 1] = lab2[:, :, 1] / lab2[:, :, 0]
-        lab2[:, :, 2] = lab2[:, :, 2] / lab2[:, :, 0]
+        lab2[0, :, :][lab2[0, :, :] == 0] = 1.0
+        lab2[1, :, :] = lab2[1, :, :] / lab2[0, :, :]
+        lab2[2, :, :] = lab2[2, :, :] / lab2[0, :, :]
 
     diff = lab1 - lab2
-    weights = torch.tensor([sqrt(lightness_weight), 1, 1])
+    weights = torch.tensor((sqrt(lightness_weight), 1, 1))[:, None, None]
     weighted_diff = diff * weights
     chromatic_diff = torch.linalg.norm(weighted_diff, dim=2)
     return chromatic_diff
