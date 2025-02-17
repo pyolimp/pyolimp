@@ -2,11 +2,12 @@ from __future__ import annotations
 from pathlib import Path
 import matplotlib.pyplot as plt
 from importlib import import_module
+from argparse import ArgumentParser
 
 
-def save_demo(root: Path, module: str, name: str) -> None:
+def save_demo(root: Path, module: str, name: str, force: bool) -> None:
     path = root / f"{name}.svg"
-    if path.exists():
+    if path.exists() and not force:
         print(f"skipping {path}")
         return
     module = import_module(module)
@@ -16,6 +17,9 @@ def save_demo(root: Path, module: str, name: str) -> None:
 
 
 def main() -> None:
+    parser = ArgumentParser()
+    parser.add_argument("--force", action="store_true")
+    args = parser.parse_args()
     root = Path(__file__).parent / "source" / "_static"
     root.mkdir(exist_ok=True, parents=True)
 
@@ -43,7 +47,7 @@ def main() -> None:
             "global_tone_mapping",
         ),
     ):
-        save_demo(root, module, name)
+        save_demo(root, module, name, args.force)
 
 
 if __name__ == "__main__":
