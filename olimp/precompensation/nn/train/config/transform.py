@@ -80,7 +80,7 @@ class NormalizeTransform(Transformation):
     def __init__(self, mean: list[float], std: list[float]):
         from torchvision.transforms.v2 import Normalize
 
-        self._normalize = Normalize(mean, std)
+        self._normalize = Normalize(mean, std, inplace=True)
 
     def __call__(self, datum: Datum, random: Random):
         assert datum.source is not None
