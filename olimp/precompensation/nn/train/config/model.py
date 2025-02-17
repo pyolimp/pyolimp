@@ -73,13 +73,21 @@ class UNET_b0(ModelConfig):
             "~/.weights/unet-efficientnet-b0.pth",
         ],
     )
+    in_channels: int = 3
+    out_channels: int = 1
 
     def get_instance(self):
         from ...models.unet_efficient_b0 import PrecompensationUNETB0
 
         if self.path is not None:
-            return PrecompensationUNETB0.from_path(path=self.path)
-        return PrecompensationUNETB0()
+            return PrecompensationUNETB0.from_path(
+                path=self.path,
+                in_channels=self.in_channels,
+                out_channels=self.out_channels,
+            )
+        return PrecompensationUNETB0(
+            in_channels=self.in_channels, out_channels=self.out_channels
+        )
 
 
 class PrecompensationUSRNet(ModelConfig):
