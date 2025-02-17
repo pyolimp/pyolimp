@@ -46,6 +46,7 @@ def main() -> None:
             "olimp.precompensation.optimization.global_tone_mapping",
             "global_tone_mapping",
         ),
+        ("olimp.precompensation.optimization.ji", "ji"),
     ):
         save_demo(root, module, name, args.force)
 
