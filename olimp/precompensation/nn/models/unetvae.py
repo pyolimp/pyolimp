@@ -57,18 +57,21 @@ class UNETVAE(nn.Module):
         # Assuming input image size is image_size
         w, h = self.image_size[0] / 64, self.image_size[1] / 64
         self.latent_shape = (math.ceil(w), math.ceil(h))
+        latent_size_multiplication = (
+            self.latent_shape[0] * self.latent_shape[1]
+        )
 
         self.fc_mu = nn.Linear(
-            1024 * self.latent_shape[0] * self.latent_shape[1],
+            1024 * latent_size_multiplication,
             latent_dimension,
         )
         self.fc_logvar = nn.Linear(
-            1024 * self.latent_shape[0] * self.latent_shape[1],
+            1024 * latent_size_multiplication,
             latent_dimension,
         )
         self.decoder_input = nn.Linear(
             latent_dimension,
-            1024 * self.latent_shape[0] * self.latent_shape[1],
+            1024 * latent_size_multiplication,
         )
 
         # Decoder
