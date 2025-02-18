@@ -141,19 +141,23 @@ class TrainStatistics:
         self.is_best_validation = True
         self._patience = patience
 
-    def __call__(self, train_loss: float, validation_loss: float):
-        self.is_best_validation = validation_loss < self.best_validation_loss
-        if self.is_best_validation:
-            self.best_validation_loss = validation_loss
-            self.epochs_no_improve = 0
-        else:
-            self.epochs_no_improve += 1
-
-        self.is_best_train = train_loss < self.best_train_loss
+    def __call__(self, train_loss: float, validation_loss: float | None):
+        is_best = self.is_best_train = train_loss < self.best_train_loss
         if self.is_best_train:
             self.best_train_loss = train_loss
 
-        self.train_loss
+        if validation_loss is not None:
+            is_best = self.is_best_validation = (
+                validation_loss < self.best_validation_loss
+            )
+            self.best_validation_loss = validation_loss
+        else:
+            self.is_best_validation = False
+
+        if is_best:
+            self.epochs_no_improve = 0
+        else:
+            self.epochs_no_improve += 1
 
     def should_stop_early(self) -> str | None:
         if self.epochs_no_improve >= self._patience:
@@ -207,11 +211,12 @@ def _train_loop(
 
         # validation
         model.eval()
-        validation_loss = 0.0
+        validation_loss: float | None = None
         if dls_validation is not None:
             validating_task = p.add_task(
                 "Validating...", total=len(dls_validation[0]), loss="?"
             )
+            validation_loss = 0.0
             with torch.inference_mode():
                 for loss in p.track(
                     _evaluate_dataset(
