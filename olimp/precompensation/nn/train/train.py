@@ -24,6 +24,7 @@ with Progress() as ci:
     ci.update(load_task, completed=75)
     from torch.utils.data import Dataset, DataLoader
     from .torch_issue_135990 import RandomSamplerCPU as RandomSampler
+    from .log_table import LogTable
     from pathlib import Path
 
     ci.update(load_task, completed=95)
@@ -179,6 +180,11 @@ def _train_loop(
 ) -> None:
     train_statistics = TrainStatistics(patience=patience)
     model_name = type(model).__name__
+    header = [("#", len(str(epochs)) + 2), ("Train", 20)]
+    if dls_validation is not None:
+        header.append(("Validation", 20))
+    log_table = LogTable(header)
+    p.console.log(log_table.header())
 
     for epoch in p.track(range(epochs), task_id=epoch_task):
         model.train()
@@ -230,6 +236,9 @@ def _train_loop(
                     validation_loss += loss.item()
                 validation_loss /= len(dls_validation[0])
                 p.remove_task(validating_task)
+            p.console.log(log_table.row([epoch, train_loss, validation_loss]))
+        else:
+            p.console.log(log_table.row([epoch, train_loss]))
 
         p.remove_task(training_task)
 
@@ -254,8 +263,10 @@ def _train_loop(
             best_validation_path.hardlink_to(cur_epoch_path)
 
         if reason := train_statistics.should_stop_early():
+            p.console.log(log_table.end())
             p.console.log(f"Stop early: {reason}")
-            break
+            return
+    p.console.log(log_table.end())
 
 
 def _as_dataloaders(
