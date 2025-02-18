@@ -157,7 +157,7 @@ class TrainStatistics:
 
     def should_stop_early(self) -> str | None:
         if self.epochs_no_improve >= self._patience:
-            return "no improvements for {self.epochs_no_improve} epochs"
+            return f"no improvements for {self.epochs_no_improve} epochs"
 
 
 def _train_loop(
