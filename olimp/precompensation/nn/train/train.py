@@ -369,6 +369,7 @@ def train(
         train_frac=train_frac,
         validation_frac=validation_frac,
     )
+    ci.log(f"{sample_size=} " f"{train_frac=} " f"{validation_frac=}")
 
     def _log_size(name: str, dls: list[DataLoader[Any]] | None):
         if dls is None:
