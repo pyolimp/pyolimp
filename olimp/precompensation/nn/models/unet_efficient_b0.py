@@ -20,14 +20,14 @@ class PrecompensationUNETB0(smp.Unet):
         encoder_wights: str = "imagenet",
         activation: str = "sigmoid",
         in_channels: int = 3,
-        classes: int = 1,
+        out_channels: int = 1,
     ) -> None:
         super().__init__(
             encoder_name=encoder_name,
             encoder_weights=encoder_wights,
             activation=activation,
             in_channels=in_channels,
-            classes=classes,
+            classes=out_channels,
         )
 
     @classmethod
