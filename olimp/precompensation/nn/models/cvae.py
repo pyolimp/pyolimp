@@ -72,7 +72,7 @@ class CVAE(nn.Module):
             nn.Sigmoid(),
         )
 
-    def reparameterize(self, mu, logvar):
+    def reparameterize(self, mu: Tensor, logvar: Tensor):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
