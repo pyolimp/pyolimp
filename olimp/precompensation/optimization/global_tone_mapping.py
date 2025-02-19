@@ -127,9 +127,9 @@ def precompensation_global_tone_mapping(
         if len(history_loss) > 50:
             max_change = max(history_loss) - min(history_loss)
             if max_change < params.gap:
-                print(
-                    f"Optimization stopped at iteration {i} due to low average loss change."
-                )
+                # print(
+                #     f"Optimization stopped at iteration {i} due to low average loss change."
+                # )
                 break
             history_loss.pop(0)
 

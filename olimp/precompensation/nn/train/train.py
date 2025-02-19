@@ -24,6 +24,7 @@ with Progress() as ci:
     ci.update(load_task, completed=75)
     from torch.utils.data import Dataset, DataLoader
     from .torch_issue_135990 import RandomSamplerCPU as RandomSampler
+    from .log_table import LogTable
     from pathlib import Path
 
     ci.update(load_task, completed=95)
@@ -141,23 +142,27 @@ class TrainStatistics:
         self.is_best_validation = True
         self._patience = patience
 
-    def __call__(self, train_loss: float, validation_loss: float):
-        self.is_best_validation = validation_loss < self.best_validation_loss
-        if self.is_best_validation:
+    def __call__(self, train_loss: float, validation_loss: float | None):
+        is_best = self.is_best_train = train_loss < self.best_train_loss
+        if self.is_best_train:
+            self.best_train_loss = train_loss
+
+        if validation_loss is not None:
+            is_best = self.is_best_validation = (
+                validation_loss < self.best_validation_loss
+            )
             self.best_validation_loss = validation_loss
+        else:
+            self.is_best_validation = False
+
+        if is_best:
             self.epochs_no_improve = 0
         else:
             self.epochs_no_improve += 1
 
-        self.is_best_train = train_loss < self.best_train_loss
-        if self.is_best_train:
-            self.best_train_loss = train_loss
-
-        self.train_loss
-
     def should_stop_early(self) -> str | None:
         if self.epochs_no_improve >= self._patience:
-            return "no improvements for {self.epochs_no_improve} epochs"
+            return f"no improvements for {self.epochs_no_improve} epochs"
 
 
 def _train_loop(
@@ -175,6 +180,11 @@ def _train_loop(
 ) -> None:
     train_statistics = TrainStatistics(patience=patience)
     model_name = type(model).__name__
+    header = [("#", len(str(epochs)) + 2), ("Train", 20)]
+    if dls_validation is not None:
+        header.append(("Validation", 20))
+    log_table = LogTable(header)
+    p.console.log(log_table.header())
 
     for epoch in p.track(range(epochs), task_id=epoch_task):
         model.train()
@@ -207,11 +217,12 @@ def _train_loop(
 
         # validation
         model.eval()
-        validation_loss = 0.0
+        validation_loss: float | None = None
         if dls_validation is not None:
             validating_task = p.add_task(
                 "Validating...", total=len(dls_validation[0]), loss="?"
             )
+            validation_loss = 0.0
             with torch.inference_mode():
                 for loss in p.track(
                     _evaluate_dataset(
@@ -225,6 +236,9 @@ def _train_loop(
                     validation_loss += loss.item()
                 validation_loss /= len(dls_validation[0])
                 p.remove_task(validating_task)
+            p.console.log(log_table.row([epoch, train_loss, validation_loss]))
+        else:
+            p.console.log(log_table.row([epoch, train_loss]))
 
         p.remove_task(training_task)
 
@@ -249,8 +263,10 @@ def _train_loop(
             best_validation_path.hardlink_to(cur_epoch_path)
 
         if reason := train_statistics.should_stop_early():
+            p.console.log(log_table.end())
             p.console.log(f"Stop early: {reason}")
-            break
+            return
+    p.console.log(log_table.end())
 
 
 def _as_dataloaders(
@@ -353,6 +369,7 @@ def train(
         train_frac=train_frac,
         validation_frac=validation_frac,
     )
+    ci.log(f"{sample_size=} " f"{train_frac=} " f"{validation_frac=}")
 
     def _log_size(name: str, dls: list[DataLoader[Any]] | None):
         if dls is None:
@@ -465,7 +482,7 @@ def main():
         device_str = "cpu"
         ci.log("Current device: [bold red]CPU")
 
-    with torch.device(device_str):
+    with torch.device(device_str) as device:
         with Progress(disable=args.no_progress) as progress:
 
             def progress_callback(description: str, done: float):
@@ -474,6 +491,7 @@ def main():
             task1 = progress.add_task("Dataset...", total=1.0)
             distortions_group = config.load_distortions(progress_callback)
             model = config.model.get_instance()
+            model = model.to(device)  # type: ignore
             loss_function = config.loss_function.load(model)
 
             img_dataset = config.img.load(progress_callback)

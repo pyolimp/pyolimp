@@ -22,18 +22,18 @@ def finv(t: Tensor):
 
 class CIELAB:
     A = torch.tensor(
-        [
-            [0.0, 125 / 29, 0.0],
-            [1.0, -125 / 29, 50 / 29],
-            [0.0, 0.0, -50 / 29],
-        ]
+        (
+            (0.0, 1.0, 0.0),
+            (125 / 29, -125 / 29, 0.0),
+            (0.0, 50 / 29, -50 / 29),
+        )
     )
     Ainv = torch.tensor(
-        [
-            [1.0, 1.0, 1.0],
-            [29 / 125, 0.0, 0.0],
-            [0.0, 0.0, -116 / 200],
-        ]
+        (
+            (1.0, 29 / 125, 0.0),
+            (1.0, 0.0, 0.0),
+            (1.0, 0.0, -116 / 200),
+        )
     )
 
     _illuminant_xyz: Tensor
@@ -43,18 +43,24 @@ class CIELAB:
         self._illuminant_xyz = illuminant_xyz
 
     def from_XYZ(self, color: Tensor):
+        illuminant_xyz = self._illuminant_xyz.view(
+            3, *((1,) * (color.dim() - 1))
+        )
         return torch.tensordot(
-            f(color / self._illuminant_xyz),
             self.A.to(device=color.device),
+            f(color / illuminant_xyz),
             dims=1,
         )
 
     def to_XYZ(self, color: Tensor):
+        illuminant_xyz = self._illuminant_xyz.view(
+            3, *((1,) * (color.dim() - 1))
+        )
         return (
             finv(
                 torch.tensordot(
-                    color, self.Ainv.to(device=color.device), dims=1
+                    self.Ainv.to(device=color.device), color, dims=1
                 )
             )
-            * self._illuminant_xyz
+            * illuminant_xyz
         )
