@@ -2,6 +2,7 @@ from __future__ import annotations
 import torch
 from torch import nn
 from torch import Tensor
+from typing import Tuple
 import math
 
 # import torchvision
@@ -17,10 +18,10 @@ class VAE(nn.Module):
 
     def __init__(
         self,
-        input_channel=3,
-        output_channel=1,
-        image_size=(512, 512),
-        latent_dimension=128,
+        input_channel: int = 3,
+        output_channel: int = 1,
+        image_size: Tuple[int, int] = (512, 512),
+        latent_dimension: Tuple[int, int] = 128,
     ):
         super().__init__()
 
