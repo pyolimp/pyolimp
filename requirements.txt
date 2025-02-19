@@ -10,4 +10,4 @@ piq==0.8.0
 json5==0.9.24
 pydantic==2.6.4
 segmentation_models_pytorch==0.3.4
-ballfish==0.3.0
+ballfish==0.3.2
