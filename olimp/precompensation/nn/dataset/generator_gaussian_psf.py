@@ -40,7 +40,6 @@ class KernelGaussianDataset(Dataset[Tensor]):
         sigma_x: float,
         sigma_y: float,
     ) -> Tensor:
-
         """
         Generate a 2D elliptical Gaussian distribution over a specified shape.
 
@@ -84,7 +83,7 @@ class KernelGaussianDataset(Dataset[Tensor]):
             width=self.width,
             height=self.height,
             center_x=self.center_x(self.random),
-            center_y=self.center_y(self.random),         
+            center_y=self.center_y(self.random),
             theta=self.theta(self.random),
             sigma_x=self.sigma_x(self.random),
             sigma_y=self.sigma_y(self.random),
