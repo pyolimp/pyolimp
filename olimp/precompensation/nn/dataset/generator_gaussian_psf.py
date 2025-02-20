@@ -5,69 +5,42 @@ from torch import Tensor
 from torch.utils.data import Dataset
 import torch
 from ballfish.distribution import DistributionParams, create_distribution
-import math
-
-import matplotlib.pyplot as plt
 
 
 class KernelGaussianDataset(Dataset[Tensor]):
     name = "kernel_distribution"
-    default_distribution: dict[str, DistributionParams] = {
-        "center": {
-            "name": "truncnorm",
-            "a": 256,
-            "b": 256,
-            "mu": 256,
-            "sigma": 2,
-        },
-        "theta": {
-            "name": "truncnorm",
-            "a": -3 * math.pi,
-            "b": 3 * math.pi,
-            "mu": 0,
-            "sigma": 10,
-        },
-        "sigma": {
-            "name": "truncnorm",
-            "a": 10,
-            "b": 20,
-            "mu": 15,
-            "sigma": 30.25,
-        },
-    }
 
     def __init__(
         self,
-        shape: tuple[int, int],
-        random: Random = Random(), # seed
-        center: tuple[DistributionParams, DistributionParams] = (
-            default_distribution["center"],
-            default_distribution["center"],
-        ),
-        theta: DistributionParams = default_distribution["theta"],
-        sigma_x: DistributionParams = default_distribution["sigma"],
-        sigma_y: DistributionParams = default_distribution["sigma"],
+        width: int,
+        height: int,
+        center_x: DistributionParams,
+        center_y: DistributionParams,
+        theta: DistributionParams,
+        sigma_x: DistributionParams,
+        sigma_y: DistributionParams,
+        seed: int | None = None,
     ):
-        self.shape = shape
-        self.random = random
-        self.theta = theta
-        self.center = (center[0], center[1])
-        self.sigma_x = sigma_x
-        self.sigma_y = sigma_y
+        self.width = width
+        self.height = height
+        self.random = Random(seed)
+        self.theta = create_distribution(theta)
+        self.center_x = create_distribution(center_x)
+        self.center_y = create_distribution(center_y)
+        self.sigma_x = create_distribution(sigma_x)
+        self.sigma_y = create_distribution(sigma_y)
 
-    @classmethod
+    @staticmethod
     def guassian_generator(
-        cls,
-        shape: tuple[int, int],
-        random: Random = Random(42),
-        center: tuple[DistributionParams, DistributionParams] = (
-            default_distribution["center"],
-            default_distribution["center"],
-        ),
-        theta: DistributionParams = default_distribution["theta"],
-        sigma_x: DistributionParams = default_distribution["sigma"],
-        sigma_y: DistributionParams = default_distribution["sigma"],
+        width: int,
+        height: int,
+        center_x: float,
+        center_y: float,
+        theta: float,
+        sigma_x: float,
+        sigma_y: float,
     ) -> Tensor:
+
         """
         Generate a 2D elliptical Gaussian distribution over a specified shape.
 
@@ -82,36 +55,22 @@ class KernelGaussianDataset(Dataset[Tensor]):
         - gaussian: 2D Tensor representing the elliptical Gaussian distribution.
         """
 
-        width, height = shape
-        theta_distr = create_distribution(theta)
-        center_distr = (
-            create_distribution(center[0]),
-            create_distribution(center[1]),
-        )
-        sigma_x_distr = create_distribution(sigma_x)
-        sigma_y_distr = create_distribution(sigma_y)
-
         # Create grid of (x, y) coordinates
         y = torch.arange(height, dtype=torch.float32)
         x = torch.arange(width, dtype=torch.float32)
         y, x = torch.meshgrid(y, x, indexing="ij")
 
         # Shift coordinates to the center
-        center = (center_distr[0](random), center_distr[1](random))
-        x_center, y_center = center
-        x_shifted = x - x_center
-        y_shifted = y - y_center
+        x_shifted = x - center_x
+        y_shifted = y - center_y
 
         # Apply rotation
-        theta = theta_distr(random)
         cos_theta = torch.cos(torch.tensor(theta))
         sin_theta = torch.sin(torch.tensor(theta))
         x_rot = cos_theta * x_shifted + sin_theta * y_shifted
         y_rot = -sin_theta * x_shifted + cos_theta * y_shifted
 
         # Compute the Gaussian function
-        sigma_x = sigma_x_distr(random)
-        sigma_y = sigma_y_distr(random)
         gaussian = torch.exp(
             -(x_rot**2 / (2 * sigma_x**2) + y_rot**2 / (2 * sigma_y**2))
         )
@@ -120,29 +79,17 @@ class KernelGaussianDataset(Dataset[Tensor]):
 
         return gaussian
 
-    def __getitem__(cls, index: int) -> Tensor:
-        gaussian = cls.guassian_generator(
-            shape=cls.shape,
-            random=cls.random,
-            center=cls.center,
-            theta=cls.theta,
-            sigma_x=cls.sigma_x,
-            sigma_y=cls.sigma_y,
+    def __getitem__(self, index: int) -> Tensor:
+        gaussian = self.guassian_generator(
+            width=self.width,
+            height=self.height,
+            center_x=self.center_x(self.random),
+            center_y=self.center_y(self.random),         
+            theta=self.theta(self.random),
+            sigma_x=self.sigma_x(self.random),
+            sigma_y=self.sigma_y(self.random),
         )
-
         return gaussian
 
     def __len__(self):
         return 10000
-
-
-if __name__ == "__main__":
-    object = KernelGaussianDataset((512, 512))
-    for i in range(1):
-        # tensor = object.guassian_generator((512, 512))
-        tensor = object[0]
-        plt.figure(figsize=(10, 10))
-        plt.imshow(tensor.cpu().numpy(), cmap="viridis")
-        plt.colorbar()
-        plt.title("Tensor Visualization")
-        plt.show()
