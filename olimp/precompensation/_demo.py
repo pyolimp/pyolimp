@@ -26,6 +26,8 @@ def demo(
         "Feng Xu",
         "Global Tone Mapping",
         "Huang",
+        "Ji",
+        "Montalto (FISTA)",
         "Montalto",
         "UNET",
         "UNETVAE",

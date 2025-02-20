@@ -71,7 +71,7 @@ def montalto(
         if parameters.progress is not None:
             parameters.progress(i / 5000)
         optimizer.zero_grad()
-        e = fft_conv(precomp, psf) - image
+        e = fft_conv(precomp, psf) - t
 
         func_l1 = torch.sum(_tv_func(precomp))
         func_l2 = torch.linalg.norm(e.flatten())

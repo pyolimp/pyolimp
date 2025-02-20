@@ -12,6 +12,7 @@ from typing_extensions import NotRequired, TypedDict as TETypedDict
 typing.TypedDict = TETypedDict  # monkeypatch for python 3.10
 
 from ballfish.transformation import Datum, Transformation, ArgDict
+from ballfish.distribution import DistributionParams, create_distribution
 import ballfish.transformation
 import ballfish.distribution
 
@@ -80,11 +81,59 @@ class NormalizeTransform(Transformation):
     def __init__(self, mean: list[float], std: list[float]):
         from torchvision.transforms.v2 import Normalize
 
-        self._normalize = Normalize(mean, std)
+        self._normalize = Normalize(mean, std, inplace=True)
 
     def __call__(self, datum: Datum, random: Random):
         assert datum.source is not None
-        datum.image = self._normalize(datum.image)
+        self._normalize(datum.image)
+        return datum
+
+
+class WhitePoint(Transformation):
+    name = "white_point"
+    default_distribution: DistributionParams = {
+        "name": "truncnorm",
+        "a": 0.8,
+        "b": 1.2,
+        "mu": 1.0,
+        "sigma": 0.25,
+    }
+
+    class Args(ArgDict):
+        name: Literal["white_point"]
+        l_factor: NotRequired[DistributionParams]
+        m_factor: NotRequired[DistributionParams]
+        s_factor: NotRequired[DistributionParams]
+
+    def __init__(
+        self,
+        l_factor: DistributionParams = default_distribution,
+        m_factor: DistributionParams = default_distribution,
+        s_factor: DistributionParams = default_distribution,
+    ) -> None:
+        self._l = create_distribution(l_factor)
+        self._m = create_distribution(m_factor)
+        self._s = create_distribution(s_factor)
+        from olimp.evaluation.cs.lms import LMS
+        from olimp.evaluation.cs.srgb import sRGB
+
+        def to_lms(color: torch.Tensor) -> torch.Tensor:
+            return LMS().from_XYZ(sRGB().to_XYZ(color))
+
+        def to_srgb(color: torch.Tensor) -> torch.Tensor:
+            return sRGB().from_XYZ(LMS().to_XYZ(color))
+
+        self._to_lms, self._to_srgb = to_lms, to_srgb
+
+    def __call__(self, datum: Datum, random: Random):
+        assert datum.image is not None
+        for image in datum.image:
+            lms = self._to_lms(image)
+            l = self._l(random)
+            m = self._m(random)
+            s = self._s(random)
+            lms *= torch.tensor((l, m, s)).unsqueeze(1).unsqueeze(1)
+            image[:] = self._to_srgb(lms)
         return datum
 
 
@@ -94,7 +143,8 @@ BallfishTransforms = list[
         | PSFNormalize.Args
         | Float32Transform.Args
         | CopyTransform.Args
-        | NormalizeTransform.Args,
+        | NormalizeTransform.Args
+        | WhitePoint.Args,
         Field(..., discriminator="name"),
     ]
 ]
