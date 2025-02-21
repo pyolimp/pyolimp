@@ -1,0 +1,35 @@
+name: PyPI Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags
+
+jobs:
+  release:
+    name: Publish on PyPI
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      - name: Build
+        run: |
+          pip install build &&
+          python -m build
+      - name: Publish
+        # implemented using "STOP! You probably don't need this section"
+        # as it was easy to understand and implement
+        # https://docs.pypi.org/trusted-publishers/using-a-publisher/
+        run: |
+          pip install id twine &&
+          oidc_token=$(python -m id pypi)
+          resp=$(curl -X POST https://pypi.org/_/oidc/mint-token -d "{\"token\": \"${oidc_token}\"}")
+          api_token=$(jq -r '.token' <<< "${resp}")
+          twine upload --verbose --username __token__ --password ${api_token} dist/*
