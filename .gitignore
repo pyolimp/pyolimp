@@ -14,3 +14,7 @@ schema.json
 /docs/build
 # get_images.py output
 /docs/source/_static/*.svg
+# build artifacts
+build/
+dist/
+*.egg-info
