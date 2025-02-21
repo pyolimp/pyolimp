@@ -1,3 +1,56 @@
+[project]
+name = "olimp"
+dynamic = ["version"]
+authors = [
+  { name="Nafanail", email="nafe93@windowslive.com" },
+  { name="Arseniy Terekhin", email="senyai@gmail.com" },
+  { name="Sergey Gladilin", email="gladilin@gmail.com" },
+  { name="Dmitry Nikolaev", email="d.p.nikolaev@gmail.com" },
+  { name="Ivan Konovalenko", email="konovalenko@iitp.ru" },
+]
+description = "Framework for Image Precompensation"
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Typing :: Typed",
+]
+dependencies = [
+  "setuptools==69.0.3",    # for numpy
+  "requests==2.28.2",
+  "pillow==10.3.0",
+  "numpy<2",
+  "torch>=2.4.0,<3",
+  "matplotlib==3.9.2",
+  "rich==13.8.0",
+  "torchvision==0.19.0",
+  "piq==0.8.0",
+  "json5==0.9.24",
+  "pydantic==2.6.4",
+  "segmentation_models_pytorch==0.3.4",
+  "ballfish==0.3.2",
+]
+[project.urls]
+"Homepage" = "https://github.com/pyolimp/pyolimp"
+"Bug Reports" = "https://github.com/pyolimp/pyolimp/issues"
+[build-system]
+requires = [
+  "setuptools",
+  "wheel",
+]
+build-backend = "setuptools.build_meta"
 [tool.black]
 line-length = 79
 target-version = ["py310"]
+# [tool.setuptools]
+# include-package-data = false
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["olimp", "olimp.*"]
+exclude = []
+namespaces = false
+[tool.setuptools.dynamic]
+version = {attr = "olimp.__version__"}
