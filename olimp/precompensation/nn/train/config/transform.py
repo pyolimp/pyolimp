@@ -31,7 +31,7 @@ class PSFNormalize(Transformation):
     class Args(ArgDict):
         name: Literal["psf_normalize"]
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.image is not None, "missing datum.image"
         datum.image = torch.fft.fftshift(datum.image)
         datum.image /= datum.image.sum(axis=(1, 2, 3), keepdim=True).view(
@@ -46,7 +46,7 @@ class Float32Transform(Transformation):
     class Args(ArgDict):
         name: Literal["float32"]
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.image is not None, "missing datum.image"
         datum.image = datum.image.to(torch.float32)
         return datum
@@ -63,7 +63,7 @@ class CopyTransform(Transformation):
     class Args(ArgDict):
         name: Literal["_copy"]
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.source is not None
         assert datum.image is None, "missing datum.image"
         datum.image = datum.source.clone()
@@ -83,7 +83,7 @@ class NormalizeTransform(Transformation):
 
         self._normalize = Normalize(mean, std, inplace=True)
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.source is not None
         self._normalize(datum.image)
         return datum
@@ -125,7 +125,7 @@ class WhitePoint(Transformation):
 
         self._to_lms, self._to_srgb = to_lms, to_srgb
 
-    def __call__(self, datum: Datum, random: Random):
+    def __call__(self, datum: Datum, random: Random) -> Datum:
         assert datum.image is not None
         for image in datum.image:
             lms = self._to_lms(image)
@@ -137,13 +137,42 @@ class WhitePoint(Transformation):
         return datum
 
 
+class ToneMappingHDRNet(Transformation):
+    name = "tone_mapping_hdrnet"
+
+    class Args(ArgDict):
+        name: Literal["tone_mapping_hdrnet"]
+        weights_path: str
+
+    def __init__(self, weights_path: str) -> None:
+        from .hdrnet import HDRnetModel
+
+        self._model = HDRnetModel.from_path(weights_path)
+        self._model.eval()
+
+    def __call__(self, datum: Datum, random: Random):
+        from torchvision.transforms.functional import resize
+
+        assert datum.image is not None
+        with torch.inference_mode():
+            lowres, fullres = self._model.preprocess(datum.image)
+            result = self._model(
+                lowres.to(memory_format=torch.contiguous_format),
+                fullres.to(memory_format=torch.contiguous_format),
+            )
+
+        datum.image = resize(result, datum.image.shape[-2:])
+        return datum
+
+
 BallfishTransforms = list[
     Annotated[
         ballfish.transformation.Args
-        | PSFNormalize.Args
-        | Float32Transform.Args
         | CopyTransform.Args
+        | Float32Transform.Args
         | NormalizeTransform.Args
+        | PSFNormalize.Args
+        | ToneMappingHDRNet.Args
         | WhitePoint.Args,
         Field(..., discriminator="name"),
     ]
