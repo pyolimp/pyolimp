@@ -1,22 +1,22 @@
 # Pyolimp
 
-This project provides a machine learning-based framework for 
-image precompensation targeting vision defects, 
-specifically color vision deficiencies (CVD) and 
-refractive visual impairments (RVI). 
+This project provides a machine learning-based framework for
+image precompensation targeting vision defects,
+specifically color vision deficiencies (CVD) and
+refractive visual impairments (RVI).
 The framework incorporates both neural network and non-neural network modules
 to address precompensation effectively across different approaches.
 
 ## Project Overview
 
-This project focuses on precompensating for visual 
-impairments using machine learning techniques. 
-It includes a comprehensive framework that supports both neural network (NN) 
+This project focuses on precompensating for visual
+impairments using machine learning techniques.
+It includes a comprehensive framework that supports both neural network (NN)
 and non-neural network (non-NN) methods to restore image quality for those affected by:
 
-* Color Vision Deficiencies (CVD): 
+* Color Vision Deficiencies (CVD):
 Compensates for color blindness (e.g., protanopia, deuteranopia).
-* Refractive Visual Impairments (RVI): 
+* Refractive Visual Impairments (RVI):
 Addresses distortions caused by refractive errors, improving clarity and sharpness.
 
 ## Requirements
@@ -27,33 +27,30 @@ Addresses distortions caused by refractive errors, improving clarity and sharpne
 
 ## Installation
 
-1. Clone the repository:
 ```
-git clone https://github.com/pyolimp/pyolimp.git
-cd pyolimp
+pip install olimp
 ```
-
-2. Install the required packages:
+or
 ```
-pip install -r requirements.txt
+pip install git+https://github.com/pyolimp/pyolimp.git
 ```
 
 ## Usage
 
 ### 1. Non-Neural Network Modules for CVD and RVI Precompensation
 
-To run the RVI optimization algorithm for precompensation using the 
+To run the RVI optimization algorithm for precompensation using the
 Bregman-Jumbo method, execute:
 ```
-python3 -m olimp.precompensation.optimization.bregman_jumbo 
+python3 -m olimp.precompensation.optimization.bregman_jumbo
 ```
 
-To run the RVI optimization algorithm for precompensation using the 
+To run the RVI optimization algorithm for precompensation using the
 Montalto method, execute:
 ```
-python3 -m olimp.precompensation.optimization.montalto 
+python3 -m olimp.precompensation.optimization.montalto
 ```
-To run the CVD optimization algorithm for precompensation using the 
+To run the CVD optimization algorithm for precompensation using the
 Tennenholtz Zachevsky method, execute:
 
 ```
@@ -75,7 +72,7 @@ To run the CVD nn model for precompensation using the USRNET method, execute:
 python3 -m olimp.precompensation.nn.models.cvd_swin.Generator_transformer_pathch4_844_48_3_nouplayer_server5
 ```
 
-### 3. Training models 
+### 3. Training models
 
 To train neural network models for precompensation, use the following command:
 
