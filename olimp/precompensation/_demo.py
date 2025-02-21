@@ -21,6 +21,7 @@ from rich.progress import (
 def demo(
     name: Literal[
         "Bregman Jumbo",
+        "Half-Quadratic",
         "CVAE",
         "DWDN",
         "Feng Xu",
