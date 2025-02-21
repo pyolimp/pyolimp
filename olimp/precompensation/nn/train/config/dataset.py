@@ -10,6 +10,7 @@ from torch import Tensor
 import torch
 from .transform import BallfishTransforms
 from ballfish import create_augmentation, Datum
+from ballfish.distribution import DistributionParams
 from ...dataset import ProgressCallback
 
 
@@ -174,8 +175,37 @@ class CVD(DatasetConfig):
         )
 
 
+class PSFGauss(DatasetConfig):
+    name: Literal["psf_gauss"]
+    width: int = 512
+    height: int = 512
+    center_x: DistributionParams | None = None
+    center_y: DistributionParams | None = None
+    theta: DistributionParams = 0.0
+    sigma_x: DistributionParams = 5.0
+    sigma_y: DistributionParams = 5.0
+    seed: int | None = None
+
+    def load(self, progress_callback: ProgressCallback):
+        from ...dataset.psf_gauss import PsfGaussDataset
+
+        x = self.width * 0.5 if self.center_x is None else self.center_x
+        y = self.height * 0.5 if self.center_y is None else self.center_y
+        return PsfGaussDataset(
+            width=self.width,
+            height=self.height,
+            center_x=x,
+            center_y=y,
+            theta=self.theta,
+            sigma_x=self.sigma_x,
+            sigma_y=self.sigma_y,
+            seed=self.seed,
+        )
+
+
 Dataset = Annotated[
-    SCA2023 | Olimp | CVD | Directory, Field(..., discriminator="name")
+    SCA2023 | Olimp | CVD | Directory | PSFGauss,
+    Field(..., discriminator="name"),
 ]
 
 
