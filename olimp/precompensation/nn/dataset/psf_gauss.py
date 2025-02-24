@@ -18,11 +18,13 @@ class PsfGaussDataset(Dataset[Tensor]):
         theta: DistributionParams,
         sigma_x: DistributionParams,
         sigma_y: DistributionParams,
-        seed: int | None = None,
+        seed: int = 42,
+        size: int = 10000,
     ):
         self._width = width
         self._height = height
-        self._random = Random(seed)
+        self._seed = seed
+        self._size = size
         self._theta = create_distribution(theta)
         self._center_x = create_distribution(center_x)
         self._center_y = create_distribution(center_y)
@@ -76,7 +78,7 @@ class PsfGaussDataset(Dataset[Tensor]):
         return gaussian
 
     def __getitem__(self, index: int) -> Tensor:
-        random = self._random
+        random = Random(f"{self._seed}|{index}")
         gaussian = self.guassian_generator(
             x=self._x,
             y=self._y,
@@ -89,4 +91,4 @@ class PsfGaussDataset(Dataset[Tensor]):
         return gaussian[None]
 
     def __len__(self):
-        return 10000
+        return self._size
