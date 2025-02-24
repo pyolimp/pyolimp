@@ -184,7 +184,8 @@ class PSFGauss(DatasetConfig):
     theta: DistributionParams = 0.0
     sigma_x: DistributionParams = 5.0
     sigma_y: DistributionParams = 5.0
-    seed: int | None = None
+    seed: int = 42
+    size: int = 10000
 
     def load(self, progress_callback: ProgressCallback):
         from ...dataset.psf_gauss import PsfGaussDataset
@@ -200,6 +201,7 @@ class PSFGauss(DatasetConfig):
             sigma_x=self.sigma_x,
             sigma_y=self.sigma_y,
             seed=self.seed,
+            size=self.size,
         )
 
 
