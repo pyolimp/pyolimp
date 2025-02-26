@@ -76,10 +76,14 @@ def _slicing(grid, guide):
     device = grid.get_device()
     if device >= 0:
         hh, ww = torch.meshgrid(
-            torch.arange(H, device=device), torch.arange(W, device=device)
+            torch.arange(H, device=device),
+            torch.arange(W, device=device),
+            indexing="ij",
         )  # H, W
     else:
-        hh, ww = torch.meshgrid(torch.arange(H), torch.arange(W))  # H, W
+        hh, ww = torch.meshgrid(
+            torch.arange(H), torch.arange(W), indexing="ij"
+        )  # H, W
     # To [-1, 1] range for grid_sample
     hh = hh / (H - 1) * 2 - 1
     ww = ww / (W - 1) * 2 - 1
