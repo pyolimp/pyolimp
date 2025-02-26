@@ -333,7 +333,13 @@ def main():
     with torch.inference_mode():
         lowres, fullres = model.preprocess(image[None])
         result = model(lowres, fullres)
-    print("result", result)
+    from matplotlib import pyplot as plt
+
+    _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+    ax1.imshow(image.permute(1, 2, 0).numpy())
+    ax2.imshow(result[0].permute(1, 2, 0).numpy())
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
