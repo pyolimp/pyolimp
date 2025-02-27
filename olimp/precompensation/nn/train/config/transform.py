@@ -4,6 +4,7 @@ import typing
 from pydantic import Field, ConfigDict
 from random import Random
 import torch
+from olimp.precompensation.nn.models.download_path import PyOlimpHF
 
 
 # patch ballfish's typing to enable pydantic
@@ -142,9 +143,11 @@ class ToneMappingHDRNet(Transformation):
 
     class Args(ArgDict):
         name: Literal["tone_mapping_hdrnet"]
-        weights_path: str
+        weights_path: NotRequired[PyOlimpHF]
 
-    def __init__(self, weights_path: str) -> None:
+    def __init__(
+        self, weights_path: PyOlimpHF = "hf://tone_mapping/hdrnet_v0.pt"
+    ) -> None:
         from .hdrnet import HDRnetModel
 
         self._model = HDRnetModel.from_path(weights_path)

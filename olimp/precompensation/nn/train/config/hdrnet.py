@@ -31,6 +31,7 @@ import torch.nn.functional as F
 from torchvision.transforms.functional import resize
 from torch import Tensor
 from PIL import Image
+from ....nn.models.download_path import download_path, PyOlimpHF
 
 
 def _conv_layer(
@@ -296,16 +297,17 @@ class HDRnetModel(nn.Module):
         return output
 
     @classmethod
-    def from_path(cls, path: str):
+    def from_path(cls, path: PyOlimpHF):
+        path = download_path(path)
         state_dict = torch.load(
             path, map_location=torch.get_default_device(), weights_only=True
         )
         params = state_dict.pop("params")
-        k_list = list(state_dict.keys())
-        for k in k_list:
-            if k.split(".")[0] == "module":
-                k_new = ".".join(k.split(".")[1:])
-                state_dict[k_new] = state_dict.pop(k)
+        # k_list = list(state_dict.keys())
+        # for k in k_list:
+        #     if k.split(".")[0] == "module":
+        #         k_new = ".".join(k.split(".")[1:])
+        #         state_dict[k_new] = state_dict.pop(k)
 
         model = cls(params)
         model._input_res = params["input_res"]
@@ -328,7 +330,7 @@ def main():
         ).to(dtype=torch.float32)
         / 255.0
     )
-    model = HDRnetModel.from_path("srgb_loss_balanced.pt")
+    model = HDRnetModel.from_path("hf://tone_mapping/hdrnet_v0.pt")
     model.eval()
     with torch.inference_mode():
         lowres, fullres = model.preprocess(image[None])
