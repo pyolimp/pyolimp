@@ -135,14 +135,8 @@ def ji(image: Tensor, psf: Tensor, params: JiParameters) -> Tensor:
         # Solving tau subproblem with fixed m
         prev_loss_tau = torch.tensor(float("inf"))
 
-        tau_plus = torch.tensor(
-            tau_plus0.clone().detach(),
-            requires_grad=True,
-        )
-        tau_minus = torch.tensor(
-            tau_minus0.clone().detach(),
-            requires_grad=True,
-        )
+        tau_plus = tau_plus0.clone().detach().requires_grad_()
+        tau_minus = tau_minus0.clone().detach().requires_grad_()
         optimizer_tau = torch.optim.Adam([tau_plus, tau_minus], lr=params.lr)
 
         for _ in range(1000):
@@ -186,10 +180,7 @@ def ji(image: Tensor, psf: Tensor, params: JiParameters) -> Tensor:
         # Solving m-subproblem with fixed tau
         prev_loss_m = torch.tensor(float("inf"))
 
-        m = torch.tensor(
-            m0.clone().detach(),
-            requires_grad=True,
-        )
+        m = m0.clone().detach().requires_grad_()
 
         optimizer_m = torch.optim.Adam([m], lr=params.lr_m)
 
