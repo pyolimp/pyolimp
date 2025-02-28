@@ -51,7 +51,7 @@ def demo(
             precompensation = opt_function(
                 img.to(device), distortion, callback
             )
-            cvd_precompensated = distortion(*precompensation)
+            cvd_precompensated = distortion()(*precompensation)
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
         dpi=72, figsize=(12, 9), ncols=2, nrows=2
@@ -60,7 +60,7 @@ def demo(
     img = img[0]
     ax1.imshow(img.permute(1, 2, 0))
     ax1.set_title(f"Source ({img.min():g}, {img.max():g})")
-    ax2.imshow(distortion(img)[0].permute(1, 2, 0), vmin=0.0, vmax=1.0)
+    ax2.imshow(distortion()(img)[0].permute(1, 2, 0), vmin=0.0, vmax=1.0)
     ax2.set_title(f"CVD simulation ({img.min():g}, {img.max():g})")
 
     p_arr = precompensation[0].cpu().detach().numpy()

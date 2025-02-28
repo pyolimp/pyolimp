@@ -96,8 +96,9 @@ def tennenholtz_zachevsky(
     res = torch.zeros_like(img_3ch)
 
     img_3ch = img_3ch[0]
+    distortion_apply = distortion()
 
-    img_2ch = distortion(img_3ch)[0]
+    img_2ch = distortion_apply(img_3ch)[0]
 
     img_3ch_hsv = torch.as_tensor(
         rgb2hsv(img_3ch.permute(1, 2, 0).detach().cpu())
@@ -129,7 +130,7 @@ def tennenholtz_zachevsky(
             )
             img_3ch_hsv_v_streched = set_range(img_3ch_hsv, v_chan_streched)
 
-            img_2ch_enh = distortion(
+            img_2ch_enh = distortion_apply(
                 torch.as_tensor(
                     hsv2rgb(
                         img_3ch_hsv_v_streched.permute(1, 2, 0).detach().cpu()
