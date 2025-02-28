@@ -9,7 +9,7 @@ from rich.progress import (
 
 with Progress() as ci:
     load_task = ci.add_task("Import libraries")
-    from typing import Callable, TypeAlias, Annotated, Any
+    from typing import Callable, Any, Protocol, Sequence
     from math import prod
 
     import random
@@ -33,10 +33,17 @@ with Progress() as ci:
     ci.update(load_task, completed=100)
 
 
-LossFunction: TypeAlias = Annotated[
-    Callable[[list[Tensor], list[Tensor], list[type[Distortion]]], Tensor],
-    "(model result, model input before preprocessing) -> loss",
-]
+class LossFunction(Protocol):
+    def __call__(
+        self,
+        precompensated: Tensor,
+        original_image: Tensor,
+        distortion_fn: Callable[[Tensor], Tensor],
+        extra: Sequence[Any],
+    ) -> Tensor:
+        """
+        extra - extra arguments for loss function, for example, for VAE loss
+        """
 
 
 class ShuffeledDataset(Dataset[Tensor]):
@@ -108,24 +115,30 @@ def _evaluate_dataset(
     device = next(model.parameters()).device
 
     for batches in zip(*dls, strict=True):
-        datums: list[Tensor] = []
+        original_tensors: list[Tensor] = []
         for batch in batches:
             batch = batch.to(device)
-            datums.append(batch)
+            original_tensors.append(batch)
 
-        inputs = model.preprocess(*datums)
+        model_inputs = model.preprocess(*original_tensors)
 
         precompensated = model(
-            inputs,
-            **model.arguments(inputs, datums[-1], **model_kwargs),
+            model_inputs,
+            **model.arguments(model_inputs, original_tensors, **model_kwargs),
         )
         assert isinstance(precompensated, tuple | list), (
             f"All models MUST return tuple "
             f"({model} returned {type(precompensated)})"
         )
 
+        original_image = original_tensors[0]
+        distortion_fn = distortions_group.create(original_tensors[1:])
+
         loss = loss_function(
-            precompensated, datums, distortions_group.distortions_classes
+            precompensated[0],
+            original_image,
+            distortion_fn,
+            extra=precompensated[1:],
         )
         yield loss
 

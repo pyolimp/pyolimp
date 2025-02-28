@@ -3,10 +3,10 @@ from typing import Literal
 import torch
 from torch import Tensor
 
-from olimp.simulate import Distortion
+from olimp.simulate import ApplyDistortion
 
 
-class ColorBlindnessDistortion(Distortion):
+class ColorBlindnessDistortion:
     blindness_type: Literal["protan", "deutan"]
 
     def __init__(
@@ -104,8 +104,11 @@ class ColorBlindnessDistortion(Distortion):
         else:
             raise NotImplementedError
 
-    def __call__(self, I: Tensor) -> Tensor:
-        assert I.ndim > 2
+    def __call__(self) -> ApplyDistortion:
+        return self.apply
+
+    def apply(self, I: Tensor):
+        assert I.ndim > 2, I.ndim
         if I.ndim == 3:
             I = I[None]
         I_sim = torch.zeros_like(I, dtype=torch.float)
