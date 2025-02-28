@@ -1,14 +1,6 @@
-from abc import ABC, abstractmethod
-from typing import Any
-
+from typing import TypeAlias
 from torch import Tensor
+from collections.abc import Callable
 
-
-class Distortion(ABC):
-    @abstractmethod
-    def __init__(self, *args: Any) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def __call__(self, image: Tensor) -> Tensor:
-        raise NotImplementedError
+ApplyDistortion: TypeAlias = Callable[[Tensor], Tensor]
+Distortion: TypeAlias = Callable[..., ApplyDistortion]

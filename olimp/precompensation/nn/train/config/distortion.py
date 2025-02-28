@@ -13,7 +13,7 @@ class RefractionDistortionConfig(StrictModel):
         from .....simulate.refraction_distortion import RefractionDistortion
 
         dataset = self.psf.load(progress_callback)
-        return dataset, RefractionDistortion
+        return dataset, RefractionDistortion()
 
 
 class ColorBlindnessDistortionConfig(StrictModel):

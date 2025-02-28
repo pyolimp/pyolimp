@@ -1,14 +1,10 @@
-import torch
+from __future__ import annotations
 from torch import Tensor
-
-from olimp.simulate import Distortion
+from olimp.simulate import ApplyDistortion
 from olimp.processing import fft_conv
 
 
-class RefractionDistortion(Distortion):
-    def __init__(self, psf: Tensor) -> None:
-        assert psf.dtype == torch.float32, psf.dtype
-        self.psf = psf
-
-    def __call__(self, image: Tensor) -> Tensor:
-        return fft_conv(image, self.psf)
+class RefractionDistortion:
+    @staticmethod
+    def __call__(psf: Tensor) -> ApplyDistortion:
+        return lambda image: fft_conv(image, psf)

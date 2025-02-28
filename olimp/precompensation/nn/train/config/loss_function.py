@@ -1,27 +1,20 @@
 from __future__ import annotations
 from typing import Annotated, Literal, Any, TypeAlias, Callable, Union
+from collections.abc import Sequence
 from .base import StrictModel
 from pydantic import Field, confloat
-from .....simulate import Distortion
+from .....simulate import ApplyDistortion
 from torch import Tensor
 
 
 def _create_simple_loss(loss: Callable[[Tensor, Tensor], Tensor]):
     def f(
-        model_output: list[Tensor],
-        datums: list[Tensor],
-        distortions: list[type[Distortion]],
+        precompensated: Tensor,
+        original_image: Tensor,
+        distortion_fn: ApplyDistortion,
+        extra: Sequence[Any],
     ) -> Tensor:
-        assert isinstance(model_output, tuple | list)
-        assert isinstance(datums, tuple | list)
-        distorted: list[Tensor] = []
-        for distortion, d_input in zip(distortions, datums[1:], strict=True):
-            distorted.append(
-                distortion(d_input)(*model_output).clip(min=0.0, max=1.0)
-            )
-        original_image = datums[0]
-        assert len(distorted) == 1, len(distorted)
-        return loss(distorted[0], original_image)
+        return loss(distortion_fn(precompensated), original_image, *extra)
 
     return f
 
@@ -39,16 +32,14 @@ class VaeLossFunction(StrictModel):
         ), f"Vae loss only work with (C,UNET)Vae model, not {model}"
 
         def f(
-            model_output: list[Tensor],
-            datums: list[Tensor],
-            distortions: list[type[Distortion]],
+            precompensated: Tensor,
+            original_image: Tensor,
+            distortion_fn: ApplyDistortion,
+            extra: Sequence[Any],
         ) -> Tensor:
-            assert len(distortions) == 1, "Not implemented"
-            original_image = datums[0]
-            precompensated, *args = model_output
-            retinal_precompensated = distortions[0](datums[1])(precompensated)
-            loss = vae_loss(retinal_precompensated, original_image, *args)
-            return loss
+            return vae_loss(
+                distortion_fn(precompensated), original_image, *extra
+            )
 
         return f
 
