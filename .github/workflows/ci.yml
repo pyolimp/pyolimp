@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
-      - uses: psf/black@stable
+      - uses: psf/black@25.1.0
       - run: pip install -e .
       - run: python -m unittest -v
       - run: python -m olimp.precompensation.nn.train.train --update-schema
