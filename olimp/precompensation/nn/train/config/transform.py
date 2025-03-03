@@ -205,16 +205,20 @@ class ToneMappingLTMNet(Transformation):
         return datum
 
 
+ballfish.transformation.TransformationArgs |= (
+    CopyTransform.Args
+    | Float32Transform.Args
+    | NormalizeTransform.Args
+    | PSFNormalize.Args
+    | ToneMappingHDRNet.Args
+    | ToneMappingLTMNet.Args
+    | WhitePoint.Args
+)
+
+
 BallfishTransforms = list[
     Annotated[
-        ballfish.transformation.Args
-        | CopyTransform.Args
-        | Float32Transform.Args
-        | NormalizeTransform.Args
-        | PSFNormalize.Args
-        | ToneMappingHDRNet.Args
-        | ToneMappingLTMNet.Args
-        | WhitePoint.Args,
+        ballfish.transformation.TransformationArgs,
         Field(..., discriminator="name"),
     ]
 ]
