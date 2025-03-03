@@ -148,7 +148,7 @@ class ToneMappingHDRNet(Transformation):
     def __init__(
         self, weights_path: PyOlimpHF = "hf://tone_mapping/hdrnet_v0.pt"
     ) -> None:
-        from .hdrnet import HDRnetModel
+        from .transform_hdrnet import HDRnetModel
 
         self._model = HDRnetModel.from_path(weights_path)
         self._model.eval()
