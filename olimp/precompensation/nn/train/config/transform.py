@@ -4,7 +4,10 @@ import typing
 from pydantic import Field, ConfigDict
 from random import Random
 import torch
-from olimp.precompensation.nn.models.download_path import PyOlimpHF
+from olimp.precompensation.nn.models.download_path import (
+    PyOlimpHF,
+    download_path,
+)
 
 
 # patch ballfish's typing to enable pydantic
@@ -168,6 +171,40 @@ class ToneMappingHDRNet(Transformation):
         return datum
 
 
+class ToneMappingLTMNet(Transformation):
+    name = "tone_mapping_ltmnet"
+
+    class Args(ArgDict):
+        name: Literal["tone_mapping_ltmnet"]
+        weights_path: NotRequired[PyOlimpHF]
+
+    def __init__(
+        self,
+        weights_path: PyOlimpHF = "hf://tone_mapping/ltmnet_hdrplus_ds_model2.pt",
+    ) -> None:
+        path = download_path(weights_path)
+        self._model = torch.jit.load(path)
+        self._model.eval()
+
+    def __call__(self, datum: Datum, random: Random):
+        from torchvision.transforms.functional import resize
+        from .transform_ltmnet import post_process
+
+        assert datum.image is not None
+        with torch.inference_mode():
+            image = datum.image.permute(0, 2, 3, 1)
+            tone_curves = self._model(image)
+            image *= 255.0
+            image += 0.5
+            image.clip_(min=0.0, max=255.0)
+            in_im_int = image.to(dtype=torch.int32)
+            result = post_process(tone_curves, in_im_int) / 255.0
+            result = result.permute(0, 3, 1, 2)
+
+        datum.image = resize(result, datum.image.shape[-2:])
+        return datum
+
+
 BallfishTransforms = list[
     Annotated[
         ballfish.transformation.Args
@@ -176,6 +213,7 @@ BallfishTransforms = list[
         | NormalizeTransform.Args
         | PSFNormalize.Args
         | ToneMappingHDRNet.Args
+        | ToneMappingLTMNet.Args
         | WhitePoint.Args,
         Field(..., discriminator="name"),
     ]
