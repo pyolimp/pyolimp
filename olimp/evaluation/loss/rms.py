@@ -26,7 +26,9 @@ def generate_random_neighbors(
     # Create a grid of indices using meshgrid
     y_indices = torch.arange(0, dst_height) * step
     x_indices = torch.arange(0, dst_width) * step
-    indices = torch.stack(torch.meshgrid(y_indices, x_indices), dim=-1)
+    indices = torch.stack(
+        torch.meshgrid(y_indices, x_indices, indexing="ij"), dim=-1
+    )
 
     seed = hash(torch.mean(img1 + img2).item())
     rng = torch.Generator().manual_seed(seed)
