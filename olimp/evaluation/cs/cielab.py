@@ -10,7 +10,9 @@ from torch import Tensor
 def f(t: Tensor):
     delta = 6 / 29
     return torch.where(
-        t > delta**3, 1.16 * torch.pow(t, 1 / 3) - 0.16, t / (delta / 2) ** 3
+        t > delta**3,
+        1.16 * torch.pow(t, 1 / 3) - 0.16,
+        0.01 * t / (delta / 2) ** 3,
     )
 
 
