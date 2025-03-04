@@ -70,7 +70,7 @@ def pixel_contrasts(
 ) -> Tensor:
     pixel_value = image[:, pixel[0], pixel[1]]
     neighbor_values = image[:, neighbors[0], neighbors[1]]
-    contrasts = torch.norm(pixel_value[:, None] - neighbor_values, dim=1)
+    contrasts = torch.norm(pixel_value[:, None] - neighbor_values, dim=0)
     return contrasts
 
 
@@ -117,7 +117,7 @@ def RMS_map(
             img2_contrasts = pixel_contrasts(
                 lab2, (int(i * step), int(j * step)), tuple(filtered_neighbors)
             )
-            normalized_contrast_diffs = (img1_contrasts - img2_contrasts) / 160
+            normalized_contrast_diffs = (img1_contrasts - img2_contrasts) / 1.6
             rms[i, j] = torch.sqrt(torch.mean(normalized_contrast_diffs**2))
 
     return rms

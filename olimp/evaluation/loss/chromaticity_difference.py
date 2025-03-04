@@ -44,7 +44,7 @@ def CD_map(
     diff = lab1 - lab2
     weights = torch.tensor((sqrt(lightness_weight), 1, 1))[:, None, None]
     weighted_diff = diff * weights
-    chromatic_diff = torch.linalg.norm(weighted_diff, dim=2)
+    chromatic_diff = torch.linalg.norm(weighted_diff, dim=0)
     return chromatic_diff
 
 
