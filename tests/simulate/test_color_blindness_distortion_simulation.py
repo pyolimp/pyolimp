@@ -20,13 +20,13 @@ class ShapeTest(TestCase):
 
 class RangeTest(TestCase):
     def test_protan_range(self):
-        image = torch.rand(3, 64, 64, dtype=torch.float)
+        image = torch.rand(1, 3, 64, 64, dtype=torch.float)
         distortion = ColorBlindnessDistortion(blindness_type="protan")()
         res = distortion(image)
         self.assertTrue(res.min() >= 0 and res.max() <= 1)
 
     def test_deutan_range(self):
-        image = torch.rand(3, 64, 64, dtype=torch.float)
+        image = torch.rand(1, 3, 64, 64, dtype=torch.float)
         distortion = ColorBlindnessDistortion(blindness_type="deutan")()
         res = distortion(image)
         self.assertTrue(res.min() >= 0 and res.max() <= 1)
