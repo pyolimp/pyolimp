@@ -19,8 +19,8 @@ class sRGB:
         color_clipped = torch.clip(color, 0.0, 1.0)
         color_clipped_f = color_clipped.reshape(-1)
 
-        for y in range(0, color_clipped.size(0), 4096):
-            fragment = color_clipped_f[y : y + 4096]
+        for y in range(0, color_clipped.numel(), 16384):
+            fragment = color_clipped_f[y : y + 16384]
             low = fragment <= thres
 
             fragment[low] *= 12.92
