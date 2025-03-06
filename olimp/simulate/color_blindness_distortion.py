@@ -81,3 +81,17 @@ class ColorBlindnessDistortion:
         for image, out in zip(image, image_sim):
             out[:] = self._simulate(image, self.sim_matrix)
         return image_sim
+
+
+def _demo():
+    from ._demo_distortion import demo
+
+    def demo_simulate():
+        yield ColorBlindnessDistortion("protan")(), "protan"
+        yield ColorBlindnessDistortion("deutan")(), "deutan"
+
+    demo("ColorBlindnessDistortion", demo_simulate)
+
+
+if __name__ == "__main__":
+    _demo()
