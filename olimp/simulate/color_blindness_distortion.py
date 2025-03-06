@@ -50,6 +50,10 @@ class ColorBlindnessDistortion:
         else:
             raise KeyError("no such distortion")
 
+        self.sim_matrix = (
+            self.RGB_from_LMS @ self.sim_matrix @ self.LMS_from_RGB
+        )
+
         self.blindness_type = blindness_type
 
     @staticmethod
@@ -61,28 +65,12 @@ class ColorBlindnessDistortion:
         return sRGB().from_linRGB(image)
 
     @classmethod
-    def _sRGB_to_LMS(cls, sRGB: Tensor) -> Tensor:
-        linRGB = cls._linearRGB_from_sRGB(sRGB)
-        return torch.tensordot(
-            cls.LMS_from_RGB.to(sRGB.device),
-            linRGB,
-            dims=1,
-        )
-
-    @classmethod
-    def _LMS_to_sRGB(cls, LMS: Tensor) -> Tensor:
-        inv_linRGB = torch.tensordot(
-            cls.RGB_from_LMS.to(LMS.device), LMS, dims=1
-        )
-        return cls._sRGB_from_linearRGB(inv_linRGB)
-
-    @classmethod
     def _simulate(cls, image: Tensor, sim_matrix: Tensor) -> Tensor:
-        lms = cls._sRGB_to_LMS(image)
+        linRGB = cls._linearRGB_from_sRGB(image)
         dichromat_LMS = torch.tensordot(
-            sim_matrix.to(image.device), lms, dims=1
+            sim_matrix.to(image.device), linRGB, dims=1
         )
-        return cls._LMS_to_sRGB(dichromat_LMS).clip_(0.0, 1.0)
+        return cls._sRGB_from_linearRGB(dichromat_LMS).clip_(0.0, 1.0)
 
     def __call__(self) -> ApplyDistortion:
         return self.apply
