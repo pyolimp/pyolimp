@@ -47,6 +47,10 @@ def main() -> None:
             "global_tone_mapping",
         ),
         ("olimp.precompensation.optimization.ji", "ji"),
+        (
+            "olimp.simulate.color_blindness_distortion",
+            "color_blindness_distortion",
+        ),
     ):
         save_demo(root, module, name, args.force)
 
