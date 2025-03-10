@@ -7,6 +7,7 @@ from pathlib import Path
 
 root = Path(__file__).parents[2]
 print("root", root)
+sys.path.insert(1, str(root))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -14,7 +15,9 @@ print("root", root)
 project = "PyOlimp"
 copyright = "2025, PyOlimp authors"
 author = "PyOlimp authors"
-release = "0.1.0"
+from olimp import __version__
+
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -41,8 +44,6 @@ html_theme_options = {
     "sidebar_width": "17em",
     "page_width": "90%",
 }
-
-sys.path.insert(1, str(root))
 
 root = Path(__file__).parents[1]
 from docs.gen_images import gen_images
