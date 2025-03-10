@@ -44,8 +44,8 @@ html_theme_options = {
 sys.path.insert(1, str(root))
 
 root = Path(__file__).parents[1]
-from docs.gen_images import main as generate_images
+from docs.gen_images import gen_images
 
 print("generating images")
-generate_images()
+gen_images()
 print("done")
