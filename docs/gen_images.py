@@ -55,6 +55,10 @@ def gen_images(force: bool = False) -> None:
             "olimp.simulate.color_blindness_distortion",
             "color_blindness_distortion",
         ),
+        (
+            "olimp.simulate.refraction_distortion",
+            "refraction_distortion",
+        ),
     ):
         save_demo(root, module, name, force)
 
