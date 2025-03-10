@@ -10,6 +10,11 @@ from olimp.simulate import ApplyDistortion
 
 
 class ColorBlindnessDistortion:
+    """
+    .. image:: ../_static/color_blindness_distortion.svg
+       :class: full-width
+    """
+
     LMS_from_RGB = torch.tensor(
         (
             (0.27293945, 0.66418685, 0.06287371),
