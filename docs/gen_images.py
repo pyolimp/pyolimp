@@ -20,6 +20,10 @@ def main() -> None:
     parser = ArgumentParser()
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
+    gen_images(args.force)
+
+
+def gen_images(force: bool = False) -> None:
     root = Path(__file__).parent / "source" / "_static"
     root.mkdir(exist_ok=True, parents=True)
 
@@ -52,7 +56,7 @@ def main() -> None:
             "color_blindness_distortion",
         ),
     ):
-        save_demo(root, module, name, args.force)
+        save_demo(root, module, name, force)
 
 
 if __name__ == "__main__":
