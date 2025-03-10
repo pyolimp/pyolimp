@@ -3,7 +3,7 @@ from typing import NewType, Callable, TypeAlias
 from pathlib import Path
 from torch._prims_common import DeviceLikeType
 import numpy as np
-from torch import Tensor, tensor, fft
+from torch import Tensor, tensor
 from torchvision.io import read_image
 
 
