@@ -1,3 +1,6 @@
+Optimization
+============
+
 olimp.precompensation.optimization.bregman_jumbo
 ------------------------------------------------
 
