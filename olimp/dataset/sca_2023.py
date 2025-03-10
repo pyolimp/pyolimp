@@ -25,6 +25,11 @@ def sca_2023(
     categories: set[T],
     progress_callback: ProgressCallback = default_progress,
 ) -> dict[T, list[ImgPath]]:
+    """
+    Downloads full dataset from https://zenodo.org/records/7848576
+
+    Returns a dictionary of category -> list of paths
+    """
     dataset = load_dataset(
         ("SCA-2023", 7848576),
         cast(set[SubPath], categories),
