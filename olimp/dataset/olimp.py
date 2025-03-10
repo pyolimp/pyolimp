@@ -92,6 +92,11 @@ def olimp(
     categories: set[T],
     progress_callback: ProgressCallback = default_progress,
 ) -> dict[T, list[ImgPath]]:
+    """
+    Downloads full dataset from https://zenodo.org/records/13692233
+
+    Returns a dictionary of category -> list of paths
+    """
     dataset = load_dataset(
         ("OLIMP", 13692233),
         cast(set[SubPath], categories),

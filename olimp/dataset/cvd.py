@@ -14,6 +14,11 @@ def cvd(
     categories: set[T],
     progress_callback: ProgressCallback = default_progress,
 ) -> dict[T, list[ImgPath]]:
+    """
+    Downloads full dataset from https://zenodo.org/records/13881170
+
+    Returns a dictionary of category -> list of paths
+    """
     dataset = load_dataset(
         ("CVD", 13881170),
         cast(set[SubPath], categories),
