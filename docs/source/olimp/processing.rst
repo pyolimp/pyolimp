@@ -1,5 +1,5 @@
-olimp.processing
-------------------
+Processing
+==========
 
 .. automodule:: olimp.processing
    :members:

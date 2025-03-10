@@ -10,20 +10,12 @@ Welcome to PyOlimp's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   olimp/processing
+   olimp/dataset
    olimp/evaluation/loss
+   olimp/processing
    olimp/simulate
-   olimp/precompensation/basic
-   olimp/precompensation/analytics
-   olimp/precompensation/optimization
-   olimp/precompensation/nn/models/vae
-   olimp/precompensation/nn/models/unetvae
-   olimp/precompensation/nn/models/cvae
-   olimp/precompensation/nn/models/cvd_swin
-   olimp/precompensation/nn/models/dwdn
-   olimp/precompensation/nn/models/vdsr
-   olimp/precompensation/nn/models/unet_efficient_b0
-   olimp/precompensation/nn/models/usrnet
+   olimp/train_configuration
+   olimp/precompensation/index
 
 
 Indices and tables
