@@ -25,6 +25,8 @@
         "protan",
         "psnr",
         "pyolimp",
+        "pyproject",
+        "Pytorch",
         "ssim",
         "swin",
         "Tennenholtz",

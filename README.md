@@ -23,7 +23,7 @@ Addresses distortions caused by refractive errors, improving clarity and sharpne
 
 * Python 3.10+
 * Pytorch 2.4+
-* Additional dependencies listed in requirements.txt
+* Additional dependencies listed in pyproject.toml
 
 ## Installation
 
