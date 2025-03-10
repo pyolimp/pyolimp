@@ -32,7 +32,7 @@ class ColorBlindnessDistortion:
     ) -> None:
 
         if blindness_type == "protan":
-            self.sim_matrix = torch.tensor(
+            sim_matrix = torch.tensor(
                 (
                     (0.0, 1.06481845, -0.06481845),
                     (0.0, 1.0, 0.0),
@@ -40,7 +40,7 @@ class ColorBlindnessDistortion:
                 )
             )
         elif blindness_type == "deutan":
-            self.sim_matrix = torch.tensor(
+            sim_matrix = torch.tensor(
                 (
                     (1.0, 0.0, 0.0),
                     (0.93912723, 0.0, 0.06087277),
@@ -51,7 +51,9 @@ class ColorBlindnessDistortion:
             raise KeyError("no such distortion")
 
         self.sim_matrix = (
-            self.RGB_from_LMS @ self.sim_matrix @ self.LMS_from_RGB
+            self.RGB_from_LMS.to(sim_matrix.device)
+            @ sim_matrix
+            @ self.LMS_from_RGB.to(sim_matrix.device)
         )
 
         self.blindness_type = blindness_type
