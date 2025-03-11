@@ -1,13 +1,14 @@
 from __future__ import annotations
 from typing import NamedTuple, TypedDict, Callable
 import torch
+from torch import Tensor
 import torch.nn.functional as F
 from olimp.processing import fft_conv
 
 
 class DebugInfo(TypedDict):
     loss_step: list[float]
-    precomp: torch.Tensor
+    precomp: Tensor
 
 
 class MontaltoParameters(NamedTuple):
@@ -18,11 +19,12 @@ class MontaltoParameters(NamedTuple):
     c_high: float = 1.0
     c_low: float = 1 - c_high
     gap: float = 0.01
+    loss_func: Callable[[Tensor, Tensor], Tensor] | None = None
     progress: Callable[[float], None] | None = None
     debug: None | DebugInfo = None  # pass dict to log
 
 
-def _tv_func(image: torch.Tensor) -> torch.Tensor:
+def _tv_func(image: Tensor) -> Tensor:
     im_bg = F.pad(input=image, pad=(1, 1, 1, 1))
 
     x1 = im_bg[..., 1:-1, :-2]
@@ -37,10 +39,10 @@ def _tv_func(image: torch.Tensor) -> torch.Tensor:
 
 
 def montalto(
-    image: torch.Tensor,
-    psf: torch.Tensor,
+    image: Tensor,
+    psf: Tensor,
     parameters: MontaltoParameters = MontaltoParameters(),
-) -> torch.Tensor:
+) -> Tensor:
     """
     .. image:: ../../_static/montalto.svg
        :class: full-width
@@ -71,14 +73,21 @@ def montalto(
         if parameters.progress is not None:
             parameters.progress(i / 5000)
         optimizer.zero_grad()
-        e = fft_conv(precomp, psf) - t
 
-        func_l1 = torch.sum(_tv_func(precomp))
-        func_l2 = torch.linalg.norm(e.flatten())
-        func_borders = torch.sum(
-            torch.exp(-Lambda * precomp) + torch.exp(-Lambda * (1 - precomp))
-        )
-        loss = func_l2 + (theta * func_l1) + (tau * func_borders)
+        if parameters.loss_func is None:
+            e = fft_conv(precomp, psf) - t
+
+            func_l1 = torch.sum(_tv_func(precomp))
+            func_l2 = torch.linalg.norm(e.flatten())
+            func_borders = torch.sum(
+                torch.exp(-Lambda * precomp)
+                + torch.exp(-Lambda * (1 - precomp))
+            )
+            loss = func_l2 + (theta * func_l1) + (tau * func_borders)
+        else:
+            precomp_clip = fft_conv(precomp.clip(0, 1), psf)
+
+            loss = parameters.loss_func(precomp_clip, t)
 
         loss_step.append(loss.item())
         loss.backward()
@@ -94,17 +103,17 @@ def montalto(
     if parameters.progress is not None:
         parameters.progress(1.0)
 
-    return precomp
+    return precomp.clip_(0, 1)
 
 
 def _demo():
     from .._demo import demo
 
     def demo_montalto(
-        image: torch.Tensor,
-        psf: torch.Tensor,
+        image: Tensor,
+        psf: Tensor,
         progress: Callable[[float], None],
-    ) -> torch.Tensor:
+    ) -> Tensor:
         return montalto(image, psf, MontaltoParameters(progress=progress))
 
     demo("Montalto", demo_montalto)
