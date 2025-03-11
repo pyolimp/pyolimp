@@ -52,8 +52,8 @@ def _image_metric(
             assert w == h
             sz = w // 2  # can be easily changed to support non square kernels
             pad = sz
-            img_dst[:, :, ch_idx] = F.conv2d(
-                img_src[:, :, ch_idx][None, None],
+            img_dst[ch_idx, :, :] = F.conv2d(
+                img_src[ch_idx, :, :][None, None],
                 kernel[None, None],
                 padding=pad,
             )
