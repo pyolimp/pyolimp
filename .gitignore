@@ -18,3 +18,5 @@ schema.json
 build/
 dist/
 *.egg-info
+**/sandbox
+**/human_studies
