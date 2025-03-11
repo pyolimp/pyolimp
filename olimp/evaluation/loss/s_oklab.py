@@ -10,16 +10,16 @@ from ..cs.oklab import Oklab
 from ..cs.opponent import Opponent
 
 
-def srgb2opponent(srgb: Tensor) -> Tensor:
+def _srgb2opponent(srgb: Tensor) -> Tensor:
     srgb = sRGB().to_XYZ(srgb)
     return Opponent().from_XYZ(srgb)
 
 
-def opponent2oklab(oppo: Tensor) -> Tensor:
+def _opponent2oklab(oppo: Tensor) -> Tensor:
     return Oklab().from_XYZ(Opponent().to_XYZ(oppo))
 
 
-def create_gauss_kernel_2d(sigma: float, weight: float = 1.0):
+def _create_gauss_kernel_2d(sigma: float, weight: float = 1.0):
     # https://en.wikipedia.org/wiki/Gaussian_blur
     size = ceil(sigma * 3.5)
     x = torch.arange(-size, size + 1)[:, None]
@@ -29,7 +29,7 @@ def create_gauss_kernel_2d(sigma: float, weight: float = 1.0):
     return gauss
 
 
-def image_metric(
+def _image_metric(
     A_srgb: Tensor,
     B_srgb: Tensor,
     spacial_filters: tuple[Tensor, Tensor, Tensor],
@@ -41,8 +41,8 @@ def image_metric(
         for sz in filter.shape:
             assert sz % 2 == 1, f"filter size must be odd (not {sz})"
 
-    A = srgb2opponent(A_srgb)
-    B = srgb2opponent(B_srgb)
+    A = _srgb2opponent(A_srgb)
+    B = _srgb2opponent(B_srgb)
 
     A_convolved = torch.zeros_like(A)
     B_convolved = torch.zeros_like(A)
@@ -57,8 +57,8 @@ def image_metric(
                 kernel[None, None],
                 padding=pad,
             )
-    A_metric_cs = opponent2oklab(A_convolved)
-    B_metric_cs = opponent2oklab(B_convolved)
+    A_metric_cs = _opponent2oklab(A_convolved)
+    B_metric_cs = _opponent2oklab(B_convolved)
     metric = torch.linalg.norm(A_metric_cs - B_metric_cs, axis=2)
 
     return torch.mean(metric)
@@ -77,13 +77,13 @@ class SOkLab(Module):
         assert img2.shape[1] == 3
         s_oklab_values = torch.empty((img1.shape[0]))
         for idx in range(img1.shape[0]):
-            s_oklab_values[idx] = image_metric(
-                img1[idx].permute(1, 2, 0),
-                img2[idx].permute(1, 2, 0),
+            s_oklab_values[idx] = _image_metric(
+                img1[idx],
+                img2[idx],
                 (
-                    create_gauss_kernel_2d(1.0),
-                    create_gauss_kernel_2d(1.0),
-                    create_gauss_kernel_2d(1.0),
+                    _create_gauss_kernel_2d(1.0),
+                    _create_gauss_kernel_2d(1.0),
+                    _create_gauss_kernel_2d(1.0),
                 ),
             )
         return s_oklab_values

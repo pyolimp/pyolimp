@@ -45,7 +45,7 @@ class Oklab:
         lms = torch.tensordot(
             XYZ_TO_LMS.to(device=color.device), color, dims=1
         )
-        lms_cubic_root = torch.pow(lms, 1 / 3, out=lms)
+        lms_cubic_root = torch.pow(lms, 1 / 3)
         return torch.tensordot(
             LMS_TO_LAB.to(device=color.device), lms_cubic_root, dims=1
         )
@@ -54,7 +54,7 @@ class Oklab:
         lab = torch.tensordot(
             LMS_TO_LAB_INV.to(device=color.device), color, dims=1
         )
-        lab_cube = torch.pow(lab, 3.0, out=lab)
+        lab_cube = torch.pow(lab, 3.0)
         return torch.tensordot(
             XYZ_TO_LMS_INV.to(device=color.device), lab_cube, dims=1
         )
