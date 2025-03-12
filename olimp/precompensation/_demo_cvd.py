@@ -18,7 +18,9 @@ from rich.progress import (
 
 
 def demo(
-    name: Literal["Tennenholtz-Zachevsky", "CVD-SWIN"],
+    name: Literal[
+        "Tennenholtz-Zachevsky", "CVD-SWIN", "CVD DIRECT OPTIMIZATION"
+    ],
     opt_function: Callable[
         [Tensor, ColorBlindnessDistortion, Callable[[float], None]], Tensor
     ],
@@ -57,10 +59,9 @@ def demo(
         dpi=72, figsize=(12, 9), ncols=2, nrows=2
     )
     assert img.shape[0] == 1
-    img = img[0]
-    ax1.imshow(img.permute(1, 2, 0))
+    ax1.imshow(img.permute(0, 2, 3, 1)[0])
     ax1.set_title(f"Source ({img.min():g}, {img.max():g})")
-    ax2.imshow(distortion()(img)[0].permute(1, 2, 0), vmin=0.0, vmax=1.0)
+    ax2.imshow(distortion()(img).permute(0, 2, 3, 1)[0], vmin=0.0, vmax=1.0)
     ax2.set_title(f"CVD simulation ({img.min():g}, {img.max():g})")
 
     p_arr = precompensation[0].cpu().detach().numpy()
