@@ -74,20 +74,17 @@ class ColorBlindnessDistortion:
     @classmethod
     def _simulate(cls, image: Tensor, sim_matrix: Tensor) -> Tensor:
         linRGB = cls._linearRGB_from_sRGB(image)
-        dichromat_LMS = torch.tensordot(
-            sim_matrix.to(image.device), linRGB, dims=1
+        dichromat_LMS = torch.einsum(
+            "ij,bjhw->bihw", sim_matrix.to(image.device), linRGB
         )
-        return cls._sRGB_from_linearRGB(dichromat_LMS).clip_(0.0, 1.0)
+        return cls._sRGB_from_linearRGB(dichromat_LMS).clip(0.0, 1.0)
 
     def __call__(self) -> ApplyDistortion:
         return self.apply
 
     def apply(self, image: Tensor):
         assert image.ndim == 4, image.ndim
-        image_sim = torch.zeros_like(image, dtype=torch.float)
-        for image, out in zip(image, image_sim):
-            out[:] = self._simulate(image, self.sim_matrix)
-        return image_sim
+        return self._simulate(image, self.sim_matrix)
 
 
 def _demo():
