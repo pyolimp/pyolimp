@@ -19,7 +19,7 @@ class CVDParameters(NamedTuple):
     debug: None | DebugInfo = None  # pass dict to log
 
 
-def cvd_color_optimization(
+def cvd_direct_optimization(
     image: Tensor,
     distortion: ColorBlindnessDistortion,
     parameters: CVDParameters = CVDParameters(),
@@ -56,7 +56,7 @@ def cvd_color_optimization(
         retinal_image = distortion_apply(precomp_image)
 
         loss = parameters.loss_func(retinal_image, image)
-        print(loss.item())
+
         loss_step.append(loss.item())
         loss.backward()
         optimizer.step()
@@ -77,7 +77,7 @@ def cvd_color_optimization(
 def _demo():
     from .._demo_cvd import demo
 
-    def demo_cvd_metrics_optimization(
+    def demo_cvd_direct_optimization(
         image: Tensor,
         distortion: ColorBlindnessDistortion,
         progress: Callable[[float], None],
@@ -85,7 +85,7 @@ def _demo():
         from olimp.evaluation.loss.rms import RMS
 
         return (
-            cvd_color_optimization(
+            cvd_direct_optimization(
                 image,
                 distortion,
                 CVDParameters(progress=progress, loss_func=RMS("lab")),
@@ -95,7 +95,7 @@ def _demo():
     distortion = ColorBlindnessDistortion("protan")
     demo(
         "CVD DIRECT OPTIMIZATION",
-        demo_cvd_metrics_optimization,
+        demo_cvd_direct_optimization,
         distortion=distortion,
     )
 
