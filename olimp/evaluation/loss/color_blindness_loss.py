@@ -83,13 +83,13 @@ class ColorBlindnessLoss:
     def __call__(
         self, image: Tensor, precompensated: Tensor, sim_f: ApplyDistortion
     ) -> Tensor:
-    
+
         target_image = self.rgb_norm_tf(image)
         output_image = self.rgb_norm_tf(precompensated)
 
-        from minimg.view.view_client import connect; c = connect("B")
-        c.log("target_image", target_image.permute(0, 2, 3, 1)[0].detach().clone().cpu().numpy().copy())
-        c.log("output_image", output_image.permute(0, 2, 3, 1)[0].detach().clone().cpu().numpy().copy())
+        # from minimg.view.view_client import connect; c = connect("B")
+        # c.log("target_image", target_image.permute(0, 2, 3, 1)[0].detach().clone().cpu().numpy().copy())
+        # c.log("output_image", output_image.permute(0, 2, 3, 1)[0].detach().clone().cpu().numpy().copy())
 
 
         # cvd_target = sim_f(target_image)
