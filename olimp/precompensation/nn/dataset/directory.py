@@ -11,6 +11,9 @@ def read_path(root: Path, matches: Sequence[str]) -> Iterator[ImgPath]:
     from glob import iglob
     from fnmatch import fnmatch
 
+    if not matches:
+        raise ValueError("Matches must not be empty")
+
     for str_path in iglob(f"{root}/**", recursive=True):
         for match in matches:
             if fnmatch(str_path, match):
@@ -25,7 +28,7 @@ class DirectoryDataset(Dataset[Tensor]):
     ) -> None:
         self._paths = list(islice(read_path(root, matches), limit))
         if not self._paths:
-            raise ValueError(f"There are no {", ".join(matches)} in {root}")
+            raise ValueError(f"There are no {', '.join(matches)} in {root}")
 
     def __getitem__(self, index: int) -> Tensor:
         return read_img_path(self._paths[index])
