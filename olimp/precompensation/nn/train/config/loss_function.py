@@ -3,7 +3,7 @@ from typing import Annotated, Literal, Any, TypeAlias, Callable, Union
 from collections.abc import Sequence
 from .base import StrictModel
 from pydantic import Field, confloat
-from .....simulate import ApplyDistortion
+from olimp.simulate import ApplyDistortion
 from torch import Tensor
 
 
@@ -67,18 +67,20 @@ class ColorBlindnessLossFunction(StrictModel):
         )
 
         def f(
-            model_output: list[Tensor],
-            datums: list[Tensor],
-            distortions: list[type[Distortion]],
+            precompensated: Tensor,
+            original_image: Tensor,
+            # model_output: list[Tensor],
+            # datums: list[Tensor],
+            # distortions: list[type[Distortion]],
+            distortion_fn: ApplyDistortion,
+            extra: Sequence[Any],
         ) -> Tensor:
-            (cbd,) = distortions
-            assert isinstance(cbd, ColorBlindnessDistortion)
-            cbl.set_cb_type(cbd.blindness_type, self.degree)
-            (image,) = datums
-            assert image.ndim == 4, image.ndim
-            (precompensated,) = model_output
+
+            # (image,) = datums
+            # assert image.ndim == 4, image.ndim
+            # (precompensated,) = model_output
             assert precompensated.ndim == 4, precompensated.ndim
-            return cbl(image, precompensated)
+            return cbl(original_image, precompensated, distortion_fn)
 
         return f
 
