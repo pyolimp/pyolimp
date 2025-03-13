@@ -60,10 +60,12 @@ def scale_value(
 
 
 def quantile_clip(image: torch.Tensor, quantile: float = 0.98) -> torch.Tensor:
-    assert 0 < quantile <= 1, f"The quantile must be between 0 and 1 your value is: {quantile}" 
+    assert (
+        0 < quantile <= 1
+    ), f"The quantile must be between 0 and 1 your value is: {quantile}"
     max_channel = torch.max(image, dim=1).values
-    divisor = torch.quantile(max_channel.view(image.shape[0], -1), quantile, dim=1)
+    divisor = torch.quantile(
+        max_channel.view(image.shape[0], -1), quantile, dim=1
+    )
     divisor = divisor.view(image.shape[0], 1, 1, 1)
     return torch.clip(image / divisor, 0, 1)
-    
-    
