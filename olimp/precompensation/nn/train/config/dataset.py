@@ -258,7 +258,6 @@ class AugmentedDataset(TorchDataset[Tensor]):
                 self._random,
             )
             assert datum.image is not None
-            datum.image = torch.maximum(datum.image, torch.tensor(0.0))
         return datum.image.squeeze(0)
 
 
