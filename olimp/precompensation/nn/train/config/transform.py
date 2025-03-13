@@ -88,7 +88,7 @@ class NormalizeTransform(Transformation):
         self._normalize = Normalize(mean, std, inplace=True)
 
     def __call__(self, datum: Datum, random: Random) -> Datum:
-        assert datum.source is not None
+        assert datum.image is not None
         self._normalize(datum.image)
         return datum
 
