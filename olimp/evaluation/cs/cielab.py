@@ -50,7 +50,7 @@ class CIELAB:
         )
         return torch.tensordot(
             self.A.to(device=color.device),
-            f(color / illuminant_xyz),
+            f(color / illuminant_xyz.to(device=color.device)),
             dims=1,
         )
 
