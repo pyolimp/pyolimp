@@ -146,6 +146,50 @@ class Namespace:
                 ref=tensor([0.12412, 0.07493, 0.3093]),
             )
 
+        def test_sRGB_to_HLS(self):
+            from olimp.evaluation.cs.hls import HLS
+            from colorsys import rgb_to_hls
+
+            for sRGB in self.wikipedia_sRGB_colors:
+                self._test(
+                    HLS().from_sRGB,
+                    color=tensor(sRGB),
+                    ref=tensor(rgb_to_hls(*sRGB)),
+                )
+
+        def test_HLS_to_sRGB(self):
+            from olimp.evaluation.cs.hls import HLS
+            from colorsys import rgb_to_hls
+
+            for sRGB in self.wikipedia_sRGB_colors:
+                self._test(
+                    HLS().to_sRGB,
+                    color=tensor(rgb_to_hls(*sRGB)),
+                    ref=tensor(sRGB),
+                )
+
+        def test_sRGB_to_HSV(self):
+            from olimp.evaluation.cs.hsv import HSV
+            from colorsys import rgb_to_hsv
+
+            for sRGB in self.wikipedia_sRGB_colors:
+                self._test(
+                    HSV().from_sRGB,
+                    color=tensor(sRGB),
+                    ref=tensor(rgb_to_hsv(*sRGB)),
+                )
+
+        def test_HLS_to_HSV(self):
+            from olimp.evaluation.cs.hsv import HSV
+            from colorsys import rgb_to_hsv
+
+            for sRGB in self.wikipedia_sRGB_colors:
+                self._test(
+                    HSV().to_sRGB,
+                    color=tensor(rgb_to_hsv(*sRGB)),
+                    ref=tensor(sRGB),
+                )
+
 
 class TestCS1D(Namespace.BaseColorTestImplementation):
     def _test(self, op: Convert, color: Tensor, ref: Tensor) -> None:
