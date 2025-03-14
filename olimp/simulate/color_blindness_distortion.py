@@ -15,13 +15,13 @@ class ColorBlindnessDistortion:
        :class: full-width
     """
 
-    LMS_from_RGB = torch.tensor(
-        (
-            (0.27293945, 0.66418685, 0.06287371),
-            (0.10022701, 0.78761123, 0.11216177),
-            (0.01781695, 0.10961952, 0.87256353),
-        )
-    )
+    # Anchors for simulation planes
+    anchor_B = torch.Tensor(
+        [0, 0, 1]
+    )  # Blue anchor color for white-blue-yellow plane
+    anchor_tritan = torch.Tensor(
+        [0, 1, 0.5]
+    )  # Anchor color for perpendicular plane
 
     RGB_from_LMS = torch.tensor(
         (
@@ -31,37 +31,17 @@ class ColorBlindnessDistortion:
         ),
     )
 
-    def __init__(
-        self,
-        blindness_type: Literal["protan", "deutan"],
-    ) -> None:
+    def __init__(self, hue_angle_deg: float) -> None:
+        self.sim_matrix = self._get_simulation_matrix(hue_angle_deg)
 
-        if blindness_type == "protan":
-            sim_matrix = torch.tensor(
-                (
-                    (0.0, 1.06481845, -0.06481845),
-                    (0.0, 1.0, 0.0),
-                    (0.0, 0.0, 1.0),
-                )
-            )
-        elif blindness_type == "deutan":
-            sim_matrix = torch.tensor(
-                (
-                    (1.0, 0.0, 0.0),
-                    (0.93912723, 0.0, 0.06087277),
-                    (0.0, 0.0, 1.0),
-                )
-            )
-        else:
-            raise KeyError("no such distortion")
-
-        self.sim_matrix = (
-            self.RGB_from_LMS.to(sim_matrix.device)
-            @ sim_matrix
-            @ self.LMS_from_RGB.to(sim_matrix.device)
+    @classmethod
+    def from_type(cls, blindness_type: Literal["protan", "deutan", "tritan"]):
+        hue_angle = {"protan": 0, "deutan": 120, "tritan": 240}.get(
+            blindness_type, None
         )
-
-        self.blindness_type = blindness_type
+        if hue_angle is None:
+            raise KeyError(f"no such distortion {blindness_type}")
+        return cls(hue_angle)
 
     @staticmethod
     def _linearRGB_from_sRGB(image: Tensor) -> Tensor:
@@ -70,6 +50,67 @@ class ColorBlindnessDistortion:
     @staticmethod
     def _sRGB_from_linearRGB(image: Tensor) -> Tensor:
         return sRGB().from_linRGB(image)
+
+    @classmethod
+    def _get_simulation_matrix(cls, hue_angle: float):
+        """
+        Code is based on Paul Maximov's <pmaximov@iitp.ru> work:
+        https://github.com/PaulMaximov/general-dichromat-simulation
+        """
+        anchor_W_ort = torch.ones(3) / 3**0.5
+        N_1plane_RGB_ort = cls._plane_normal_from_vectors(
+            anchor_W_ort, cls.anchor_B
+        )
+        N_2plane_RGB_ort = cls._plane_normal_from_vectors(
+            anchor_W_ort, cls.anchor_tritan
+        )
+        dichvec_LMS_ort = cls._confusion_vector_from_hue(hue_angle)
+        dichvec_RGB_ort = cls.RGB_from_LMS @ dichvec_LMS_ort
+        dichvec_RGB_ort = dichvec_RGB_ort / torch.linalg.norm(dichvec_RGB_ort)
+
+        sinfi_RGB_1plane = torch.abs(dichvec_RGB_ort @ N_1plane_RGB_ort)
+        sinfi_RGB_2plane = torch.abs(dichvec_RGB_ort @ N_2plane_RGB_ort)
+
+        if sinfi_RGB_1plane > sinfi_RGB_2plane:
+            simmatr = cls._simmatr_from_points(
+                anchor_W_ort, cls.anchor_B, dichvec_RGB_ort
+            )
+        else:
+            simmatr = cls._simmatr_from_points(
+                anchor_W_ort, cls.anchor_tritan, dichvec_RGB_ort
+            )
+        return simmatr
+
+    @staticmethod
+    def _plane_normal_from_vectors(
+        anchor1: torch.Tensor, anchor2: torch.Tensor
+    ) -> torch.Tensor:
+        """Function for calculation of normal unit vector of dichromatic projection
+        plane from origin and two anchor points (Vienot et al., 1999)"""
+        plane_normal = torch.empty(3)
+        plane_normal[0] = anchor1[1] * anchor2[2] - anchor1[2] * anchor2[1]
+        plane_normal[1] = anchor1[2] * anchor2[0] - anchor1[0] * anchor2[2]
+        plane_normal[2] = anchor1[0] * anchor2[1] - anchor1[1] * anchor2[0]
+        return plane_normal / torch.linalg.norm(plane_normal)
+
+    @staticmethod
+    def _simmatr_from_points(
+        anchor1: torch.Tensor,
+        anchor2: torch.Tensor,
+        confusionvec: torch.Tensor,
+    ) -> torch.Tensor:
+        matrix = torch.vstack((confusionvec, anchor1, anchor2))
+        matrix_inv = torch.linalg.inv(matrix)
+        initial_values = torch.vstack((torch.zeros(3), anchor1, anchor2))
+        return (matrix_inv @ initial_values).T
+
+    @staticmethod
+    def _confusion_vector_from_hue(hue_angle: float) -> torch.Tensor:
+        angle = torch.deg2rad(torch.tensor(hue_angle))
+
+        vec = torch.tensor((torch.cos(angle), torch.sin(angle), 1))
+        matrix = torch.tensor(((2, 0, 1), (-1, 3**0.5, 1), (-1, -(3**0.5), 1)))
+        return 1 / 3 * matrix @ vec
 
     @classmethod
     def _simulate(cls, image: Tensor, sim_matrix: Tensor) -> Tensor:
@@ -91,8 +132,9 @@ def _demo():
     from ._demo_distortion import demo
 
     def demo_simulate():
-        yield ColorBlindnessDistortion("protan")(), "protan"
-        yield ColorBlindnessDistortion("deutan")(), "deutan"
+        yield ColorBlindnessDistortion.from_type("protan")(), "protan"
+        yield ColorBlindnessDistortion.from_type("deutan")(), "deutan"
+        yield ColorBlindnessDistortion.from_type("tritan")(), "tritan"
 
     demo("ColorBlindnessDistortion", demo_simulate)
 
