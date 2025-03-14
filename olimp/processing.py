@@ -57,3 +57,18 @@ def scale_value(
     out = torch.mul(arr, mul)
     out += add
     return out
+
+
+def quantile_clip(image: torch.Tensor, quantile: float = 0.98) -> torch.Tensor:
+    """
+    Normalizes each image in the batch by its specified quantile value and clips the result to [0, 1].
+    """
+    assert (
+        0 < quantile <= 1
+    ), f"The quantile must be between 0 and 1 your value is: {quantile}"
+    max_channel = torch.max(image, dim=1).values
+    divisor = torch.quantile(
+        max_channel.view(image.shape[0], -1), quantile, dim=1
+    )
+    divisor = divisor.view(image.shape[0], 1, 1, 1)
+    return torch.clip(image / divisor, 0, 1)

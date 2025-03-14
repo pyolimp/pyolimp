@@ -31,7 +31,7 @@ def generate_random_neighbors(
     )
 
     seed = hash(torch.mean(img1 + img2).item())
-    rng = torch.Generator().manual_seed(seed)
+    rng = torch.Generator(device=img1.device).manual_seed(seed)
 
     neighbors = torch.empty(
         (dst_height, dst_width, 2, n_pixel_neighbors), dtype=torch.float32
