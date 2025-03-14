@@ -207,7 +207,13 @@ class TestCS2D(Namespace.BaseColorTestImplementation):
 
 class TestCS3D(Namespace.BaseColorTestImplementation):
     def _test(self, op: Convert, color: Tensor, ref: Tensor) -> None:
-        color = color[:, None, None].repeat(1, 7, 2)
+        color_repeated = color[:, None, None].repeat(1, 7, 2)
         ref = ref[:, None, None].repeat(1, 7, 2)
-        exp = op(color)
+        exp = op(color_repeated)
         testing.assert_close(exp, ref, rtol=1e-5, atol=1e-4)
+        testing.assert_close(
+            color_repeated,
+            color[:, None, None].repeat(1, 7, 2),
+            rtol=0.0,
+            atol=0.0,
+        )

@@ -19,6 +19,6 @@ class HSV:
         h, s, v = color
         l = v * (1.0 - s / 2.0)
         minl = torch.minimum(l, 1.0 - l)
-        s = torch.nan_to_num(torch.divide((v - l), minl, out=v), out=v)
+        s = torch.nan_to_num(torch.divide((v - l), minl, out=minl), out=minl)
 
         return HLS().to_sRGB(torch.stack((h, l, s)).reshape(color.shape))
