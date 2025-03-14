@@ -13,13 +13,14 @@ class TennenholtzZachevskyParameters(NamedTuple):
     progress: Callable[[float], None] | None = None
 
 
-def create_sim_map(
-    img_3ch_hsv: Tensor, img_2ch_hsv: Tensor, window: tuple[int, int]
+def _create_sim_map(
+    img_3ch_hsv: Tensor, img_2ch_hsv: Tensor, window: int
 ) -> Tensor:
     assert img_3ch_hsv.dim() == img_2ch_hsv.dim() == 3
+    assert window % 2 == 1, f"window ({window}) must be odd"
 
-    pad_h = window[0] // 2
-    pad_w = window[1] // 2
+    pad_h = window // 2
+    pad_w = window // 2
     img_3ch_hsv = F.pad(
         img_3ch_hsv, pad=(pad_w, pad_w, pad_h, pad_h), mode="reflect"
     )
@@ -37,22 +38,10 @@ def create_sim_map(
                 :, i - pad_h : i + pad_h + 1, j - pad_w : j + pad_w + 1
             ]
             mse_3ch = torch.sum(
-                torch.norm(
-                    p_3ch
-                    - img_3ch_hsv[..., i, j]
-                    .unsqueeze(-1)
-                    .unsqueeze(-1)
-                    .repeat(1, window[0], window[1])
-                )
+                torch.norm(p_3ch - img_3ch_hsv[..., i : i + 1, j : j + 1])
             )
             mse_2ch = torch.sum(
-                torch.norm(
-                    p_2ch
-                    - img_2ch_hsv[..., i, j]
-                    .unsqueeze(-1)
-                    .unsqueeze(-1)
-                    .repeat(1, window[0], window[1])
-                )
+                torch.norm(p_2ch - img_2ch_hsv[..., i : i + 1, j : j + 1])
             )
             sim_map[i, j] = mse_3ch - mse_2ch
     sim_map_stretched = (
@@ -64,7 +53,7 @@ def create_sim_map(
     ]
 
 
-def contrast_func(
+def _contrast_func(
     sim_map: Tensor, params: Tensor, type: Literal["lin", "exp"]
 ) -> Tensor:
     if type == "lin":
@@ -73,11 +62,23 @@ def contrast_func(
         return params[0] * sim_map * torch.exp(params[1] * torch.abs(sim_map))
 
 
-def set_range(img_3ch_hsv: Tensor, v_chan_stretched: Tensor) -> Tensor:
+def _set_range(img_3ch_hsv: Tensor, v_chan_stretched: Tensor) -> Tensor:
     img_3ch_hsv[2] = (v_chan_stretched - v_chan_stretched.min()) / (
         v_chan_stretched.max() - v_chan_stretched.min()
     ) * (img_3ch_hsv[2].max() - img_3ch_hsv[2].min()) + img_3ch_hsv[2].min()
     return img_3ch_hsv
+
+
+def _hsv2rgb(hsv: Tensor) -> Tensor:
+    from olimp.evaluation.cs.hsv import HSV
+
+    return HSV().to_sRGB(hsv)
+
+
+def _rgb2hsv(rgb: Tensor) -> Tensor:
+    from olimp.evaluation.cs.hsv import HSV
+
+    return HSV().from_sRGB(rgb)
 
 
 def tennenholtz_zachevsky(
@@ -91,26 +92,17 @@ def tennenholtz_zachevsky(
     .. image:: ../../_static/tennenholtz_zachevsky.svg
        :class: full-width
     """
-    from skimage.color import rgb2hsv, hsv2rgb
 
-    res = torch.zeros_like(img_3ch)
-
-    img_3ch = img_3ch[0]
+    assert img_3ch.ndim == 3, img_3ch.ndim
     distortion_apply = distortion()
 
-    img_2ch = distortion_apply(img_3ch)[0]
+    img_2ch = distortion_apply(img_3ch[None])[0]
 
-    img_3ch_hsv = torch.as_tensor(
-        rgb2hsv(img_3ch.permute(1, 2, 0).detach().cpu())
-    ).permute(2, 0, 1)
-    img_2ch_hsv = torch.as_tensor(
-        rgb2hsv(img_2ch.permute(1, 2, 0).detach().cpu())
-    ).permute(2, 0, 1)
+    img_3ch_hsv = _rgb2hsv(img_3ch.clone())
+    img_2ch_hsv = _rgb2hsv(img_2ch.clone())
 
-    sim_map_base = create_sim_map(
-        img_3ch_hsv,
-        img_2ch_hsv,
-        window=(parameters.sim_window_size, parameters.sim_window_size),
+    sim_map_base = _create_sim_map(
+        img_3ch_hsv, img_2ch_hsv, parameters.sim_window_size
     )
 
     if parameters.contrast_func_type == "lin":
@@ -125,40 +117,28 @@ def tennenholtz_zachevsky(
         for param in params:
             if parameters.progress is not None:
                 parameters.progress(float(param / params[-1]))
-            v_chan_streched = img_3ch_hsv[2, ...] + contrast_func(
+            v_chan_stretched = img_3ch_hsv[2, ...] + _contrast_func(
                 sim_map_base, param, type=parameters.contrast_func_type
             )
-            img_3ch_hsv_v_streched = set_range(img_3ch_hsv, v_chan_streched)
+            img_3ch_hsv_v_stretched = _set_range(img_3ch_hsv, v_chan_stretched)
 
             img_2ch_enh = distortion_apply(
-                torch.as_tensor(
-                    hsv2rgb(
-                        img_3ch_hsv_v_streched.permute(1, 2, 0).detach().cpu()
-                    )
-                ).permute(2, 0, 1)
+                _hsv2rgb(img_3ch_hsv_v_stretched.detach())[None]
             )[0]
-            img_2ch_hsv_v_streched = torch.as_tensor(
-                rgb2hsv(img_2ch_enh.permute(1, 2, 0).detach().cpu())
-            ).permute(2, 0, 1)
+            img_2ch_hsv_v_stretched = _rgb2hsv(img_2ch_enh.detach())
 
-            sim_map_curr = create_sim_map(
-                img_3ch_hsv_v_streched,
-                img_2ch_hsv_v_streched,
-                window=(
-                    parameters.sim_window_size,
-                    parameters.sim_window_size,
-                ),
+            sim_map_curr = _create_sim_map(
+                img_3ch_hsv_v_stretched,
+                img_2ch_hsv_v_stretched,
+                window=parameters.sim_window_size,
             )
             curr_error = (sim_map_curr + 1).norm() + regularization_coef * (
-                v_chan_streched - img_3ch_hsv[2, ...]
+                v_chan_stretched - img_3ch_hsv[2, ...]
             ).norm()
             if curr_error < optimal_error:
                 optimal_error = curr_error
-                optimal_params_img = img_3ch_hsv_v_streched.clone()
-    res[0] = torch.as_tensor(
-        hsv2rgb(optimal_params_img.permute(1, 2, 0).detach().cpu())
-    ).permute(2, 0, 1)
-    return res
+                optimal_params_img = img_3ch_hsv_v_stretched.clone()
+    return _hsv2rgb(optimal_params_img)
 
 
 def _demo():
@@ -169,15 +149,10 @@ def _demo():
         distortion: ColorBlindnessDistortion,
         progress: Callable[[float], None],
     ) -> torch.Tensor:
-        return (
-            tennenholtz_zachevsky(
-                image,
-                distortion,
-                TennenholtzZachevskyParameters(progress=progress),
-            ),
-        )
+        parameters = TennenholtzZachevskyParameters(progress=progress)
+        return (tennenholtz_zachevsky(image[0], distortion, parameters)[None],)
 
-    distortion = ColorBlindnessDistortion("protan")
+    distortion = ColorBlindnessDistortion.from_type("protan")
     demo(
         "Tennenholtz-Zachevsky",
         demo_tennenholtz_zachevsky,
