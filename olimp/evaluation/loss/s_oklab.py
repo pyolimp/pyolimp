@@ -1,5 +1,3 @@
-from math import ceil
-
 import torch
 from torch import Tensor
 from torch.nn import Module
@@ -11,22 +9,23 @@ from ..cs.opponent import Opponent
 
 
 def _srgb2opponent(srgb: Tensor) -> Tensor:
-    srgb = sRGB().to_XYZ(srgb)
-    return Opponent().from_XYZ(srgb)
+    return Opponent().from_XYZ(sRGB().to_XYZ(srgb))
 
 
 def _opponent2oklab(oppo: Tensor) -> Tensor:
-    return Oklab().from_XYZ(Opponent().to_XYZ(oppo))
+    return Oklab().from_XYZ(Opponent().to_XYZ(oppo).clip(min=0.0))
 
 
-def _create_gauss_kernel_2d(sigma: float, weight: float = 1.0):
+def _create_gauss_kernel_2d(sigma: Tensor, weight: Tensor, image_size: Tensor):
     # https://en.wikipedia.org/wiki/Gaussian_blur
-    size = ceil(sigma * 3.5)
+    size = torch.ceil(torch.min(sigma.max() * 3.5, image_size))
     x = torch.arange(-size, size + 1)[:, None]
     y = x.T
-    gauss = torch.exp(-(x * x + y * y) / (2 * sigma * sigma))
-    gauss *= weight / gauss.sum()
-    return gauss
+    kernel = torch.zeros(len(x), len(x))
+    for s, w in zip(sigma, weight):
+        gauss = torch.exp(-(x * x + y * y) / (2 * s * s))
+        kernel += gauss / gauss.sum() * w
+    return kernel / kernel.sum()
 
 
 def _image_metric(
@@ -52,38 +51,65 @@ def _image_metric(
             assert w == h
             sz = w // 2  # can be easily changed to support non square kernels
             pad = sz
-            img_dst[ch_idx, :, :] = F.conv2d(
-                img_src[ch_idx, :, :][None, None],
+            img_dst[ch_idx] = F.conv2d(
+                img_src[ch_idx][None, None],
                 kernel[None, None],
                 padding=pad,
             )
     A_metric_cs = _opponent2oklab(A_convolved)
     B_metric_cs = _opponent2oklab(B_convolved)
+
     metric = torch.linalg.norm(A_metric_cs - B_metric_cs, axis=2)
 
     return torch.mean(metric)
 
 
 class SOkLab(Module):
+    """
+    Code is based on:
+    https://github.com/iitpvisionlab/vsl_ial/blob/main/vsl_ial/image_metric.py
+    """
 
-    def __init__(self):
+    def __init__(self, dpi: float, distance_inch: float):
+
+        ppd = dpi * distance_inch * torch.tan(torch.tensor(torch.pi / 180))
+
+        self.weights = (
+            torch.tensor((1.00327, 0.11442, -0.11769)),
+            torch.tensor((0.61672, 0.38328)),
+            torch.tensor((0.56789, 0.43211)),
+        )
+        self.sigmas = (
+            torch.tensor((0.0283, 0.133, 4.336)) * ppd,
+            torch.tensor((0.0392, 0.494)) * ppd,
+            torch.tensor((0.0536, 0.386)) * ppd,
+        )
+
         super().__init__()
 
-    def forward(self, img1: Tensor, img2: Tensor):
-        assert img1.ndim == 4, img1.shape
-        assert img2.ndim == 4, img2.shape
+    def forward(self, image1: Tensor, image2: Tensor):
+        assert image1.ndim == 4, image1.shape
+        assert image2.ndim == 4, image2.shape
 
-        assert img1.shape[1] == 3
-        assert img2.shape[1] == 3
-        s_oklab_values = torch.empty((img1.shape[0]))
-        for idx in range(img1.shape[0]):
+        assert image1.shape[1] == 3
+        assert image2.shape[1] == 3
+
+        max_size = torch.tensor(max(image1.shape[-2:]))
+        s_oklab_values = torch.empty((image1.shape[0]))
+        for idx in range(image1.shape[0]):
             s_oklab_values[idx] = _image_metric(
-                img1[idx],
-                img2[idx],
+                image1[idx],
+                image2[idx],
                 (
-                    _create_gauss_kernel_2d(1.0),
-                    _create_gauss_kernel_2d(1.0),
-                    _create_gauss_kernel_2d(1.0),
+                    _create_gauss_kernel_2d(
+                        self.sigmas[0], self.weights[0], max_size
+                    ),
+                    _create_gauss_kernel_2d(
+                        self.sigmas[1], self.weights[1], max_size
+                    ),
+                    _create_gauss_kernel_2d(
+                        self.sigmas[2], self.weights[2], max_size
+                    ),
                 ),
             )
         return s_oklab_values
