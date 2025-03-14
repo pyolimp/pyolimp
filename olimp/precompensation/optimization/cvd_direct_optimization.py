@@ -92,7 +92,7 @@ def _demo():
             ),
         )
 
-    distortion = ColorBlindnessDistortion("protan")
+    distortion = ColorBlindnessDistortion.from_type("protan")
     demo(
         "CVD DIRECT OPTIMIZATION",
         demo_cvd_direct_optimization,
