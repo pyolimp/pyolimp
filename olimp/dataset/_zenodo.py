@@ -108,8 +108,15 @@ def load_dataset(
     progress_callback: ProgressCallback = default_progress,
 ) -> dict[SubPath, list[ImgPath]]:
     dataset_name, record = dataset_name_and_record
-    root_path = Path(os.environ.get("OLIMP_DATATEST", ".datasets")).absolute()
-    dataset_path = root_path / dataset_name
+
+    cache_root = os.getenv("OLIMP_DATASETS")
+    if cache_root is None:
+        cache_home_dir = os.getenv("XDG_CACHE_HOME")
+        if not cache_home_dir:
+            cache_home_dir = Path("~/.cache").expanduser()
+        cache_root = Path(cache_home_dir) / "pyolimp"
+    dataset_path = Path(cache_root) / dataset_name
+
     if not dataset_path.exists():
         dataset_path.mkdir(parents=True, exist_ok=True)
         _download_zenodo(
