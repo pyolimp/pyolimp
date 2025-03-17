@@ -103,7 +103,7 @@ def montalto(
     if parameters.progress is not None:
         parameters.progress(1.0)
 
-    return precomp.clip_(0, 1)
+    return precomp.clip(0, 1)
 
 
 def _demo():
