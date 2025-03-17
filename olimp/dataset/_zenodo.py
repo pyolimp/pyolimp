@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import cast, Iterator, Literal, Callable, NewType
+from typing import cast, Iterator, Literal, NewType
 from pathlib import Path
 import os
 from . import ImgPath, ProgressCallback
@@ -44,6 +44,8 @@ def _download_zenodo(
                     progress_callback(
                         f"Unpacking {name}", idx / len(zf.infolist())
                     )
+        # Remove file, so we know the download was successful
+        zip_path.unlink()
 
 
 def _read_dataset_dir(
@@ -118,10 +120,25 @@ def load_dataset(
     dataset_path = Path(cache_root) / dataset_name
 
     if not dataset_path.exists():
+        print(f"downloading dataset to {dataset_path}")
         dataset_path.mkdir(parents=True, exist_ok=True)
         _download_zenodo(
             dataset_path, record=record, progress_callback=progress_callback
         )
+    else:
+        zips = list(dataset_path.glob("*.zip"))
+
+        if zips:
+            print("Dataset is corrupted")
+            print(f"Redownloading dataset to {dataset_path}")
+            # zips = corrupt download
+            for zipfile in zips:
+                zipfile.unlink()
+            _download_zenodo(
+                dataset_path,
+                record=record,
+                progress_callback=progress_callback,
+            )
 
     dataset: dict[SubPath, list[ImgPath]] = {}
     for subpath, items in _read_dataset_dir(dataset_path, subpaths):
@@ -129,4 +146,6 @@ def load_dataset(
             dataset[subpath] += items
         else:
             dataset[subpath] = items
+    if progress_callback is not None:
+        progress_callback(f"Loaded {len(dataset)} subsets", 1.0)
     return dataset
