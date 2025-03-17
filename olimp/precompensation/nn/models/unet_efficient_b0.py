@@ -41,13 +41,12 @@ class PrecompensationUNETB0(smp.Unet):
         return model
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
-        # img_gray = image.to(torch.float32)[None, ...]
-        # img_gray = torchvision.transforms.Resize((512, 512))(img_gray)
         img_blur = fft_conv(image, psf)
-
+        # we train with low contrast image, account dynamic range [0, 1]
+        image_low_contrast = image * (0.7 - 0.3) + 0.3
         return torch.cat(
             [
-                image,
+                image_low_contrast,
                 img_blur,
                 psf,
             ],
