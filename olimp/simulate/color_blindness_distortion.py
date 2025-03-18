@@ -32,7 +32,8 @@ class ColorBlindnessDistortion:
     )
 
     def __init__(self, hue_angle_deg: float) -> None:
-        self.sim_matrix = self._get_simulation_matrix(hue_angle_deg)
+        with torch.device("cpu"):
+            self.sim_matrix = self._get_simulation_matrix(hue_angle_deg)
 
     @classmethod
     def from_type(cls, blindness_type: Literal["protan", "deutan", "tritan"]):
