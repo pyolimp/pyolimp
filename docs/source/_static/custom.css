@@ -1,3 +1,14 @@
 img.full-width {
     min-width: 77vw;
 }
+
+#config>.wy-table-responsive {
+    min-width: 800px;
+    max-width: 77vw;
+    width: 77vw;
+    background: white;
+}
+
+#config>.wy-table-responsive table td, #config>.wy-table-responsive table th {
+    white-space: wrap;
+}

@@ -19,7 +19,7 @@ copyright = "2025, PyOlimp authors"
 author = "PyOlimp authors"
 from olimp import __version__
 
-release = __version__
+module_version = release = __version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -38,14 +38,17 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 # see https://alabaster.readthedocs.io/en/latest/customization.html#theme-options
 html_theme_options = {
     "sidebar_width": "17em",
-    "page_width": "90%",
 }
+
+html_css_files = [
+    "custom.css",
+]
 
 
 def skip_forward_methods(
