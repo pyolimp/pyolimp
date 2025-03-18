@@ -17,6 +17,7 @@
         "grayscale",
         "hdrnet",
         "linalg",
+        "lpips",
         "meshgrid",
         "Montalto",
         "nrmse",

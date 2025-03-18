@@ -87,8 +87,8 @@ stress
 .. automodule:: olimp.evaluation.loss.stress
    :members:
 
-vsi
----
+lpips
+-----
 
-.. automodule:: olimp.evaluation.loss.vsi
+.. automodule:: olimp.evaluation.loss.lpips
    :members:
