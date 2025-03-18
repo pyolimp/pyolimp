@@ -30,8 +30,9 @@ def demo(
             simulation.append(out)
             labels.append(label)
 
+    ncols = len(simulation) + 1
     _fig, axis = plt.subplots(
-        dpi=72, figsize=(12, 9), ncols=len(simulation) + 1, nrows=1
+        dpi=72, figsize=(4 * ncols, 4), ncols=ncols, nrows=1
     )
     assert img.shape[0] == 1
     img = img[0]
