@@ -3,7 +3,9 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 import sys
+from typing import Literal, Any
 from pathlib import Path
+from sphinx.application import Sphinx
 
 root = Path(__file__).parents[2]
 print("root", root)
@@ -44,6 +46,27 @@ html_theme_options = {
     "sidebar_width": "17em",
     "page_width": "90%",
 }
+
+
+def skip_forward_methods(
+    app: Sphinx,
+    what: Literal[
+        "module", "class", "exception", "function", "method", "attribute"
+    ],
+    name: str,
+    obj: Any,
+    skip: bool,
+    options: dict[str, bool],
+) -> bool:
+    # Skip default "forward" methods
+    if name == "forward" and obj.__doc__ == None:
+        return True
+    return skip
+
+
+def setup(app: Sphinx):
+    app.connect("autodoc-skip-member", skip_forward_methods)
+
 
 root = Path(__file__).parents[1]
 from docs.gen_images import gen_images
