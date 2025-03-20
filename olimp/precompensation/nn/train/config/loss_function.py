@@ -23,7 +23,7 @@ class VaeLossFunction(StrictModel):
     name: Literal["Vae"]
 
     def load(self, model: Any):
-        from .....evaluation.loss import vae_loss
+        from .....evaluation.loss.vae import vae_loss
 
         assert type(model).__name__ in (
             "VAE",

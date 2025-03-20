@@ -92,3 +92,9 @@ lpips
 
 .. automodule:: olimp.evaluation.loss.lpips
    :members:
+
+vae
+---
+
+.. automodule:: olimp.evaluation.loss.vae
+   :members:
