@@ -42,9 +42,7 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 # see https://alabaster.readthedocs.io/en/latest/customization.html#theme-options
-html_theme_options = {
-    "sidebar_width": "17em",
-}
+html_theme_options = {}
 
 html_css_files = [
     "custom.css",
