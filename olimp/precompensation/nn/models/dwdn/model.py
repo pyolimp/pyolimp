@@ -1,4 +1,3 @@
-import numpy as np
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
@@ -240,8 +239,8 @@ class DWDN(nn.Module):
         for level in range(self.n_levels):
             scale = self.scale ** (self.n_levels - level - 1)
             _, _, h, w = input.shape
-            hi = int(np.round(h * scale))
-            wi = int(np.round(w * scale))
+            hi = round(h * scale)
+            wi = round(w * scale)
 
             if level == 0:
                 input_clear = F.interpolate(
