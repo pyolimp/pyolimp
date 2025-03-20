@@ -11,7 +11,7 @@
 # --------------------------------------------
 """
 
-import numpy as np
+from math import ceil
 import torch
 import torch.nn as nn
 import torch.fft
@@ -35,12 +35,6 @@ def splits(a: Tensor, sf: int):
     b = torch.cat(torch.chunk(b, sf, dim=3), dim=5)
 
     return b
-
-
-def c2c(x):
-    return torch.from_numpy(
-        np.stack([np.float32(x.real), np.float32(x.imag)], axis=-1)
-    )
 
 
 def r2c(x):
@@ -280,8 +274,8 @@ class ResUNet(nn.Module):
 
     def forward(self, x: Tensor):
         h, w = x.size()[-2:]
-        paddingBottom = int(np.ceil(h / 8) * 8 - h)
-        paddingRight = int(np.ceil(w / 8) * 8 - w)
+        paddingBottom = int(ceil(h / 8) * 8 - h)
+        paddingRight = int(ceil(w / 8) * 8 - w)
         x = nn.ReplicationPad2d((0, paddingRight, 0, paddingBottom))(x)
 
         x1 = self.m_head(x)
