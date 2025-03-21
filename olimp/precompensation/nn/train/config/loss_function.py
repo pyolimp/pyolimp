@@ -236,26 +236,20 @@ class RMSLossFunction(StrictModel):
         return _create_simple_loss(rms)
 
 
-class CDLabLossFunction(StrictModel):
-    name: Literal["CDLab"]
+class ChromaticityDifferenceLossFunction(StrictModel):
+    name: Literal["ChromaticityDifference"]
+    color_space: Literal["lab", "prolab"]
 
     def load(self, _model: Any):
-        from .....evaluation.loss.chromaticity_difference import CDLab
+        from .....evaluation.loss.chromaticity_difference import (
+            ChromaticityDifference,
+        )
 
-        cd_lab = Lab()
+        cd = ChromaticityDifference(
+            self.color_space,
+        )
 
-        return _create_simple_loss(cd_lab)
-
-
-class CDproLabLossFunction(StrictModel):
-    name: Literal["CDproLab"]
-
-    def load(self, _model: Any):
-        from .....evaluation.loss.chromaticity_difference import CDproLab
-
-        cd_prolab = CDproLab()
-
-        return _create_simple_loss(cd_prolab)
+        return _create_simple_loss(cd)
 
 
 class VSILossFunction(StrictModel):
