@@ -41,11 +41,15 @@ def CD_map(
     return chromaticity_diff
 
 
-class CDBase(Module):
+class ChromaticityDifference(Module):
     _color_space: Literal["lab", "prolab"]
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        color_space: Literal["lab", "prolab"],
+    ) -> None:
         super().__init__()
+        self._color_space = color_space
 
     def forward(
         self,
@@ -68,11 +72,3 @@ class CDBase(Module):
                 )
             )
         return cd_maps
-
-
-class CDLab(CDBase):
-    _color_space = "lab"
-
-
-class CDproLab(CDBase):
-    _color_space = "prolab"

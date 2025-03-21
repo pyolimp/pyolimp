@@ -1,6 +1,8 @@
 from __future__ import annotations
 from unittest import TestCase
-from olimp.evaluation.loss.chromaticity_difference import CDLab, CDproLab
+from olimp.evaluation.loss.chromaticity_difference import (
+    ChromaticityDifference,
+)
 from olimp.evaluation.loss.rms import RMS
 from olimp.evaluation.loss.piq import MultiScaleSSIMLoss
 import torch
@@ -36,11 +38,12 @@ class TestRMS(TestCase):
         pred = torch.zeros((1, 3, 256, 256))
         target = torch.zeros((1, 3, 256, 256))
 
-        # Calculate the RMS loss
-        loss = RMS("lab")(pred, target)
+        for color_space in ["lab", "prolab"]:
+            # Calculate the RMS loss
+            loss = RMS(color_space)(pred, target)
 
-        # Assert that the loss is zero
-        self.assertEqual(loss, 0)
+            # Assert that the loss is zero
+            self.assertEqual(loss, 0)
 
     def test_empty_zero_and_rand_images(self):
         # Create an empty zero image and an image with all ones
@@ -49,24 +52,26 @@ class TestRMS(TestCase):
         rng = torch.Generator().manual_seed(seed)
         target = torch.rand(1, 3, 256, 256, generator=rng)
 
-        # Calculate the RMS loss
-        loss = RMS("lab")(pred, target)
+        for color_space in ["lab", "prolab"]:
+            # Calculate the RMS loss
+            loss = RMS(color_space)(pred, target)
 
-        # Assert that the loss is non-zero
-        self.assertNotEqual(loss, 0)
+            # Assert that the loss is non-zero
+            self.assertNotEqual(loss, 0)
 
 
-class TestCDLab(TestCase):
+class TestChromaticityDifference(TestCase):
     def test_empty_zero_images(self):
         # Create two empty zero images
         pred = torch.zeros((1, 3, 256, 256))
         target = torch.zeros((1, 3, 256, 256))
 
-        # Calculate the CDLab loss
-        loss = CDLab()(pred, target)
+        for color_space in ["lab", "prolab"]:
+            # Calculate the CDLab loss
+            loss = ChromaticityDifference(color_space)(pred, target)
 
-        # Assert that the loss is zero
-        self.assertEqual(loss, 0)
+            # Assert that the loss is zero
+            self.assertEqual(loss, 0)
 
     def test_empty_zero_and_ones_images(self):
         # Create an empty zero image and an image with all ones
@@ -74,33 +79,9 @@ class TestCDLab(TestCase):
         target = torch.ones((1, 3, 256, 256))
         target[:, 0, 0:32, 0:32] = 0.5
 
-        # Calculate the CDLab loss
-        loss = CDLab()(pred, target)
+        for color_space in ["lab", "prolab"]:
+            # Calculate the CDLab loss
+            loss = ChromaticityDifference(color_space)(pred, target)
 
-        # Assert that the loss is non-zero
-        self.assertNotEqual(loss, 0)
-
-
-class TestCDproLab(TestCase):
-    def test_empty_zero_images(self):
-        # Create two empty zero images
-        pred = torch.zeros((1, 3, 256, 256))
-        target = torch.zeros((1, 3, 256, 256))
-
-        # Calculate the CDproLab loss
-        loss = CDproLab()(pred, target)
-
-        # Assert that the loss is zero
-        self.assertEqual(loss, 0)
-
-    def test_empty_zero_and_ones_images(self):
-        # Create an empty zero image and an image with all ones
-        pred = torch.zeros((1, 3, 256, 256))
-        target = torch.ones((1, 3, 256, 256))
-        target[:, 0, 0:32, 0:32] = 0.5
-
-        # Calculate the CDproLab loss
-        loss = CDproLab()(pred, target)
-
-        # Assert that the loss is non-zero
-        self.assertNotEqual(loss, 0)
+            # Assert that the loss is non-zero
+            self.assertNotEqual(loss, 0)

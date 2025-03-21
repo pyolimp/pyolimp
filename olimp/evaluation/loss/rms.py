@@ -132,7 +132,7 @@ class RMS(Module):
         n_pixel_neighbors: int = 1000,
         step: int = 10,
         sigma_rate: float = 0.25,
-    ):
+    ) -> None:
         super().__init__()
         self._color_space = color_space
         self._n_pixel_neighbors = n_pixel_neighbors
