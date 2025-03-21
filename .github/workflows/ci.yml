@@ -10,7 +10,7 @@ on:
 
 jobs:
   main:
-    name: Run HSIRS Tests
+    name: Run PyOlimp Tests
     runs-on: ubuntu-22.04
     permissions:
       contents: write
