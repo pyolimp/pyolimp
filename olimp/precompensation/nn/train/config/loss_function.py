@@ -239,17 +239,46 @@ class RMSLossFunction(StrictModel):
 class ChromaticityDifferenceLossFunction(StrictModel):
     name: Literal["ChromaticityDifference"]
     color_space: Literal["lab", "prolab"]
+    mode: Literal[
+        "normal-color-vision",
+        "color-vision-deficiency",
+    ] = "normal-color-vision"
 
     def load(self, _model: Any):
         from .....evaluation.loss.chromaticity_difference import (
             ChromaticityDifference,
         )
 
-        cd = ChromaticityDifference(
-            self.color_space,
-        )
+        cd = ChromaticityDifference(self.color_space)
 
-        return _create_simple_loss(cd)
+        if self.mode == "normal-color-vision":
+
+            def loss_func(
+                precompensated: Tensor,
+                original_image: Tensor,
+                distortion_fn: ApplyDistortion,
+                extra: Sequence[Any],
+            ) -> Tensor:
+                return cd(precompensated, original_image, *extra)
+
+        elif self.mode == "color-vision-deficiency":
+
+            def loss_func(
+                precompensated: Tensor,
+                original_image: Tensor,
+                distortion_fn: ApplyDistortion,
+                extra: Sequence[Any],
+            ) -> Tensor:
+                return cd(
+                    distortion_fn(precompensated),
+                    distortion_fn(original_image),
+                    *extra,
+                )
+
+        else:
+            assert False
+
+        return loss_func
 
 
 class VSILossFunction(StrictModel):
@@ -276,6 +305,7 @@ class SOkLabLossFunction(StrictModel):
 
 LossFunction = Annotated[
     VaeLossFunction
+    | ChromaticityDifferenceLossFunction
     | ColorBlindnessLossFunction
     | MultiScaleSSIMLossFunction
     | RMSLossFunction
