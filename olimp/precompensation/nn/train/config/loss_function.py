@@ -285,9 +285,9 @@ class VSILossFunction(StrictModel):
     name: Literal["VSI"]
 
     def load(self, _model: Any):
-        from .....evaluation.loss.vsi import VSI
+        from .....evaluation.loss.piq import VSILoss
 
-        vsi = VSI()
+        vsi = VSILoss()
 
         return _create_simple_loss(vsi)
 
