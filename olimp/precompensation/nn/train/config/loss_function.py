@@ -294,11 +294,13 @@ class VSILossFunction(StrictModel):
 
 class SOkLabLossFunction(StrictModel):
     name: Literal["SOkLab"]
+    dpi: float
+    distance_inch: float
 
     def load(self, _model: Any):
         from .....evaluation.loss.s_oklab import SOkLab
 
-        s_oklab = SOkLab()
+        s_oklab = SOkLab(dpi=self.dpi, distance_inch=self.distance_inch)
 
         return _create_simple_loss(s_oklab)
 
