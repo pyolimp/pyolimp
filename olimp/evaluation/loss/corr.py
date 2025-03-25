@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from torch.nn import Module
 from torch import Tensor
+import torch
 
 
 class Correlation(Module):
@@ -24,6 +25,11 @@ class Correlation(Module):
         Returns:
             Tensor: The computed correlation value.
         """
+        assert x.ndim == 4, x.shape
+        assert y.ndim == 4, y.shape
+        return torch.tensor([self._correlation(x, y) for x, y in zip(x, y)])
+
+    def _correlation(self, x: Tensor, y: Tensor) -> Tensor:
         # Small epsilon to avoid division by zero
         epsilon = 1e-8
 

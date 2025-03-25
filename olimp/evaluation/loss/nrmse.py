@@ -19,7 +19,7 @@ class NormalizedRootMSE(Module):
         normalization: Literal["euclidean", "min-max", "mean"] = "euclidean",
         invert: bool = True,
     ) -> None:
-        super(NormalizedRootMSE, self).__init__()  # type: ignore
+        super().__init__()  # type: ignore
         self.normalization = normalization.lower()
         self.invert = invert
 
