@@ -18,6 +18,7 @@ class PSNR(Module):
         self,
         mse_metric: MSE = MSE(),
     ) -> None:
+        super().__init__()
         self.mse_metric = mse_metric
 
     def forward(self, x: Tensor, y: Tensor) -> Tensor:
@@ -31,7 +32,11 @@ class PSNR(Module):
         Returns:
             Tensor: The computed PSNR value. Returns `inf` if MSE is zero.
         """
+        assert x.ndim == 4, x.shape
+        assert y.ndim == 4, y.shape
+        return torch.tensor([self._psnr(x, y) for x, y in zip(x, y)])
 
+    def _psnr(self, x: Tensor, y: Tensor) -> Tensor:
         mse_value = self.mse_metric(x, y)
         max_pixel = torch.max(x)
 

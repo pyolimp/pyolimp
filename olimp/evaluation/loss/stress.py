@@ -14,10 +14,15 @@ class STRESS(Module):
     """
 
     def __init__(self, invert: bool = False):
-        super(STRESS, self).__init__()  # type: ignore
+        super().__init__()  # type: ignore
         self.invert = invert
 
     def forward(self, x: Tensor, y: Tensor) -> Tensor:
+        assert x.ndim == 4, x.shape
+        assert y.ndim == 4, y.shape
+        return torch.tensor([self._stress(x, y) for x, y in zip(x, y)])
+
+    def _stress(self, x: Tensor, y: Tensor) -> Tensor:
         """
         Computes the Stress metric (or 1 - Stress if invert is True).
 
@@ -35,6 +40,7 @@ class STRESS(Module):
 
         # Compute stress
         stress_value = torch.sqrt(1 - (x_y**2) / (x_1 * y_2))
+        stress_value = torch.nan_to_num(stress_value)
 
         # Return stress or 1 - stress based on invert flag
         return 1 - stress_value if self.invert else stress_value
