@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from ..cs.srgb import sRGB
 from ..cs.oklab import Oklab
 from ..cs.opponent import Opponent
+from olimp.processing import fft_conv
 
 
 def _srgb2opponent(srgb: Tensor) -> Tensor:
@@ -16,16 +17,17 @@ def _opponent2oklab(oppo: Tensor) -> Tensor:
     return Oklab().from_XYZ(Opponent().to_XYZ(oppo).clip(min=0.0))
 
 
-def _create_gauss_kernel_2d(sigma: Tensor, weight: Tensor, image_size: Tensor):
+def _create_gauss_kernel_2d(
+    sigma: Tensor, weight: Tensor, height: int, width: int
+) -> Tensor:
     # https://en.wikipedia.org/wiki/Gaussian_blur
-    size = torch.ceil(torch.min(sigma.max() * 3.5, image_size))
-    x = torch.arange(-size, size + 1)[:, None]
-    y = x.T
-    kernel = torch.zeros(len(x), len(x))
+    y = (torch.arange(height, dtype=torch.float32) - height * 0.5)[:, None]
+    x = (torch.arange(width, dtype=torch.float32) - width * 0.5)[:, None].T
+    kernel = torch.zeros(height, width)
     for s, w in zip(sigma, weight):
         gauss = torch.exp(-(x * x + y * y) / (2 * s * s))
         kernel += gauss / gauss.sum() * w
-    return kernel / kernel.sum()
+    return torch.fft.fftshift(kernel / kernel.sum())
 
 
 def _image_metric(
@@ -36,9 +38,6 @@ def _image_metric(
     assert A_srgb.shape == B_srgb.shape, (A_srgb.shape, B_srgb.shape)
     assert A_srgb.ndim == 3, A_srgb.ndim
     assert len(spacial_filters) == 3
-    for filter in spacial_filters:
-        for sz in filter.shape:
-            assert sz % 2 == 1, f"filter size must be odd (not {sz})"
 
     A = _srgb2opponent(A_srgb)
     B = _srgb2opponent(B_srgb)
@@ -47,19 +46,11 @@ def _image_metric(
     B_convolved = torch.zeros_like(A)
     for img_src, img_dst in ((A, A_convolved), (B, B_convolved)):
         for ch_idx, kernel in enumerate(spacial_filters):
-            w, h = kernel.shape[-2:]
-            assert w == h
-            sz = w // 2  # can be easily changed to support non square kernels
-            pad = sz
-            img_dst[ch_idx] = F.conv2d(
-                img_src[ch_idx][None, None],
-                kernel[None, None],
-                padding=pad,
-            )
+            img_dst[ch_idx] = fft_conv(img_src[ch_idx], kernel)
     A_metric_cs = _opponent2oklab(A_convolved)
     B_metric_cs = _opponent2oklab(B_convolved)
 
-    metric = torch.linalg.norm(A_metric_cs - B_metric_cs, axis=2)
+    metric = torch.linalg.norm(A_metric_cs - B_metric_cs, axis=0)
 
     return torch.mean(metric)
 
@@ -93,23 +84,18 @@ class SOkLab(Module):
 
         assert image1.shape[1] == 3
         assert image2.shape[1] == 3
+        h, w = image1.shape[-2:]
 
-        max_size = torch.tensor(max(image1.shape[-2:]))
         s_oklab_values = torch.empty((image1.shape[0]))
+
+        spacial_filters = (
+            _create_gauss_kernel_2d(self.sigmas[0], self.weights[0], h, w),
+            _create_gauss_kernel_2d(self.sigmas[1], self.weights[1], h, w),
+            _create_gauss_kernel_2d(self.sigmas[2], self.weights[2], h, w),
+        )
+
         for idx in range(image1.shape[0]):
             s_oklab_values[idx] = _image_metric(
-                image1[idx],
-                image2[idx],
-                (
-                    _create_gauss_kernel_2d(
-                        self.sigmas[0], self.weights[0], max_size
-                    ),
-                    _create_gauss_kernel_2d(
-                        self.sigmas[1], self.weights[1], max_size
-                    ),
-                    _create_gauss_kernel_2d(
-                        self.sigmas[2], self.weights[2], max_size
-                    ),
-                ),
+                image1[idx], image2[idx], spacial_filters
             )
         return s_oklab_values
