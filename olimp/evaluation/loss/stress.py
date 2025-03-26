@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from torch.nn import Module
 import torch
 from torch import Tensor
+from ._base import ReducibleLoss, Reduction
 
 
-class STRESS(Module):
+class STRESS(ReducibleLoss):
     """
     Computes the Stress or 1 - Stress metric between two tensors.
 
@@ -13,16 +13,11 @@ class STRESS(Module):
         invert (bool): If True, computes `1 - Stress`. Default is False.
     """
 
-    def __init__(self, invert: bool = False):
-        super().__init__()  # type: ignore
+    def __init__(self, invert: bool = False, reduction: Reduction = "mean"):
+        super().__init__(reduction=reduction)
         self.invert = invert
 
-    def forward(self, x: Tensor, y: Tensor) -> Tensor:
-        assert x.ndim == 4, x.shape
-        assert y.ndim == 4, y.shape
-        return torch.tensor([self._stress(x, y) for x, y in zip(x, y)])
-
-    def _stress(self, x: Tensor, y: Tensor) -> Tensor:
+    def _loss(self, x: Tensor, y: Tensor) -> Tensor:
         """
         Computes the Stress metric (or 1 - Stress if invert is True).
 
