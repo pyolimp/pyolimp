@@ -11,8 +11,8 @@ Shape = tuple[int, int, int, int]
 def _check_zero_zero(
     loss: Callable[[Tensor, Tensor], Tensor], shape: Shape = (2, 3, 256, 192)
 ) -> Tensor:
-    pred = torch.zeros(shape)
-    target = torch.zeros(shape)
+    pred = torch.zeros(shape, requires_grad=True)
+    target = torch.zeros(shape, requires_grad=True)
     return loss(pred, target)
 
 
@@ -21,8 +21,10 @@ def _check_nonzero_nonzero(
 ) -> Tensor:
     pred = torch.zeros(shape)
     pred[0, 0, 16:48, 0:32] = 0.5
+    pred.requires_grad_()
     target = torch.ones(shape)
     target[0, 0, 0:32, 0:32] = 0.5
+    target.requires_grad_()
     return loss(pred, target)
 
 
@@ -40,6 +42,7 @@ class TestMSSSIM(TestCase):
             MultiScaleSSIMLoss(reduction="none"), shape=(2, 3, 256, 256)
         )
         assert_close(loss, torch.tensor([0.707713723182, 0.706974804401]))
+        self.assertTrue(loss.requires_grad)
 
 
 class TestRMS(TestCase):
@@ -61,6 +64,7 @@ class TestRMS(TestCase):
 
         loss = _check_nonzero_nonzero(RMS("prolab"))
         assert_close(loss, torch.tensor([0.0355894602835, 0.0]))
+        self.assertTrue(loss.requires_grad)
 
 
 class TestChromaticityDifference(TestCase):
@@ -88,53 +92,61 @@ class TestChromaticityDifference(TestCase):
 
         loss = _check_nonzero_nonzero(ChromaticityDifference("prolab"))
         assert_close(loss, torch.tensor([0.040271583944, 3.65355923293e-8]))
+        self.assertTrue(loss.requires_grad)
 
 
 class TestPSNR(TestCase):
     def test_empty_zero_images(self):
         from olimp.evaluation.loss.psnr import PSNR
 
-        loss = _check_zero_zero(PSNR())
+        loss = _check_zero_zero(PSNR(reduction="none"))
         self.assertEqual(loss.tolist(), [float("inf")] * 2)
 
     def test_nonzero_nonzero(self):
         from olimp.evaluation.loss.psnr import PSNR
 
-        loss = _check_nonzero_nonzero(PSNR())
+        loss = _check_nonzero_nonzero(PSNR(reduction="none"))
         assert_close(loss, torch.tensor([-5.96368026733, float("-inf")]))
+        self.assertTrue(loss.requires_grad)
 
 
 class TestSTRESS(TestCase):
     def test_empty_zero_images(self):
         from olimp.evaluation.loss.stress import STRESS
 
-        loss = _check_zero_zero(STRESS(invert=True))
+        loss = _check_zero_zero(STRESS(invert=True, reduction="none"))
         self.assertEqual(loss.tolist(), [1.0, 1.0])
 
     def test_nonzero_nonzero(self):
         from olimp.evaluation.loss.stress import STRESS
 
-        loss = _check_nonzero_nonzero(STRESS(invert=True))
+        loss = _check_nonzero_nonzero(STRESS(invert=True, reduction="none"))
         assert_close(loss, torch.tensor([0.0029571056365966797, 1.0]))
 
-        loss = _check_nonzero_nonzero(STRESS(invert=False))
+        loss = _check_nonzero_nonzero(STRESS(invert=False, reduction="none"))
         assert_close(loss, torch.tensor([1.0 - 0.0029571056365966797, 0.0]))
+        self.assertTrue(loss.requires_grad)
 
 
 class TestCORR(TestCase):
     def test_empty_zero_images(self):
         from olimp.evaluation.loss.corr import Correlation
 
-        loss = _check_zero_zero(Correlation(invert=True))
+        loss = _check_zero_zero(Correlation(invert=True, reduction="none"))
         self.assertEqual(loss.tolist(), [1.0, 1.0])
 
     def test_nonzero_nonzero(self):
         from olimp.evaluation.loss.corr import Correlation
 
-        loss = _check_nonzero_nonzero(Correlation(invert=True))
+        loss = _check_nonzero_nonzero(
+            Correlation(invert=True, reduction="none")
+        )
         assert_close(loss, torch.tensor([1.49472975730896, 1.0]))
 
-        loss = _check_nonzero_nonzero(Correlation(invert=False))
+        loss = _check_nonzero_nonzero(
+            Correlation(invert=False, reduction="none")
+        )
+        self.assertTrue(loss.requires_grad)
         assert_close(loss, torch.tensor([-0.49472978711128235, 0.0]))
 
 
@@ -143,6 +155,7 @@ class TestSOkLab(TestCase):
         from olimp.evaluation.loss.s_oklab import SOkLab
 
         loss = _check_zero_zero(SOkLab(20.0, 39.0))
+        self.assertTrue(loss.requires_grad)
         self.assertEqual(loss.tolist(), [0.0, 0.0])
 
     def test_nonzero_nonzero(self):
@@ -150,4 +163,5 @@ class TestSOkLab(TestCase):
 
         loss = _check_nonzero_nonzero(SOkLab(20.0, 39.0))
 
+        self.assertTrue(loss.requires_grad)
         assert_close(loss, torch.tensor([0.983500361442, 0.999999940395]))
