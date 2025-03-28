@@ -172,3 +172,20 @@ class TestSOkLab(TestCase):
 
         self.assertTrue(loss.requires_grad)
         assert_close(loss, torch.tensor([0.983500361442, 0.999999940395]))
+
+
+class TestMSE(TestCase):
+    def test_empty_zero_images(self):
+        from olimp.evaluation.loss.mse import MSE
+
+        loss = _check_zero_zero(MSE())
+        self.assertTrue(loss.requires_grad)
+        self.assertEqual(loss, 0.0)
+
+    def test_nonzero_nonzero(self):
+        from olimp.evaluation.loss.mse import MSE
+
+        loss = _check_nonzero_nonzero(MSE())
+
+        self.assertTrue(loss.requires_grad)
+        assert_close(loss, torch.tensor(0.993489563465))
