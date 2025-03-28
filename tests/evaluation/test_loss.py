@@ -50,19 +50,19 @@ class TestRMS(TestCase):
         from olimp.evaluation.loss.rms import RMS
 
         for color_space in ["lab", "prolab"]:
-            loss = _check_zero_zero(RMS(color_space))
+            loss = _check_zero_zero(RMS(color_space, reduction="none"))
             self.assertEqual(loss.tolist(), [0.0, 0.0])
 
     def test_lab_empty_zero_and_rand_images(self):
         from olimp.evaluation.loss.rms import RMS
 
-        loss = _check_nonzero_nonzero(RMS("lab"))
+        loss = _check_nonzero_nonzero(RMS("lab", reduction="none"))
         assert_close(loss, torch.tensor([0.06708120554685593, 0.0]))
 
     def test_prolab_empty_zero_and_rand_images(self):
         from olimp.evaluation.loss.rms import RMS
 
-        loss = _check_nonzero_nonzero(RMS("prolab"))
+        loss = _check_nonzero_nonzero(RMS("prolab", reduction="none"))
         assert_close(loss, torch.tensor([0.0355894602835, 0.0]))
         self.assertTrue(loss.requires_grad)
 
