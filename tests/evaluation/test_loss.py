@@ -74,7 +74,10 @@ class TestChromaticityDifference(TestCase):
         )
 
         for color_space in ["lab", "prolab"]:
-            loss = _check_zero_zero(ChromaticityDifference(color_space))
+            assert color_space in ["lab", "prolab"]
+            loss = _check_zero_zero(
+                ChromaticityDifference(color_space, reduction="none")
+            )
             self.assertEqual(loss.tolist(), [0.0, 0.0])
 
     def test_lab_empty_zero_and_ones_images(self):
@@ -82,7 +85,9 @@ class TestChromaticityDifference(TestCase):
             ChromaticityDifference,
         )
 
-        loss = _check_nonzero_nonzero(ChromaticityDifference("lab"))
+        loss = _check_nonzero_nonzero(
+            ChromaticityDifference("lab", reduction="none")
+        )
         assert_close(loss, torch.tensor([0.0303995292633, 0.0]))
 
     def test_prolab_empty_zero_and_ones_images(self):
@@ -90,7 +95,9 @@ class TestChromaticityDifference(TestCase):
             ChromaticityDifference,
         )
 
-        loss = _check_nonzero_nonzero(ChromaticityDifference("prolab"))
+        loss = _check_nonzero_nonzero(
+            ChromaticityDifference("prolab", reduction="none")
+        )
         assert_close(loss, torch.tensor([0.040271583944, 3.65355923293e-8]))
         self.assertTrue(loss.requires_grad)
 
