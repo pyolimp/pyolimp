@@ -5,6 +5,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
+from ._base import ReducibleLoss, Reduction
 from ..cs import D65 as D65_sRGB
 from ..cs.srgb import sRGB
 from ..cs.cielab import CIELAB
@@ -123,7 +124,7 @@ def RMS_map(
     return rms
 
 
-class RMS(Module):
+class RMS(ReducibleLoss):
     _color_space: Literal["lab", "prolab"]
 
     def __init__(
@@ -132,30 +133,22 @@ class RMS(Module):
         n_pixel_neighbors: int = 1000,
         step: int = 10,
         sigma_rate: float = 0.25,
+        reduction: Reduction = "mean",
     ) -> None:
-        super().__init__()
+        super().__init__(reduction=reduction)
         self._color_space = color_space
         self._n_pixel_neighbors = n_pixel_neighbors
         self._step = step
         self._sigma_rate = sigma_rate
 
-    def forward(self, img1: Tensor, img2: Tensor):
-        assert img1.ndim == 4, img1.shape
-        assert img2.ndim == 4, img2.shape
-
-        assert img1.shape[1] == 3
-        assert img2.shape[1] == 3
-
-        rms_maps = torch.empty((img1.shape[0]))
-        for idx in range(img1.shape[0]):
-            rms_maps[idx] = torch.mean(
-                RMS_map(
-                    img1[idx],
-                    img2[idx],
-                    self._color_space,
-                    self._n_pixel_neighbors,
-                    self._step,
-                    self._sigma_rate,
-                )
+    def _loss(self, img1: Tensor, img2: Tensor):
+        return torch.mean(
+            RMS_map(
+                img1,
+                img2,
+                self._color_space,
+                self._n_pixel_neighbors,
+                self._step,
+                self._sigma_rate,
             )
-        return rms_maps
+        )
