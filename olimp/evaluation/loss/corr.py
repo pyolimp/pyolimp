@@ -27,9 +27,12 @@ class Correlation(Module):
         """
         assert x.ndim == 4, x.shape
         assert y.ndim == 4, y.shape
-        return torch.tensor([self._correlation(x, y) for x, y in zip(x, y)])
+        out = torch.empty(y.shape[0])
+        for idx, (x, y) in enumerate(zip(x, y)):
+            out[idx] = self._correlation(x, y)
+        return out
 
-    def _correlation(self, x: Tensor, y: Tensor) -> Tensor:
+    def forward(self, x: Tensor, y: Tensor) -> Tensor:
         # Small epsilon to avoid division by zero
         epsilon = 1e-8
 
