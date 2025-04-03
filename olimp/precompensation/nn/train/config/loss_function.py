@@ -318,12 +318,40 @@ class SOkLabLossFunction(StrictModel):
         return _create_simple_loss(s_oklab)
 
 
+class ModuleFunction(StrictModel):
+    """
+    Load any loss function from external module
+
+    Specified class will be constructed with `args` and `kwargs`
+    and when called with this arguments:
+
+    precompensated: Tensor
+    original_image: Tensor
+    distortion_fn: ApplyDistortion
+    extra: Sequence[Any]
+    """
+
+    name: Literal["module"]
+    args: list[Any] = []
+    kwargs: dict[str, Any] = {}
+
+    def load(self, _model: Any):
+        from importlib import import_module
+
+        name, _, attr = self.name.rpartition(".")
+        module = import_module(name)
+        loss_cls = getattr(module, attr)
+        loss_function = loss_cls(*self.args, **self.kwargs)
+        return loss_function
+
+
 LossFunction = Annotated[
-    VaeLossFunction
-    | ChromaticityDifferenceLossFunction
+    ChromaticityDifferenceLossFunction
     | ColorBlindnessLossFunction
+    | ModuleFunction
     | MultiScaleSSIMLossFunction
     | RMSLossFunction
+    | VaeLossFunction
     | VSILossFunction,
     Field(..., discriminator="name"),
 ]
