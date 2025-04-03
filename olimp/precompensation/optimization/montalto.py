@@ -85,9 +85,10 @@ def montalto(
             )
             loss = func_l2 + (theta * func_l1) + (tau * func_borders)
         else:
-            precomp_clip = fft_conv(precomp.clip(0, 1), psf)
-
-            loss = parameters.loss_func(precomp_clip, t)
+            retinal_precomp = fft_conv(precomp.clip(0, 1), psf)
+            loss = parameters.loss_func(
+                retinal_precomp.clip(0, 1), t.clip(0, 1)
+            )
 
         loss_step.append(loss.item())
         loss.backward()
