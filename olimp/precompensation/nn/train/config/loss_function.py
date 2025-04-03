@@ -107,6 +107,17 @@ class RMSELossFunction(StrictModel):
         return _create_simple_loss(rmse)
 
 
+class ProlabLossFucntion(StrictModel):
+    name: Literal["Prolab"]
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.rmse import RMSE
+
+        prolab = RMSE(color_space="prolab")
+
+        return _create_simple_loss(prolab)
+
+
 class PSNRLossFunction(StrictModel):
     name: Literal["PSNR"]
 
