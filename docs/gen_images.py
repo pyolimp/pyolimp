@@ -44,6 +44,7 @@ def gen_images(force: bool = False) -> None:
             "unet_efficient_b0",
         ),
         ("olimp.precompensation.nn.models.unetvae", "unetvae"),
+        ("olimp.precompensation.nn.models.usrnet.__main__", "usrnet"),
         ("olimp.precompensation.nn.models.dwdn.__main__", "dwdn"),
         # ("olimp.precompensation.nn.models.cvd_swin", "cvd_swin"), not implemented yet
         (

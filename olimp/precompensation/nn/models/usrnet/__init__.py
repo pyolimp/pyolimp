@@ -9,6 +9,13 @@ Input: TypeAlias = tuple[Tensor, Tensor, int, Tensor]
 
 
 class PrecompensationUSRNet(USRNet):
+    """
+    Deep unfolding super-resolution network
+
+    .. image:: ../../../../_static/usrnet.svg
+       :class: full-width
+    """
+
     def __init__(
         self,
         n_iter: int = 8,
