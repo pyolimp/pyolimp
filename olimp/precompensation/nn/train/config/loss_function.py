@@ -94,6 +94,19 @@ class MSELossFucntion(StrictModel):
         return _create_simple_loss(mse)
 
 
+class RMSELossFunction(StrictModel):
+    name: Literal["RMSE"]
+
+    color_space: Literal["srgb", "lab", "prolab", "oklab"] = "srgb"
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.rmse import RMSE
+
+        rmse = RMSE(color_space=self.color_space)
+
+        return _create_simple_loss(rmse)
+
+
 class PSNRLossFunction(StrictModel):
     name: Literal["PSNR"]
 

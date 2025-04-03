@@ -189,3 +189,44 @@ class TestMSE(TestCase):
 
         self.assertTrue(loss.requires_grad)
         assert_close(loss, torch.tensor(0.993489563465))
+
+
+class TestRMSE(TestCase):
+    def test_empty_zero_images(self):
+        from olimp.evaluation.loss.rmse import RMSE
+
+        loss = _check_zero_zero(RMSE(reduction="mean"))
+        self.assertTrue(loss.requires_grad)
+        self.assertEqual(loss, 0.0, 0.0)
+
+    def test_nonzero_nonzero_lab(self):
+        from olimp.evaluation.loss.rmse import RMSE
+
+        loss = _check_nonzero_nonzero(RMSE("lab", reduction="none"))
+
+        self.assertTrue(loss.requires_grad)
+        assert_close(loss, torch.tensor((181.475875854, 181.0193328857)))
+
+    def test_nonzero_nonzero_oklab(self):
+        from olimp.evaluation.loss.rmse import RMSE
+
+        loss = _check_nonzero_nonzero(RMSE("oklab", reduction="none"))
+
+        self.assertTrue(loss.requires_grad)
+        assert_close(loss, torch.tensor((179.1174468994, 181.019332885)))
+
+    def test_nonzero_nonzero_prolab(self):
+        from olimp.evaluation.loss.rmse import RMSE
+
+        loss = _check_nonzero_nonzero(RMSE("prolab", reduction="none"))
+
+        self.assertTrue(loss.requires_grad)
+        assert_close(loss, torch.tensor((180.13354492, 181.019332885)))
+
+    def test_nonzero_nonzero_srgb(self):
+        from olimp.evaluation.loss.rmse import RMSE
+
+        loss = _check_nonzero_nonzero(RMSE("srgb", reduction="none"))
+
+        self.assertTrue(loss.requires_grad)
+        assert_close(loss, torch.tensor((311.4867553710, 313.534698486)))
