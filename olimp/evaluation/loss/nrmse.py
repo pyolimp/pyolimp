@@ -20,17 +20,19 @@ class NormalizedRootMSE(Module):
         invert: bool = True,
     ) -> None:
         super().__init__()  # type: ignore
-        self.normalization = normalization.lower()
         self.invert = invert
-
-        if self.normalization not in ["euclidean", "min-max", "mean"]:
-            raise ValueError(
-                "Unsupported normalization type. Choose from 'euclidean', 'min-max', or 'mean'."
-            )
-
-        self._denom_function = getattr(
-            self, f"_{normalization.replace('-', '_')}"
-        )
+        match normalization:
+            case "euclidean":
+                self._denom_function = self._euclidean
+            case "mean":
+                self._denom_function = self._mean
+            case "min-max":
+                self._denom_function = self._min_max
+            case _:
+                raise ValueError(
+                    f"Unsupported normalization type ({normalization})."
+                    "Choose from 'euclidean', 'min-max', or 'mean'."
+                )
 
     @staticmethod
     def _euclidean(x: Tensor) -> Tensor:
@@ -63,6 +65,8 @@ class NormalizedRootMSE(Module):
 
         # Avoid division by zero
         if denom == 0:
+            if mse_value == 0.0:
+                return denom
             raise ValueError("Denominator for normalization is zero.")
 
         # Compute NRMSE
