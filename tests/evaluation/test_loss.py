@@ -45,6 +45,23 @@ class TestMSSSIM(TestCase):
         self.assertTrue(loss.requires_grad)
 
 
+class TestSSIM(TestCase):
+    def test_empty_zero_images(self):
+        from olimp.evaluation.loss.ssim import SSIMLoss
+
+        loss = _check_zero_zero(SSIMLoss(reduction="none"))
+        self.assertEqual(loss.tolist(), [0.0, 0.0])
+
+    def test_empty_zero_and_ones_images(self):
+        from olimp.evaluation.loss.ssim import SSIMLoss
+
+        loss = _check_nonzero_nonzero(
+            SSIMLoss(reduction="none"), shape=(2, 3, 256, 256)
+        )
+        assert_close(loss, torch.tensor([0.997894, 0.999906]))
+        self.assertTrue(loss.requires_grad)
+
+
 class TestRMS(TestCase):
     def test_empty_zero_images(self):
         from olimp.evaluation.loss.rms import RMS

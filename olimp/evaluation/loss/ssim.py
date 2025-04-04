@@ -4,10 +4,17 @@ from torch.nn import Module, L1Loss
 import torch.nn.functional as F
 import torch
 from torch import Tensor
+from ._base import ReducibleLoss, Reduction
 
 
-class SSIMLoss(Module):
-    def __init__(self, kernel_size: int = 11, sigma: float = 1.5) -> None:
+class SSIMLoss(ReducibleLoss):
+    def __init__(
+        self,
+        kernel_size: int = 11,
+        sigma: float = 1.5,
+        invert: bool = True,
+        reduction: Reduction = "mean",
+    ) -> None:
         """Computes the structural similarity (SSIM) index map between two images.
 
         Args:
@@ -15,23 +22,24 @@ class SSIMLoss(Module):
             sigma (float): Gaussian standard deviation in the x and y direction.
         """
 
-        super().__init__()
+        super().__init__(reduction=reduction)
         self.kernel_size = kernel_size
         self.sigma = sigma
+        self._invert = invert
         self.gaussian_kernel = self._create_gaussian_kernel(
             self.kernel_size, self.sigma
         )
 
-    def forward(self, x: Tensor, y: Tensor, as_loss: bool = True) -> Tensor:
+    def _loss(self, x: Tensor, y: Tensor) -> Tensor:
         if not self.gaussian_kernel.is_cuda:
             self.gaussian_kernel = self.gaussian_kernel.to(x.device)
 
         ssim_map = self._ssim(x, y)
 
-        if as_loss:
+        if self._invert:
             return 1 - ssim_map.mean()
         else:
-            return ssim_map
+            return ssim_map.mean()
 
     def _ssim(self, x: Tensor, y: Tensor) -> Tensor:
         # Compute means
@@ -69,7 +77,7 @@ class SSIMLoss(Module):
         c2 = 0.03**2
         numerator = (2 * ux * uy + c1) * (2 * vxy + c2)
         denominator = (ux**2 + uy**2 + c1) * (vx + vy + c2)
-        return numerator / (denominator + 1e-12)
+        return numerator / denominator
 
     def _create_gaussian_kernel(
         self, kernel_size: int, sigma: float
