@@ -4,20 +4,21 @@ from . import (
     PatchMerging,
     Upsample_promotion,
     Upsample,
+    resi_connection_layer,
 )
-
+from torch import Tensor
 import torch
 import torch.nn as nn
+import torchvision.transforms as transforms
 from timm.models.layers import trunc_normal_
+from ..download_path import download_path, PyOlimpHF
 
 
-class Generator_transformer_pathch2_1_1(nn.Module):
-    r"""patch size is 2."""
-
-    r""" Swin Transformer
+class CVDSwin3Channels(nn.Module):
+    r"""Swin Transformer
     Args:
-        img_size (int | tuple(int)): Input image size. Default 256
-        patch_size (int | tuple(int)): Patch size. Default: 2
+        img_size (int | tuple(int)): Input image size. Default 224
+        patch_size (int | tuple(int)): Patch size. Default: 4
         in_chans (int): Number of input image channels. Default: 3
         num_classes (int): Number of classes for classification head. Default: 1000
         embed_dim (int): Patch embedding dimension. Default: 96
@@ -39,19 +40,19 @@ class Generator_transformer_pathch2_1_1(nn.Module):
     def __init__(
         self,
         img_size=256,
-        patch_size=2,
+        patch_size=4,
         in_chans=3,
         num_classes=1000,
         embed_dim=96,
-        depths=[4, 6],
-        num_heads=[3, 6],
-        window_size=4,
+        depths=[8, 4, 4],
+        num_heads=[8, 8, 8],
+        window_size=8,
         mlp_ratio=4.0,
         qkv_bias=True,
         qk_scale=None,
         drop_rate=0.0,
         attn_drop_rate=0.0,
-        drop_path_rate=0.1,
+        drop_path_rate=0,
         norm_layer=nn.LayerNorm,
         ape=True,
         patch_norm=True,
@@ -59,6 +60,15 @@ class Generator_transformer_pathch2_1_1(nn.Module):
         **kwargs,
     ):
         super().__init__()
+
+        transform_val_list1 = [
+            transforms.Normalize((-1.0, -1.0, -1.0), (2.0, 2.0, 2.0))
+        ]
+        transform_val_list2 = [
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ]
+        self.trans_compose1 = transforms.Compose(transform_val_list1)
+        self.trans_compose2 = transforms.Compose(transform_val_list2)
 
         # self.num_classes = num_classes
         self.num_layers = len(depths)
@@ -125,7 +135,6 @@ class Generator_transformer_pathch2_1_1(nn.Module):
         self.uplayers = nn.ModuleList()
         for i_layer in range(self.num_layers - 1):
             if i_layer == 0:
-
                 layer = BasicLayer(
                     dim=int(embed_dim * 2 ** (self.num_layers - 1 - i_layer)),
                     input_resolution=(
@@ -134,8 +143,8 @@ class Generator_transformer_pathch2_1_1(nn.Module):
                         patches_resolution[1]
                         // (2 ** (self.num_layers - 1 - i_layer)),
                     ),
-                    depth=depths[i_layer],
-                    num_heads=num_heads[i_layer],
+                    depth=depths[self.num_layers - 1 - i_layer],
+                    num_heads=num_heads[self.num_layers - i_layer - 1],
                     window_size=window_size,
                     mlp_ratio=self.mlp_ratio,
                     qkv_bias=qkv_bias,
@@ -150,7 +159,6 @@ class Generator_transformer_pathch2_1_1(nn.Module):
                     use_checkpoint=use_checkpoint,
                 )
             else:
-
                 layer = BasicLayer(
                     dim=int(
                         embed_dim * 2 ** (self.num_layers - 1 - i_layer) * 2
@@ -161,8 +169,8 @@ class Generator_transformer_pathch2_1_1(nn.Module):
                         patches_resolution[1]
                         // (2 ** (self.num_layers - 1 - i_layer)),
                     ),
-                    depth=depths[i_layer],
-                    num_heads=num_heads[i_layer],
+                    depth=depths[self.num_layers - i_layer - 1],
+                    num_heads=num_heads[self.num_layers - i_layer - 1],
                     window_size=window_size,
                     mlp_ratio=self.mlp_ratio,
                     qkv_bias=qkv_bias,
@@ -185,8 +193,35 @@ class Generator_transformer_pathch2_1_1(nn.Module):
             else nn.Identity()
         )
 
-        self.apply(self._init_weights)
+        self.resi_connection = nn.ModuleList()
+        for i_layer in range(self.num_layers):
+            layer = resi_connection_layer(
+                input_resolution=(
+                    patches_resolution[0] // (2**i_layer),
+                    patches_resolution[1] // (2**i_layer),
+                ),
+                dim=int(embed_dim * 2**i_layer),
+                output_dim=int(embed_dim * 2**i_layer),
+            )
+            self.resi_connection.append(layer)
 
+        self.flinal_layer = nn.Sequential(
+            # resi_connection_layer(embed_dim*)
+            nn.Conv2d(
+                embed_dim * 2,
+                embed_dim * 2,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
+            nn.Conv2d(
+                embed_dim * 2,
+                embed_dim * 2,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
+        )
         self.final_upsample = nn.Sequential(
             Upsample_promotion(
                 input_resolution=(
@@ -196,22 +231,30 @@ class Generator_transformer_pathch2_1_1(nn.Module):
                 dim=embed_dim * 2,
                 norm_layer=norm_layer,
             ),
-            # Upsample_promotion(input_resolution=(patches_resolution[0] * 2, patches_resolution[1] * 2),
-            #                    dim=int(embed_dim // 2), norm_layer=norm_layer),
+            Upsample_promotion(
+                input_resolution=(
+                    patches_resolution[0] * 2,
+                    patches_resolution[1] * 2,
+                ),
+                dim=embed_dim,
+                norm_layer=norm_layer,
+            ),
         )
 
         self.final = nn.Sequential(
-            # Upsample(x
-            # nn.ZeroPad2d((1, 0, 1, 0)),
-            # nn.Conv2d(embed_dim, 3, 4, padding=1),
-            nn.Linear(int(embed_dim), 30, bias=False),
-            nn.Linear(30, 3, bias=False),
-            # nn.Conv2d(int(embed_dim // 2), 3, 1, padding=0),
-            # nn.Conv2d(int(embed_dim/2), 3, 3, padding=1),
-            # nn.Conv2d()
-            # nn.ConvTranspose2d(embed_dim/4, 3, 4, 2, 1, bias=False),
+            nn.Conv2d(
+                embed_dim // 2,
+                embed_dim // 2,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
+            nn.LeakyReLU(0.2),
+            nn.Conv2d(embed_dim // 2, 3, kernel_size=3, padding=1, stride=1),
             nn.Tanh(),
         )
+
+        self.apply(self._init_weights)
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -230,9 +273,9 @@ class Generator_transformer_pathch2_1_1(nn.Module):
     def no_weight_decay_keywords(self):
         return {"relative_position_bias_table"}
 
-    def forward_features(self, x):
-
+    def forward_features(self, x: Tensor) -> Tensor:
         x = self.patch_embed(x)
+
         if self.ape:
             x = x + self.absolute_pos_embed
         x = self.pos_drop(x)
@@ -240,49 +283,28 @@ class Generator_transformer_pathch2_1_1(nn.Module):
         self.downsample_result = [x]
         for layer in self.layers:
             x = layer(x)
-            # print(x.size())
             self.downsample_result.append(x)
-        i = 0
 
-        for xx in self.downsample_result:
-            i = i + 1
+        i = 0
         x1 = x
 
-        i = 0
         for uplayer in self.uplayers:
-
             x1 = uplayer(x1)
-            # print(x1.size())
-            if i < 1:
-                x1 = torch.cat((x1, self.downsample_result[0 - i]), -1)
+            if i < 3:
+                x1 = torch.cat((x1, self.downsample_result[1 - i]), -1)
             i = i + 1
 
         x = x1
 
-        # x = self.norm(x)  # B L C
-        # print(x.size())
         x = self.final_upsample(x)
-        x = self.final(x)
-
-        # print(x.size())
-        # print(x1123)
-
-        # x = x.view(-1, C, H * W)
         x = x.permute(0, 2, 1)  # B C ,H*W
-        # print(x.size())
-        x = x.view([-1, 3, 256, 256])
-
-        # x = self.final(x)
-
-        # x = self.avgpool(x.transpose(1, 2))  # B C 1
-        # x = torch.flatten(x, 1)
+        x = x.view([-1, 48, 256, 256])
+        x = self.final(x)
         return x
 
-    def forward(self, x):
-        # print('forward',x.size())
+    def forward(self, x: Tensor) -> tuple[Tensor]:
         x = self.forward_features(x)
-        # x = self.head(x)
-        return x
+        return (x,)
 
     def flops(self):
         flops = 0
@@ -298,22 +320,61 @@ class Generator_transformer_pathch2_1_1(nn.Module):
         flops += self.num_features * self.num_classes
         return flops
 
+    @classmethod
+    def from_path(
+        cls,
+        path: PyOlimpHF = "hf://CVD/cvd_swin.pth",
+    ):
+        path = download_path(path)
+        state_dict = torch.load(
+            path,
+            map_location=torch.get_default_device(),
+            weights_only=True,
+        )
+        new_state_dict = {}
+        for key, value in state_dict.items():
+            new_key = key.replace("module.", "")
+            new_state_dict[new_key] = value
+        model = cls()
+        model.load_state_dict(new_state_dict)
+        return model
 
-if __name__ == "__main__":
-    import numpy as np
-    import matplotlib.pyplot as plt
+    def preprocess(self, tensor: torch.Tensor) -> torch.Tensor:
+        return self.trans_compose2(tensor)
 
-    test_data = np.load(
-        "/home/devel/olimp/pyolimp/tests/test_data/test.npy", allow_pickle=True
+    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
+        return (self.trans_compose1(tensor[0]),)
+
+    def arguments(self, *args, **kwargs):
+        return {}
+
+
+def _demo():
+    from ...._demo_cvd import demo
+    from typing import Callable
+    from olimp.simulate.color_blindness_distortion import (
+        ColorBlindnessDistortion,
     )
 
-    test = test_data[3]
-    test = test.clip(0, 1)
-    test_t = torch.tensor(test).unsqueeze(0)
+    def demo_cvd_swin(
+        image: Tensor,
+        distortion: ColorBlindnessDistortion,
+        progress: Callable[[float], None],
+    ) -> tuple[torch.Tensor]:
+        cvd_swin = CVDSwin3Channels.from_path()
+        image = cvd_swin.preprocess(image)
+        progress(0.1)
+        precompensation = cvd_swin(image)
+        progress(1.0)
+        return (cvd_swin.postprocess(precompensation)[0],)
 
-    swd_swin = Generator_transformer_pathch2_1_1()
-    output = swd_swin(test_t)
+    distortion = ColorBlindnessDistortion(120)
+    demo(
+        "CVD-SWIN",
+        demo_cvd_swin,
+        distortion=distortion,
+    )
 
-    plt.imshow(output.detach().cpu().numpy().transpose([0, 2, 3, 1])[0])
-    plt.savefig("fig3.png")
-    plt.show()
+
+if __name__ == "__main__":
+    _demo()

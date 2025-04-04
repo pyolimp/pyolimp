@@ -1,6 +1,6 @@
 {
     "model": {
-        "name": "Generator_transformer_pathch4_844_48_3_nouplayer_server5"
+        "name": "cvd_swin_3channels"
     },
     "img": {
         "datasets": [
@@ -20,9 +20,8 @@
                 "name": "float32"
             },
             {
-                "name": "normalize",
-                "mean": [0.5, 0.5, 0.5],
-                "std": [0.5, 0.5, 0.5]
+                "name": "divide",
+                "value": 255.0
             }
 
         ]
@@ -30,11 +29,11 @@
     "distortion": [
         {
             "name": "cvd",
-            "blindness_type": "deutan"
+            "hue_angle_deg": 120
         }
     ],
     "loss_function": {
-        "name": "ColorBlindnessLoss"
+        "name": "CVDSwinLoss"
     },
     "batch_size": 4
 }

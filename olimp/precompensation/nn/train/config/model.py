@@ -133,8 +133,8 @@ class PrecompensationDWDN(ModelConfig):
         return PrecompensationDWDN(n_levels=self.n_levels)
 
 
-class Generator_transformer_pathch4_844_48_3_nouplayer_server5(ModelConfig):
-    name: Literal["Generator_transformer_pathch4_844_48_3_nouplayer_server5"]
+class CVDSwin3Channels(ModelConfig):
+    name: Literal["cvd_swin_3channels"]
     path: str | None = Field(
         None,
         examples=[
@@ -144,16 +144,35 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(ModelConfig):
     )
 
     def get_instance(self):
-        from ...models.cvd_swin.Generator_transformer_pathch4_844_48_3_nouplayer_server5 import (
-            Generator_transformer_pathch4_844_48_3_nouplayer_server5,
+        from ...models.cvd_swin.cvd_swin_3channels import (
+            CVDSwin3Channels,
         )
 
         if self.path is not None:
-            return Generator_transformer_pathch4_844_48_3_nouplayer_server5.from_path(
-                path=self.path
-            )
+            return CVDSwin3Channels.from_path(path=self.path)
 
-        return Generator_transformer_pathch4_844_48_3_nouplayer_server5()
+        return CVDSwin3Channels()
+
+
+class CVDSwin1Channel(ModelConfig):
+    name: Literal["cvd_swin_1channel"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/cvd_swin_1channel.pth",
+            "~/.weights/cvd_swin_1channel.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.cvd_swin_1channel import (
+            CVDSwin1Channel,
+        )
+
+        if self.path is not None:
+            return CVDSwin1Channel.from_path(path=self.path)
+
+        return CVDSwin1Channel()
 
 
 Model = Annotated[
@@ -164,6 +183,7 @@ Model = Annotated[
     | UNET_b0
     | PrecompensationUSRNet
     | PrecompensationDWDN
-    | Generator_transformer_pathch4_844_48_3_nouplayer_server5,
+    | CVDSwin3Channels
+    | CVDSwin1Channel,
     Field(..., discriminator="name"),
 ]

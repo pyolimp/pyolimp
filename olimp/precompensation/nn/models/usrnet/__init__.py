@@ -79,6 +79,9 @@ class PrecompensationUSRNet(USRNet):
         psf = torch.fft.fftshift(psf)
         return image, psf, scale_factor, sigma
 
+    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
+        return tensor
+
     @classmethod
     def from_path(cls, path: PyOlimpHF, **kwargs):
         model = cls(**kwargs)

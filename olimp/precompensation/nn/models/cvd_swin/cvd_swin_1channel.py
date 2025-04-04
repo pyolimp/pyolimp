@@ -6,15 +6,16 @@ from . import (
     Upsample,
     resi_connection_layer,
 )
-
+from torch import Tensor
 import torch
 import torch.nn as nn
+import torchvision.transforms as transforms
 from timm.models.layers import trunc_normal_
+from ..download_path import download_path, PyOlimpHF
+from olimp.processing import quantile_clip
 
 
-class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
-    nn.Module
-):
+class CVDSwin1Channel(nn.Module):
     r"""Swin Transformer
     Args:
         img_size (int | tuple(int)): Input image size. Default 224
@@ -61,7 +62,11 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
     ):
         super().__init__()
 
-        # self.num_classes = num_classes
+        self.simple_conv = nn.Conv2d(3, 1, kernel_size=3, padding=1, stride=1)
+        self.simple_relu = nn.ReLU()
+        self.simple_sigmoid = nn.Sigmoid()
+
+        self.Tanh = nn.Tanh()
         self.num_layers = len(depths)
         self.embed_dim = embed_dim
         self.ape = ape
@@ -194,15 +199,9 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
                 dim=int(embed_dim * 2**i_layer),
                 output_dim=int(embed_dim * 2**i_layer),
             )
-            # nn.Conv2d(int(embed_dim * 2 ** (self.num_layers - 1 - i_layer)), int(embed_dim * 2 ** (self.num_layers - 1 - i_layer)), kernel_size=3, padding=1, stride=1),
             self.resi_connection.append(layer)
-        # self.resi_connection = nn.Sequential(
-        #     nn.Conv2d(embed_dim *2, embed_dim *2, kernel_size=3, padding=1, stride=1),
-        #     nn.Conv2d(embed_dim * 2, embed_dim * 2, kernel_size=3, padding=1, stride=1),
-        # )
 
         self.flinal_layer = nn.Sequential(
-            # resi_connection_layer(embed_dim*)
             nn.Conv2d(
                 embed_dim * 2,
                 embed_dim * 2,
@@ -219,8 +218,6 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
             ),
         )
         self.final_upsample = nn.Sequential(
-            # nn.Conv2d(embed_dim, num_feat, 3, 1, 1),
-            # nn.LeakyReLU(inplace=True),
             Upsample_promotion(
                 input_resolution=(
                     patches_resolution[0],
@@ -228,7 +225,6 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
                 ),
                 dim=embed_dim * 2,
                 norm_layer=norm_layer,
-                norm_flag=0,
             ),
             Upsample_promotion(
                 input_resolution=(
@@ -237,30 +233,10 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
                 ),
                 dim=embed_dim,
                 norm_layer=norm_layer,
-                norm_flag=0,
             ),
-            #
-            # Upsample_layer(input_resolution=(patches_resolution[0], patches_resolution[1]),
-            #                    dim=embed_dim*2, output_dim =embed_dim, norm_layer=norm_layer),
-            # Upsample_layer(input_resolution=(patches_resolution[0] * 2, patches_resolution[1] * 2),
-            #                dim=embed_dim, output_dim=embed_dim // 2, norm_layer=norm_layer),
-            # nn.Conv2d(embed_dim * 2 , embed_dim, kernel_size=3, padding=1, stride=1),
-            # Upsample_promotion(input_resolution=(patches_resolution[0], patches_resolution[1]),
-            #                    dim=embed_dim, norm_layer=norm_layer),
-            # nn.Conv2d(embed_dim, embed_dim, kernel_size=3, padding=1, stride=1),
-            # Upsample_promotion(input_resolution=(patches_resolution[0]*2, patches_resolution[1]*2),
-            #                                dim=embed_dim, norm_layer=norm_layer),
-            # self.flinal_layer
-            # Upsample_promotion(input_resolution=(patches_resolution[0], patches_resolution[1]),
-            #                    dim=embed_dim*2, norm_layer=norm_layer),
-            # Upsample_promotion(input_resolution=(patches_resolution[0] * 2, patches_resolution[1] * 2),
-            #                    dim=int(embed_dim), norm_layer=norm_layer),
         )
 
         self.final = nn.Sequential(
-            # Upsample(x
-            # nn.ZeroPad2d((1, 0, 1, 0)),
-            # nn.Conv2d(embed_dim, 3, 4, padding=1),
             nn.Conv2d(
                 embed_dim // 2,
                 embed_dim // 2,
@@ -269,14 +245,8 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
                 stride=1,
             ),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(embed_dim // 2, 3, kernel_size=3, padding=1, stride=1),
-            # nn.Linear(96, 30, bias=False),
-            # nn.LeakyReLU(),
-            # nn.Linear(48, 10, bias=False),
-            # nn.Linear(30, 3, bias=False),
-            # nn.Linear(30, 3, bias=False),
-            # nn.ConvTranspose2d(embed_dim/4, 3, 4, 2, 1, bias=False),
-            nn.Tanh(),
+            nn.Conv2d(embed_dim // 2, 1, kernel_size=3, padding=1, stride=1),
+            nn.Softplus(),
         )
 
         self.apply(self._init_weights)
@@ -298,88 +268,94 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
     def no_weight_decay_keywords(self):
         return {"relative_position_bias_table"}
 
-    def forward_features(self, x):
-
+    def forward_features(self, x: Tensor) -> Tensor:
         x = self.patch_embed(x)
+
         if self.ape:
             x = x + self.absolute_pos_embed
         x = self.pos_drop(x)
 
         self.downsample_result = [x]
         for layer in self.layers:
-            # print(x.size())
             x = layer(x)
-
             self.downsample_result.append(x)
+
         i = 0
         x1 = x
-        # print('x1',x.size(),len(self.downsample_result))
         for uplayer in self.uplayers:
             x1 = uplayer(x1)
-            # print(x1.size())
             if i < 3:
-                # x1 = torch.cat((x1, self.resi_connection[1-i](self.downsample_result[1-i])), -1)
                 x1 = torch.cat((x1, self.downsample_result[1 - i]), -1)
             i = i + 1
 
         x = x1
 
-        # x = self.norm(x)  # B L C
-        # print(x.size())
-
-        # print(x.size())
-        # print(x1123)
-
-        # x = x.view(-1, C, H * W)
-
-        # print(x.size())
-
         x = self.final_upsample(x)
         x = x.permute(0, 2, 1)  # B C ,H*W
         x = x.view([-1, 48, 256, 256])
         x = self.final(x)
-        # x = self.avgpool(x.transpose(1, 2))  # B C 1
-        # x = torch.flatten(x, 1)
         return x
 
-    def forward(self, x):
-        # print('forward',x.size())
-        x = self.forward_features(x)
-        # x = self.head(x)
-        return x
+    def forward(self, x: Tensor) -> tuple[Tensor]:
+        x1 = self.forward_features(x)
+        x1 = x * x1 + 1e-5
+        return (quantile_clip(x1),)
 
-    def flops(self):
-        flops = 0
-        flops += self.patch_embed.flops()
-        for i, layer in enumerate(self.layers):
-            flops += layer.flops()
-        flops += (
-            self.num_features
-            * self.patches_resolution[0]
-            * self.patches_resolution[1]
-            // (2**self.num_layers)
+    @classmethod
+    def from_path(
+        cls,
+        path: PyOlimpHF = "hf://CVD/cvd_swin_1channel.pth",
+    ):
+        path = download_path(path)
+        state_dict = torch.load(
+            path,
+            map_location=torch.get_default_device(),
+            weights_only=True,
         )
-        flops += self.num_features * self.num_classes
-        return flops
+        new_state_dict = {}
+        for key, value in state_dict.items():
+            new_key = key.replace("module.", "")
+            new_state_dict[new_key] = value
+        model = cls()
+        model.load_state_dict(new_state_dict)
+        return model
+
+    def preprocess(self, tensor: torch.Tensor) -> torch.Tensor:
+        return tensor
+
+    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
+        return tensor
+
+    def arguments(self, *args, **kwargs):
+        return {}
+
+
+def _demo():
+    from ...._demo_cvd import demo
+    from typing import Callable
+    from olimp.simulate.color_blindness_distortion import (
+        ColorBlindnessDistortion,
+    )
+
+    def demo_cvd_swin(
+        image: Tensor,
+        distortion: ColorBlindnessDistortion,
+        progress: Callable[[float], None],
+    ) -> tuple[torch.Tensor]:
+        cvd_swin = CVDSwin1Channel.from_path()
+        image = cvd_swin.preprocess(image)
+        progress(0.1)
+        precompensation = cvd_swin(image)
+        progress(1.0)
+        return (cvd_swin.postprocess(precompensation)[0],)
+
+    distortion = ColorBlindnessDistortion(120)
+    demo(
+        "CVD-SWIN",
+        demo_cvd_swin,
+        distortion=distortion,
+    )
 
 
 if __name__ == "__main__":
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    test_data = np.load(
-        "/home/devel/olimp/pyolimp/tests/test_data/test.npy", allow_pickle=True
-    )
-
-    test = test_data[3]
-    test = test.clip(0, 1)
-    test_t = torch.tensor(test).unsqueeze(0)
-
-    swd_swin = (
-        Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton()
-    )
-    output = swd_swin(test_t)
-
-    plt.imshow(output.detach().cpu().numpy().transpose([0, 2, 3, 1])[0])
-    plt.savefig("fig2.png")
-    plt.show()
+    _demo()

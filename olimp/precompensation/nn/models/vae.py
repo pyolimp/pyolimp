@@ -110,6 +110,9 @@ class VAE(nn.Module):
             dim=1,
         )
 
+    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
+        return tensor
+
     def arguments(self, *args):
         return {}
 

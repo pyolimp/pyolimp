@@ -132,6 +132,7 @@ def _evaluate_dataset(
             f"({model} returned {type(precompensated)})"
         )
 
+        precompensated = model.postprocess(precompensated)
         original_image = original_tensors[0]
         distortion_fn = distortions_group.create(original_tensors[1:])
 

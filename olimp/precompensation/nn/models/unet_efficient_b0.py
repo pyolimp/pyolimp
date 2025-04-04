@@ -53,7 +53,10 @@ class PrecompensationUNETB0(smp.Unet):
             dim=1,
         )
 
-    def forward(self, image: Tensor) -> Tensor:
+    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
+        return tensor
+
+    def forward(self, image: Tensor) -> tuple[Tensor]:
         return (super().forward(image),)
 
     def arguments(self, *args, **kwargs):

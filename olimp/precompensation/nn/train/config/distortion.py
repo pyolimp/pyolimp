@@ -18,14 +18,15 @@ class RefractionDistortionConfig(StrictModel):
 
 class ColorBlindnessDistortionConfig(StrictModel):
     name: Literal["cvd"]
-    blindness_type: Literal["deutan", "protan"]
+    # blindness_type: Literal["deutan", "protan"]
+    hue_angle_deg: int
 
     def load(self, progress_context: ProgressContext):
         from .....simulate.color_blindness_distortion import (
             ColorBlindnessDistortion,
         )
 
-        return None, ColorBlindnessDistortion(self.blindness_type)
+        return None, ColorBlindnessDistortion(self.hue_angle_deg)
 
 
 DistortionConfig = Annotated[

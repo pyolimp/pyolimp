@@ -122,6 +122,9 @@ class CVAE(nn.Module):
         y = torch.ones(x.size(0), 1)
         return x, y
 
+    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
+        return tensor
+
     def arguments(self, *args):
         return {}
 
