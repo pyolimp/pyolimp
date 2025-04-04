@@ -23,7 +23,8 @@ def demo(
         "Tennenholtz-Zachevsky", "CVD-SWIN", "CVD DIRECT OPTIMIZATION"
     ],
     opt_function: Callable[
-        [Tensor, ColorBlindnessDistortion, Callable[[float], None]], tuple[Tensor]
+        [Tensor, ColorBlindnessDistortion, Callable[[float], None]],
+        tuple[Tensor],
     ],
     distortion: ColorBlindnessDistortion,
 ):
