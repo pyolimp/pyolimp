@@ -4,7 +4,7 @@ from typing import Generic, TypeVar
 from torch import Tensor
 from torch.utils.data import Dataset
 from olimp.dataset._zenodo import ImgPath
-from olimp.dataset import read_img_path, ProgressCallback
+from olimp.dataset import read_img_path, ProgressContext
 from itertools import islice
 
 SubPath = TypeVar("SubPath", covariant=True)
@@ -14,8 +14,8 @@ class BaseZenodoDataset(Dataset[Tensor], Generic[SubPath]):
     def __init__(
         self,
         subsets: set[SubPath] | None,
+        progress_context: ProgressContext,
         limit: int | None = None,
-        progress_callback: ProgressCallback = None,
     ):
         if subsets is None:
             subsets = getattr(self, "subsets", None)
@@ -23,7 +23,7 @@ class BaseZenodoDataset(Dataset[Tensor], Generic[SubPath]):
                 raise ValueError("Specify subsets or use predefined classes")
 
         dataset = self.create_dataset(
-            categories=subsets, progress_callback=progress_callback
+            categories=subsets, progress_context=progress_context
         )
         self._items = list(
             islice(
@@ -34,7 +34,7 @@ class BaseZenodoDataset(Dataset[Tensor], Generic[SubPath]):
     def create_dataset(
         self,
         categories: set[SubPath],
-        progress_callback: ProgressCallback,
+        progress_context: ProgressContext,
     ) -> dict[SubPath, list[ImgPath]]:
         raise NotImplementedError
 

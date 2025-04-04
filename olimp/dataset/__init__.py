@@ -1,14 +1,25 @@
 from __future__ import annotations
-from typing import NewType, Callable, TypeAlias
+from typing import NewType, Callable, TypeAlias, Protocol
 from pathlib import Path
 from torch._prims_common import DeviceLikeType
 import numpy as np
 from torch import Tensor, tensor
 from torchvision.io import read_image
+from types import TracebackType
 
 
 ImgPath = NewType("ImgPath", Path)
-ProgressCallback: TypeAlias = Callable[[str, float], None] | None
+ProgressCallback: TypeAlias = Callable[[str, float], None]
+
+
+class ProgressContext(Protocol):
+    def __enter__(self) -> ProgressCallback: ...
+    def __exit__(
+        self,
+        typ: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None: ...
 
 
 def read_img_path(path: ImgPath, device: DeviceLikeType = "cpu") -> Tensor:

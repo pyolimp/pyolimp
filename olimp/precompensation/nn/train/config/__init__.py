@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from .base import StrictModel
 from .optimizer import Optimizer, AdamConfig
 from .model import Model as ModelConfig
-from .dataset import ImgDataloaderConfig, ProgressCallback
+from .dataset import ImgDataloaderConfig, ProgressContext
 from .loss_function import LossFunction
 from .distortion import DistortionConfig
 
@@ -80,12 +80,12 @@ class Config(StrictModel):
     )
 
     def load_distortions(
-        self, progress_callback: ProgressCallback
+        self, progress_context: ProgressContext
     ) -> DistortionsGroup:
         datasets: list[Dataset[Tensor] | None] = []
         distortions_classes: list[Distortion] = []
         for distortion in self.distortion:
-            dataset, distortion = distortion.load(progress_callback)
+            dataset, distortion = distortion.load(progress_context)
             datasets.append(dataset)
             distortions_classes.append(distortion)
         return DistortionsGroup(datasets, distortions_classes)

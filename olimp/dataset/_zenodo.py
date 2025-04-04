@@ -2,7 +2,8 @@ from __future__ import annotations
 from typing import cast, Iterator, Literal, NewType
 from pathlib import Path
 import os
-from . import ImgPath, ProgressCallback
+from types import TracebackType
+from . import ImgPath, ProgressCallback, ProgressContext
 
 
 SubPath = NewType("SubPath", str)
@@ -29,21 +30,18 @@ def _download_zenodo(
                     for chunk in r.iter_content(chunk_size=0x10000):
                         out_zip.write(chunk)
                         downloaded += len(chunk)
-                        if progress_callback:
-                            progress_callback(
-                                f"Downloading {name}",
-                                downloaded
-                                / float(r.headers["Content-Length"]),
-                            )
+                        progress_callback(
+                            f"Downloading {name}",
+                            downloaded / float(r.headers["Content-Length"]),
+                        )
         assert zip_path.exists(), zip_path
 
         with ZipFile(zip_path) as zf:
             for idx, member in enumerate(zf.infolist(), 1):
                 zf.extract(member, root)
-                if progress_callback:
-                    progress_callback(
-                        f"Unpacking {name}", idx / len(zf.infolist())
-                    )
+                progress_callback(
+                    f"Unpacking {name}", idx / len(zf.infolist())
+                )
         # Remove file, so we know the download was successful
         zip_path.unlink()
 
@@ -82,22 +80,32 @@ def _read_dataset_dir(
                 yield subpath, items
 
 
-progress = None
-
-
-def default_progress(action: str, done: float) -> None:
+class DefaultProgress:
     """
     suitable for demo purposes only
     """
-    global progress, task1
-    if not progress:
+
+    def __enter__(self) -> "DefaultProgress":
         from rich.progress import Progress
 
-        progress = Progress()
-        progress.start()
-        task1 = progress.add_task("Dataset...", total=1.0)
+        self._progress = Progress()
+        self._task1 = self._progress.add_task("Dataset...", total=1.0)
+        self._progress.__enter__()
+        return self
 
-    progress.update(task1, completed=done, description=action)
+    def __call__(self, action: str, done: float) -> None:
+        self._progress.update(self._task1, completed=done, description=action)
+
+    def __exit__(
+        self,
+        typ: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
+    ):
+        return self._progress.__exit__(typ, value, traceback)
+
+
+default_progress = DefaultProgress()
 
 
 def load_dataset(
@@ -107,7 +115,7 @@ def load_dataset(
         | tuple[Literal["CVD"], Literal[13881170]]
     ),
     subpaths: set[SubPath],
-    progress_callback: ProgressCallback = default_progress,
+    progress_context: ProgressContext = default_progress,
 ) -> dict[SubPath, list[ImgPath]]:
     dataset_name, record = dataset_name_and_record
 
@@ -119,33 +127,33 @@ def load_dataset(
         cache_root = Path(cache_home_dir) / "pyolimp"
     dataset_path = Path(cache_root) / dataset_name
 
-    if not dataset_path.exists():
-        print(f"downloading dataset to {dataset_path}")
-        dataset_path.mkdir(parents=True, exist_ok=True)
-        _download_zenodo(
-            dataset_path, record=record, progress_callback=progress_callback
-        )
-    else:
-        zips = list(dataset_path.glob("*.zip"))
-
-        if zips:
-            print("Dataset is corrupted")
-            print(f"Redownloading dataset to {dataset_path}")
-            # zips = corrupt download
-            for zipfile in zips:
-                zipfile.unlink()
+    with progress_context as progress:
+        if not dataset_path.exists():
+            print(f"downloading dataset to {dataset_path}")
+            dataset_path.mkdir(parents=True, exist_ok=True)
             _download_zenodo(
-                dataset_path,
-                record=record,
-                progress_callback=progress_callback,
+                dataset_path, record=record, progress_callback=progress
             )
-
-    dataset: dict[SubPath, list[ImgPath]] = {}
-    for subpath, items in _read_dataset_dir(dataset_path, subpaths):
-        if subpath in dataset:
-            dataset[subpath] += items
         else:
-            dataset[subpath] = items
-    if progress_callback is not None:
-        progress_callback(f"Loaded {len(dataset)} subsets", 1.0)
+            zips = list(dataset_path.glob("*.zip"))
+
+            if zips:
+                print("Dataset is corrupted")
+                print(f"Redownloading dataset to {dataset_path}")
+                # zips = corrupt download
+                for zipfile in zips:
+                    zipfile.unlink()
+                _download_zenodo(
+                    dataset_path,
+                    record=record,
+                    progress_callback=progress,
+                )
+
+        dataset: dict[SubPath, list[ImgPath]] = {}
+        for subpath, items in _read_dataset_dir(dataset_path, subpaths):
+            if subpath in dataset:
+                dataset[subpath] += items
+            else:
+                dataset[subpath] = items
+        progress(f"Loaded {len(dataset)} subsets", 1.0)
     return dataset

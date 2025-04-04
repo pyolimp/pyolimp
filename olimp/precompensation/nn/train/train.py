@@ -14,6 +14,7 @@ with Progress() as ci:
 
     import random
     import json5
+    from contextlib import contextmanager
 
     ci.update(load_task, completed=1)
     import torch
@@ -495,19 +496,23 @@ def main():
         device_str = "cpu"
         ci.log("Current device: [bold red]CPU")
 
+    @contextmanager
+    def download_progress():
+        def progress_callback(description: str, done: float):
+            progress.update(task1, completed=done, description=description)
+
+        yield progress_callback
+
     with torch.device(device_str) as device:
         with Progress(disable=args.no_progress) as progress:
 
-            def progress_callback(description: str, done: float):
-                progress.update(task1, completed=done, description=description)
-
             task1 = progress.add_task("Dataset...", total=1.0)
-            distortions_group = config.load_distortions(progress_callback)
+            distortions_group = config.load_distortions(download_progress())
             model = config.model.get_instance()
             model = model.to(device)  # type: ignore
             loss_function = config.loss_function.load(model)
 
-            img_dataset = config.img.load(progress_callback)
+            img_dataset = config.img.load(download_progress())
             progress.update(task1, completed=1.0)
         create_optimizer = config.optimizer.load()
         train(

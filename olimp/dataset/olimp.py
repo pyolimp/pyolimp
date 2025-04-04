@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Literal, TypeVar, cast
 from ._zenodo import load_dataset, SubPath, ImgPath, default_progress
-from . import read_img_path, ProgressCallback
+from . import read_img_path, ProgressContext
 
 
 Paths = Literal[
@@ -90,7 +90,7 @@ T = TypeVar("T", bound=Paths)
 
 def olimp(
     categories: set[T],
-    progress_callback: ProgressCallback = default_progress,
+    progress_context: ProgressContext = default_progress,
 ) -> dict[T, list[ImgPath]]:
     """
     Downloads full dataset from https://zenodo.org/records/13692233
@@ -100,7 +100,7 @@ def olimp(
     dataset = load_dataset(
         ("OLIMP", 13692233),
         cast(set[SubPath], categories),
-        progress_callback=progress_callback,
+        progress_context=progress_context,
     )
     return cast(dict[T, list[ImgPath]], dataset)
 
