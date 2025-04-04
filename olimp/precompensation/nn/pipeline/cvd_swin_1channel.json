@@ -1,6 +1,6 @@
 {
     "model": {
-        "name": "cvd_swin_3channels"
+        "name": "cvd_swin_1channel"
     },
     "img": {
         "datasets": [
@@ -23,7 +23,6 @@
                 "name": "divide",
                 "value": 255.0
             }
-
         ]
     },
     "distortion": [
@@ -33,7 +32,8 @@
         }
     ],
     "loss_function": {
-        "name": "CVDSwinLoss"
+        "name": "CVDSwinLoss",
+        "lambda_ssim": 0.25
     },
     "batch_size": 4
 }
