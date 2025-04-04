@@ -11,7 +11,7 @@ import torch
 from .transform import BallfishTransforms
 from ballfish import create_augmentation, Datum
 from ballfish.distribution import DistributionParams
-from ...dataset import ProgressCallback
+from ...dataset import ProgressContext
 
 
 class DatasetConfig(StrictModel):
@@ -19,9 +19,7 @@ class DatasetConfig(StrictModel):
         default=None, description="Load dataset, but only take first N images"
     )
 
-    def load(
-        self, progress_callback: ProgressCallback
-    ) -> TorchDataset[Tensor]:
+    def load(self, progress_context: ProgressContext) -> TorchDataset[Tensor]:
         raise NotImplementedError
 
 
@@ -45,11 +43,11 @@ class SCA2023(DatasetConfig):
         ]
     ]
 
-    def load(self, progress_callback: ProgressCallback):
+    def load(self, progress_context: ProgressContext):
         from ...dataset.sca_2023 import SCA2023Dataset
 
         return SCA2023Dataset(
-            self.subsets, limit=self.limit, progress_callback=progress_callback
+            self.subsets, limit=self.limit, progress_context=progress_context
         )
 
 
@@ -138,11 +136,11 @@ class Olimp(DatasetConfig):
         ]
     ]
 
-    def load(self, progress_callback: ProgressCallback):
+    def load(self, progress_context: ProgressContext):
         from ...dataset.olimp import OlimpDataset
 
         return OlimpDataset(
-            self.subsets, limit=self.limit, progress_callback=progress_callback
+            self.subsets, limit=self.limit, progress_context=progress_context
         )
 
 
@@ -151,7 +149,7 @@ class Directory(DatasetConfig):
     path: Path
     matches: list[str] = ["*.jpg", "*.jpeg", "*.png"]
 
-    def load(self, progress_callback: ProgressCallback):
+    def load(self, progress_context: ProgressContext):
         from ...dataset.directory import DirectoryDataset
 
         return DirectoryDataset(self.path, self.matches, limit=self.limit)
@@ -167,11 +165,11 @@ class CVD(DatasetConfig):
         ]
     ]
 
-    def load(self, progress_callback: ProgressCallback):
+    def load(self, progress_context: ProgressContext):
         from ...dataset.cvd import CVDDataset
 
         return CVDDataset(
-            self.subsets, limit=self.limit, progress_callback=progress_callback
+            self.subsets, limit=self.limit, progress_context=progress_context
         )
 
 
@@ -187,7 +185,7 @@ class PSFGauss(DatasetConfig):
     seed: int = 42
     size: int = 10000
 
-    def load(self, progress_callback: ProgressCallback):
+    def load(self, progress_context: ProgressContext):
         from ...dataset.psf_gauss import PsfGaussDataset
 
         x = self.width * 0.5 if self.center_x is None else self.center_x
@@ -220,9 +218,9 @@ class BaseDataloaderConfig(StrictModel):
         "to set augmentation_factor that will multiple original dataset size",
     )
 
-    def load(self, progress_callback: ProgressCallback):
+    def load(self, progress_context: ProgressContext):
         dataset = ConcatDataset[Tensor](
-            [dataset.load(progress_callback) for dataset in self.datasets]
+            [dataset.load(progress_context) for dataset in self.datasets]
         )
         if self.transforms:
             dataset = AugmentedDataset(
