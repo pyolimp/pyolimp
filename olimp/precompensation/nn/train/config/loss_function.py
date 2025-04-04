@@ -44,41 +44,30 @@ class VaeLossFunction(StrictModel):
         return f
 
 
-Degree: TypeAlias = Literal[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-
-
-class ColorBlindnessLossFunction(StrictModel):
-    name: Literal["ColorBlindnessLoss"]
-    degree: Degree = 100
+class CVDSwinLossFunction(StrictModel):
+    name: Literal["CVDSwinLoss"]
     lambda_ssim: Annotated[float, confloat(ge=0, le=1)] = 0.25
     global_points: int = 3000
 
     def load(self, _model: Any):
-        from .....evaluation.loss.color_blindness_loss import (
-            ColorBlindnessLoss,
-        )
-        from .....simulate.color_blindness_distortion import (
-            ColorBlindnessDistortion,
+        from .....evaluation.loss.cvd_swin_loss import (
+            CVDSwinLoss,
         )
 
-        cbl = ColorBlindnessLoss(
+        cbl = CVDSwinLoss(
             lambda_ssim=self.lambda_ssim,
             global_points=self.global_points,
         )
 
         def f(
-            model_output: list[Tensor],
-            datums: list[Tensor],
-            distortions: list[type[Distortion]],
+            precompensated: Tensor,
+            original_image: Tensor,
+            distortion_fn: ApplyDistortion,
+            extra: Sequence[Any],
         ) -> Tensor:
-            (cbd,) = distortions
-            assert isinstance(cbd, ColorBlindnessDistortion)
-            cbl.set_cb_type(cbd.blindness_type, self.degree)
-            (image,) = datums
-            assert image.ndim == 4, image.ndim
-            (precompensated,) = model_output
+
             assert precompensated.ndim == 4, precompensated.ndim
-            return cbl(image, precompensated)
+            return cbl(original_image, precompensated, distortion_fn)
 
         return f
 
@@ -332,7 +321,7 @@ class SOkLabLossFunction(StrictModel):
 LossFunction = Annotated[
     VaeLossFunction
     | ChromaticityDifferenceLossFunction
-    | ColorBlindnessLossFunction
+    | CVDSwinLossFunction
     | MultiScaleSSIMLossFunction
     | RMSLossFunction
     | VSILossFunction,
