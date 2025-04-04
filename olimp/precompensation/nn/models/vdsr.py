@@ -57,7 +57,7 @@ class VDSR(nn.Module):
         model.load_state_dict(state_dict)
         return model
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> tuple[Tensor]:
         identity = x[:, :1, :, :]
 
         out = self.conv1(x)
@@ -82,6 +82,9 @@ class VDSR(nn.Module):
             ],
             dim=1,
         )
+
+    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
+        return tensor
 
     def arguments(self, *args):
         return {}
