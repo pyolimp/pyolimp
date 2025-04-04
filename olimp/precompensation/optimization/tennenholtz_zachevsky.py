@@ -85,7 +85,7 @@ def tennenholtz_zachevsky(
     img_3ch: Tensor,
     distortion: ColorBlindnessDistortion,
     parameters: TennenholtzZachevskyParameters = TennenholtzZachevskyParameters(),
-) -> tuple[Tensor]:
+) -> Tensor:
     """
     Tennenholtz-Zachevsky Natural Contrast Enhancement color blindness precompensation.
 
@@ -148,7 +148,7 @@ def _demo():
         image: Tensor,
         distortion: ColorBlindnessDistortion,
         progress: Callable[[float], None],
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor]:
         parameters = TennenholtzZachevskyParameters(progress=progress)
         return (tennenholtz_zachevsky(image[0], distortion, parameters)[None],)
 
