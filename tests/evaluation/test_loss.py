@@ -208,6 +208,48 @@ class TestMSE(TestCase):
         assert_close(loss, torch.tensor(0.993489563465))
 
 
+class TestLPIPS(TestCase):
+    def test_can_be_imported(self):
+        from olimp.evaluation.loss.lpips import LPIPS
+
+
+class TestNRMSE(TestCase):
+    def test_empty_zero_images(self):
+        from olimp.evaluation.loss.nrmse import NormalizedRootMSE
+
+        loss = _check_zero_zero(NormalizedRootMSE())
+        self.assertTrue(loss.requires_grad)
+        self.assertEqual(loss, 0.0)
+
+    def test_nonzero_nonzero_euclidean(self):
+        from olimp.evaluation.loss.nrmse import NormalizedRootMSE
+
+        loss = _check_nonzero_nonzero(
+            NormalizedRootMSE(normalization="euclidean")
+        )
+
+        self.assertTrue(loss.requires_grad)
+        assert_close(loss, torch.tensor(-26.62245368957))
+
+    def test_nonzero_nonzero_mean(self):
+        from olimp.evaluation.loss.nrmse import NormalizedRootMSE
+
+        loss = _check_nonzero_nonzero(NormalizedRootMSE(normalization="mean"))
+
+        self.assertTrue(loss.requires_grad)
+        assert_close(loss, torch.tensor(-381.747924804))
+
+    def test_nonzero_nonzero_min_max(self):
+        from olimp.evaluation.loss.nrmse import NormalizedRootMSE
+
+        loss = _check_nonzero_nonzero(
+            NormalizedRootMSE(normalization="min-max")
+        )
+
+        self.assertTrue(loss.requires_grad)
+        assert_close(loss, torch.tensor(-0.993478894233))
+
+
 class TestRMSE(TestCase):
     def test_empty_zero_images(self):
         from olimp.evaluation.loss.rmse import RMSE
