@@ -15,9 +15,7 @@ from ..download_path import download_path, PyOlimpHF
 from olimp.processing import quantile_clip
 
 
-class CVDSwin1Channel(
-    nn.Module
-):
+class CVDSwin1Channel(nn.Module):
     r"""Swin Transformer
     Args:
         img_size (int | tuple(int)): Input image size. Default 224
@@ -344,9 +342,7 @@ def _demo():
         distortion: ColorBlindnessDistortion,
         progress: Callable[[float], None],
     ) -> tuple[torch.Tensor]:
-        cvd_swin = (
-            CVDSwin1Channel.from_path()
-        )
+        cvd_swin = CVDSwin1Channel.from_path()
         image = cvd_swin.preprocess(image)
         progress(0.1)
         precompensation = cvd_swin(image)
