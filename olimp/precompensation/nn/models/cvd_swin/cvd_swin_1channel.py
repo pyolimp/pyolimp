@@ -12,9 +12,12 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 from timm.models.layers import trunc_normal_
 from ..download_path import download_path, PyOlimpHF
+from olimp.processing import quantile_clip
 
 
-class CVDSwin3Channels(nn.Module):
+class CVDSwin1Channel(
+    nn.Module
+):
     r"""Swin Transformer
     Args:
         img_size (int | tuple(int)): Input image size. Default 224
@@ -61,16 +64,11 @@ class CVDSwin3Channels(nn.Module):
     ):
         super().__init__()
 
-        transform_val_list1 = [
-            transforms.Normalize((-1.0, -1.0, -1.0), (2.0, 2.0, 2.0))
-        ]
-        transform_val_list2 = [
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ]
-        self.trans_compose1 = transforms.Compose(transform_val_list1)
-        self.trans_compose2 = transforms.Compose(transform_val_list2)
+        self.simple_conv = nn.Conv2d(3, 1, kernel_size=3, padding=1, stride=1)
+        self.simple_relu = nn.ReLU()
+        self.simple_sigmoid = nn.Sigmoid()
 
-        # self.num_classes = num_classes
+        self.Tanh = nn.Tanh()
         self.num_layers = len(depths)
         self.embed_dim = embed_dim
         self.ape = ape
@@ -206,7 +204,6 @@ class CVDSwin3Channels(nn.Module):
             self.resi_connection.append(layer)
 
         self.flinal_layer = nn.Sequential(
-            # resi_connection_layer(embed_dim*)
             nn.Conv2d(
                 embed_dim * 2,
                 embed_dim * 2,
@@ -250,8 +247,8 @@ class CVDSwin3Channels(nn.Module):
                 stride=1,
             ),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(embed_dim // 2, 3, kernel_size=3, padding=1, stride=1),
-            nn.Tanh(),
+            nn.Conv2d(embed_dim // 2, 1, kernel_size=3, padding=1, stride=1),
+            nn.Softplus(),
         )
 
         self.apply(self._init_weights)
@@ -287,7 +284,6 @@ class CVDSwin3Channels(nn.Module):
 
         i = 0
         x1 = x
-
         for uplayer in self.uplayers:
             x1 = uplayer(x1)
             if i < 3:
@@ -303,27 +299,14 @@ class CVDSwin3Channels(nn.Module):
         return x
 
     def forward(self, x: Tensor) -> tuple[Tensor]:
-        x = self.forward_features(x)
-        return (x,)
-
-    def flops(self):
-        flops = 0
-        flops += self.patch_embed.flops()
-        for i, layer in enumerate(self.layers):
-            flops += layer.flops()
-        flops += (
-            self.num_features
-            * self.patches_resolution[0]
-            * self.patches_resolution[1]
-            // (2**self.num_layers)
-        )
-        flops += self.num_features * self.num_classes
-        return flops
+        x1 = self.forward_features(x)
+        x1 = x * x1 + 1e-5
+        return (quantile_clip(x1),)
 
     @classmethod
     def from_path(
         cls,
-        path: PyOlimpHF = "hf://CVD/cvd_swin.pth",
+        path: PyOlimpHF = "hf://CVD/cvd_swin_1channel.pth",
     ):
         path = download_path(path)
         state_dict = torch.load(
@@ -340,10 +323,10 @@ class CVDSwin3Channels(nn.Module):
         return model
 
     def preprocess(self, tensor: torch.Tensor) -> torch.Tensor:
-        return self.trans_compose2(tensor)
+        return tensor
 
     def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
-        return (self.trans_compose1(tensor[0]),)
+        return tensor
 
     def arguments(self, *args, **kwargs):
         return {}
@@ -361,7 +344,9 @@ def _demo():
         distortion: ColorBlindnessDistortion,
         progress: Callable[[float], None],
     ) -> tuple[torch.Tensor]:
-        cvd_swin = CVDSwin3Channels.from_path()
+        cvd_swin = (
+            CVDSwin1Channel.from_path()
+        )
         image = cvd_swin.preprocess(image)
         progress(0.1)
         precompensation = cvd_swin(image)
