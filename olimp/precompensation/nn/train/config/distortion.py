@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Annotated, Literal
 from .base import StrictModel
-from pydantic import Field
+from pydantic import Field, model_validator
 from .dataset import PsfDataloaderConfig, ProgressContext
 
 
@@ -18,15 +18,35 @@ class RefractionDistortionConfig(StrictModel):
 
 class ColorBlindnessDistortionConfig(StrictModel):
     name: Literal["cvd"]
-    # blindness_type: Literal["deutan", "protan"]
-    hue_angle_deg: int
+    blindness_type: Literal["deutan", "protan", "tritan"] | None = None
+    hue_angle_deg: int | None = None
+
+    @model_validator(mode="after")
+    def check_only_one_is_set(self):
+        both_off = self.blindness_type is None and self.hue_angle_deg is None
+        both_on = (
+            self.blindness_type is not None and self.hue_angle_deg is not None
+        )
+        if both_off or both_on:
+            raise ValueError(
+                f"{'Only one' if both_on else 'One'} of `blindness_type` "
+                f"{'and' if both_off else 'or'} `hue_angle_deg` must be set"
+            )
+        return self
 
     def load(self, progress_context: ProgressContext):
         from .....simulate.color_blindness_distortion import (
             ColorBlindnessDistortion,
         )
 
-        return None, ColorBlindnessDistortion(self.hue_angle_deg)
+        if self.hue_angle_deg is not None:
+            distortion = ColorBlindnessDistortion(self.hue_angle_deg)
+        else:
+            assert self.blindness_type is not None, "Programmer error"
+            distortion = ColorBlindnessDistortion.from_type(
+                self.blindness_type
+            )
+        return None, distortion
 
 
 DistortionConfig = Annotated[
