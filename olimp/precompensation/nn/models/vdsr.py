@@ -83,8 +83,8 @@ class VDSR(nn.Module):
             dim=1,
         )
 
-    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
-        return tensor
+    def postprocess(self, tensors: tuple[Tensor]) -> tuple[Tensor]:
+        return tensors
 
     def arguments(self, *args):
         return {}

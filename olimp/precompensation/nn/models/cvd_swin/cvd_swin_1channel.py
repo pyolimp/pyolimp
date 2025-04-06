@@ -320,11 +320,11 @@ class CVDSwin1Channel(nn.Module):
         model.load_state_dict(new_state_dict)
         return model
 
-    def preprocess(self, tensor: torch.Tensor) -> torch.Tensor:
+    def preprocess(self, tensor: Tensor) -> Tensor:
         return tensor
 
-    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
-        return tensor
+    def postprocess(self, tensors: tuple[Tensor]) -> tuple[Tensor]:
+        return tensors
 
     def arguments(self, *args, **kwargs):
         return {}

@@ -41,8 +41,8 @@ class PrecompensationDWDN(DWDN):
         psf = torch.fft.fftshift(psf)
         return image, psf
 
-    def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
-        return tensor
+    def postprocess(self, tensors: tuple[Tensor]) -> tuple[Tensor]:
+        return tensors
 
     def arguments(self, input: Tensor, psf: Tensor):
         return {}
