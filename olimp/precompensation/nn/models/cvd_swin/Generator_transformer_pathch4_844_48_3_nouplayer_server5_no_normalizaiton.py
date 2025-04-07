@@ -71,8 +71,6 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
         ]
         self.trans_compose1 = transforms.Compose(transform_val_list1)
         self.trans_compose2 = transforms.Compose(transform_val_list2)
-
-        # self.num_classes = num_classes
         self.num_layers = len(depths)
         self.embed_dim = embed_dim
         self.ape = ape
@@ -205,15 +203,9 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
                 dim=int(embed_dim * 2**i_layer),
                 output_dim=int(embed_dim * 2**i_layer),
             )
-            # nn.Conv2d(int(embed_dim * 2 ** (self.num_layers - 1 - i_layer)), int(embed_dim * 2 ** (self.num_layers - 1 - i_layer)), kernel_size=3, padding=1, stride=1),
             self.resi_connection.append(layer)
-        # self.resi_connection = nn.Sequential(
-        #     nn.Conv2d(embed_dim *2, embed_dim *2, kernel_size=3, padding=1, stride=1),
-        #     nn.Conv2d(embed_dim * 2, embed_dim * 2, kernel_size=3, padding=1, stride=1),
-        # )
 
         self.flinal_layer = nn.Sequential(
-            # resi_connection_layer(embed_dim*)
             nn.Conv2d(
                 embed_dim * 2,
                 embed_dim * 2,
@@ -230,8 +222,6 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
             ),
         )
         self.final_upsample = nn.Sequential(
-            # nn.Conv2d(embed_dim, num_feat, 3, 1, 1),
-            # nn.LeakyReLU(inplace=True),
             Upsample_promotion(
                 input_resolution=(
                     patches_resolution[0],
@@ -250,28 +240,9 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
                 norm_layer=norm_layer,
                 norm_flag=0,
             ),
-            #
-            # Upsample_layer(input_resolution=(patches_resolution[0], patches_resolution[1]),
-            #                    dim=embed_dim*2, output_dim =embed_dim, norm_layer=norm_layer),
-            # Upsample_layer(input_resolution=(patches_resolution[0] * 2, patches_resolution[1] * 2),
-            #                dim=embed_dim, output_dim=embed_dim // 2, norm_layer=norm_layer),
-            # nn.Conv2d(embed_dim * 2 , embed_dim, kernel_size=3, padding=1, stride=1),
-            # Upsample_promotion(input_resolution=(patches_resolution[0], patches_resolution[1]),
-            #                    dim=embed_dim, norm_layer=norm_layer),
-            # nn.Conv2d(embed_dim, embed_dim, kernel_size=3, padding=1, stride=1),
-            # Upsample_promotion(input_resolution=(patches_resolution[0]*2, patches_resolution[1]*2),
-            #                                dim=embed_dim, norm_layer=norm_layer),
-            # self.flinal_layer
-            # Upsample_promotion(input_resolution=(patches_resolution[0], patches_resolution[1]),
-            #                    dim=embed_dim*2, norm_layer=norm_layer),
-            # Upsample_promotion(input_resolution=(patches_resolution[0] * 2, patches_resolution[1] * 2),
-            #                    dim=int(embed_dim), norm_layer=norm_layer),
         )
 
         self.final = nn.Sequential(
-            # Upsample(x
-            # nn.ZeroPad2d((1, 0, 1, 0)),
-            # nn.Conv2d(embed_dim, 3, 4, padding=1),
             nn.Conv2d(
                 embed_dim // 2,
                 embed_dim // 2,
@@ -281,12 +252,6 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
             ),
             nn.LeakyReLU(0.2),
             nn.Conv2d(embed_dim // 2, 3, kernel_size=3, padding=1, stride=1),
-            # nn.Linear(96, 30, bias=False),
-            # nn.LeakyReLU(),
-            # nn.Linear(48, 10, bias=False),
-            # nn.Linear(30, 3, bias=False),
-            # nn.Linear(30, 3, bias=False),
-            # nn.ConvTranspose2d(embed_dim/4, 3, 4, 2, 1, bias=False),
             nn.Tanh(),
         )
 
@@ -310,47 +275,30 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
         return {"relative_position_bias_table"}
 
     def forward_features(self, x):
-
         x = self.patch_embed(x)
         if self.ape:
             x = x + self.absolute_pos_embed
         x = self.pos_drop(x)
-
         self.downsample_result = [x]
-        for layer in self.layers:
-            # print(x.size())
-            x = layer(x)
 
+        for layer in self.layers:
+            x = layer(x)
             self.downsample_result.append(x)
+
         i = 0
         x1 = x
-        # print('x1',x.size(),len(self.downsample_result))
+
         for uplayer in self.uplayers:
             x1 = uplayer(x1)
-            # print(x1.size())
             if i < 3:
-                # x1 = torch.cat((x1, self.resi_connection[1-i](self.downsample_result[1-i])), -1)
                 x1 = torch.cat((x1, self.downsample_result[1 - i]), -1)
             i = i + 1
 
         x = x1
-
-        # x = self.norm(x)  # B L C
-        # print(x.size())
-
-        # print(x.size())
-        # print(x1123)
-
-        # x = x.view(-1, C, H * W)
-
-        # print(x.size())
-
         x = self.final_upsample(x)
         x = x.permute(0, 2, 1)  # B C ,H*W
         x = x.view([-1, 48, 256, 256])
         x = self.final(x)
-        # x = self.avgpool(x.transpose(1, 2))  # B C 1
-        # x = torch.flatten(x, 1)
         return x
 
     def preprocess(self, tensor: torch.Tensor) -> torch.Tensor:
@@ -382,9 +330,7 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
         return model
 
     def forward(self, x):
-        # print('forward',x.size())
         x = self.forward_features(x)
-        # x = self.head(x)
         return (x,)
 
     def flops(self):
