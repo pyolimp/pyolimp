@@ -15,6 +15,7 @@ PyOlimpHF = (
         "hf://CVD/Generator_transformer_pathch4_1_1.pth",
         "hf://CVD/Generator_transformer_pathch4_8_3_48_3.pth",
         "hf://CVD/Generator_transformer_pathch4_844_48_3.pth",
+        "hf://CVD/cvd_swin_1channel.pth",
         "hf://tone_mapping/hdrnet_v0.pt",
     ]
     | str
