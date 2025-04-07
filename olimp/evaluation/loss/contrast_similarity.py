@@ -1,35 +1,27 @@
 from __future__ import annotations
 
-from torch.nn import Module
+from ._base import ReducibleLoss
 import torch
 from torch import Tensor
 
 
-class ContrastSimLoss(Module):
+class ContrastSimLoss(ReducibleLoss):
     """
     Computes Contrast Similarity metric between two images.
     """
 
     @staticmethod
     def _calc_gradx(image: Tensor) -> Tensor:
-        grad_x = torch.zeros_like(image)
-        torch.subtract(
-            image[:, :, 1:], image[:, :, :-1], out=grad_x[:, :, :-1]
-        )
-        torch.subtract(
-            image[:, :, :1], image[:, :, -1:], out=grad_x[:, :, -1:]
-        )
+        grad_x = torch.empty_like(image)
+        grad_x[:, :, :-1] = torch.subtract(image[:, :, 1:], image[:, :, :-1])
+        grad_x[:, :, -1:] = torch.subtract(image[:, :, :1], image[:, :, -1:])
         return grad_x
 
     @staticmethod
     def _calc_grady(image: Tensor) -> Tensor:
-        grad_y = torch.zeros_like(image)
-        torch.subtract(
-            image[:, 1:, :], image[:, :-1, :], out=grad_y[:, :-1, :]
-        )
-        torch.subtract(
-            image[:, :1, :], image[:, -1:, :], out=grad_y[:, -1:, :]
-        )
+        grad_y = torch.empty_like(image)
+        grad_y[:, :-1, :] = torch.subtract(image[:, 1:, :], image[:, :-1, :])
+        grad_y[:, -1:, :] = torch.subtract(image[:, :1, :], image[:, -1:, :])
         return grad_y
 
     @staticmethod
@@ -110,7 +102,7 @@ class ContrastSimLoss(Module):
         director_field = cls._calc_director_field(grad_x, grad_y)
         return cls._sign_solution_intensity(image, director_field)
 
-    def forward(self, x: Tensor, y: Tensor) -> Tensor:
+    def _loss(self, x: Tensor, y: Tensor) -> Tensor:
         vf_x = self._vector_field_from_image(x)
         vf_y = self._vector_field_from_image(y)
         return torch.sum(
