@@ -15,12 +15,6 @@ chromaticity_difference
    :members:
 
 
-color_blindness_loss
---------------------
-
-.. automodule:: olimp.evaluation.loss.color_blindness_loss
-   :members:
-
 corr
 ----
 
