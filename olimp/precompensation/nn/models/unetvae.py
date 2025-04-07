@@ -2,6 +2,8 @@ from __future__ import annotations
 import torch
 from torch import nn
 from torch import Tensor
+from typing import Tuple
+import math
 
 # import torchvision
 from olimp.processing import fft_conv
@@ -14,12 +16,21 @@ class UNETVAE(nn.Module):
        :class: full-width
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        input_channel: int = 3,
+        output_channel: int = 3,
+        image_size: Tuple[int, int] = (512, 512),
+        latent_dimension: int = 128,
+    ):
         super().__init__()
+
+        # Image cast size
+        self.image_size = image_size
 
         # Encoder
         self.encoder1 = nn.Sequential(
-            nn.Conv2d(3, 32, 3, stride=2, padding=1),
+            nn.Conv2d(input_channel, 32, 3, stride=2, padding=1),
             nn.ReLU(),
         )
         self.encoder2 = nn.Sequential(
@@ -44,9 +55,25 @@ class UNETVAE(nn.Module):
         )
 
         # Latent space
-        self.fc_mu = nn.Linear(1024 * 8 * 8, 128)
-        self.fc_logvar = nn.Linear(1024 * 8 * 8, 128)
-        self.decoder_input = nn.Linear(128, 1024 * 8 * 8)
+        # Assuming input image size is image_size
+        w, h = self.image_size[0] / 64, self.image_size[1] / 64
+        self.latent_shape = (math.ceil(w), math.ceil(h))
+        latent_size_multiplication = (
+            self.latent_shape[0] * self.latent_shape[1]
+        )
+
+        self.fc_mu = nn.Linear(
+            1024 * latent_size_multiplication,
+            latent_dimension,
+        )
+        self.fc_logvar = nn.Linear(
+            1024 * latent_size_multiplication,
+            latent_dimension,
+        )
+        self.decoder_input = nn.Linear(
+            latent_dimension,
+            1024 * latent_size_multiplication,
+        )
 
         # Decoder
         self.decoder6 = nn.Sequential(
@@ -81,7 +108,7 @@ class UNETVAE(nn.Module):
         )
         self.decoder1 = nn.Sequential(
             nn.ConvTranspose2d(
-                64, 3, 3, stride=2, padding=1, output_padding=1
+                64, output_channel, 3, stride=2, padding=1, output_padding=1
             ),  # 256 -> 512
             nn.Sigmoid(),
         )
@@ -117,7 +144,9 @@ class UNETVAE(nn.Module):
         z = self.reparameterize(mu, logvar)
 
         # Decode latent vector
-        decoded_input = self.decoder_input(z).view(-1, 1024, 8, 8)
+        decoded_input = self.decoder_input(z).view(
+            -1, 1024, self.latent_shape[0], self.latent_shape[1]
+        )
 
         # Decoder with skip connections
         d6 = self.decoder6(decoded_input)
@@ -126,6 +155,10 @@ class UNETVAE(nn.Module):
         d3 = self.decoder3(torch.cat([d4, e3], dim=1))
         d2 = self.decoder2(torch.cat([d3, e2], dim=1))
         d1 = self.decoder1(torch.cat([d2, e1], dim=1))
+
+        d1 = torch.nn.functional.interpolate(
+            d1, size=self.image_size, mode="bilinear", align_corners=False
+        )
 
         return d1, mu, logvar
 
