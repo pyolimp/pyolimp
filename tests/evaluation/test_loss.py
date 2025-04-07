@@ -305,3 +305,23 @@ class TestContrastSimilarity(TestCase):
         loss = _check_nonzero_nonzero(ContrastSimLoss(reduction="none"))
         assert_close(loss, torch.tensor([float("inf"), 0.0]))
         self.assertTrue(loss.requires_grad)
+
+
+class TestVAELoss(TestCase):
+    def test_empty_zero_images(self):
+        from olimp.evaluation.loss.vae import vae_loss
+
+        loss = _check_zero_zero(
+            lambda x, y: vae_loss(x, y, torch.tensor(0.5), torch.tensor(0.2))
+        )
+        self.assertTrue(loss.requires_grad)
+        assert_close(loss, torch.tensor(0.1357013583))
+
+    def test_empty_zero_and_ones_images(self):
+        from olimp.evaluation.loss.vae import vae_loss
+
+        loss = _check_nonzero_nonzero(
+            lambda x, y: vae_loss(x, y, torch.tensor(0.5), torch.tensor(0.2))
+        )
+        assert_close(loss, torch.tensor(195584.14))
+        self.assertTrue(loss.requires_grad)
