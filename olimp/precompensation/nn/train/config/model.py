@@ -175,6 +175,282 @@ class CVDSwin1Channel(ModelConfig):
         return CVDSwin1Channel()
 
 
+class Generator_transformer_pathch4_8421_48_3_nouplayer_server5(ModelConfig):
+    name: Literal["Generator_transformer_pathch4_8421_48_3_nouplayer_server5"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch4_8421_48_3_nouplayer_server5 import (
+            Generator_transformer_pathch4_8421_48_3_nouplayer_server5,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch4_8421_48_3_nouplayer_server5.from_path(
+                path=self.path
+            )
+
+        return Generator_transformer_pathch4_8421_48_3_nouplayer_server5()
+
+
+class Generator_transformer_pathch4_844_48_3_server5(ModelConfig):
+    name: Literal["Generator_transformer_pathch4_844_48_3_server5"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch4_844_48_3_server5 import (
+            Generator_transformer_pathch4_844_48_3_server5,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch4_844_48_3_server5.from_path(
+                path=self.path
+            )
+
+        return Generator_transformer_pathch4_844_48_3_server5()
+
+
+class Generator_transformer_pathch4_844_48_3(ModelConfig):
+    name: Literal["Generator_transformer_pathch4_844_48_3"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch4_844_48_3 import (
+            Generator_transformer_pathch4_844_48_3,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch4_844_48_3.from_path(
+                path=self.path
+            )
+
+        return Generator_transformer_pathch4_844_48_3()
+
+
+class Generator_transformer_pathch4_844_48_3_nouplayer_server5(ModelConfig):
+    name: Literal["Generator_transformer_pathch4_844_48_3_nouplayer_server5"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch4_844_48_3_nouplayer_server5 import (
+            Generator_transformer_pathch4_844_48_3_nouplayer_server5,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch4_844_48_3_nouplayer_server5.from_path(
+                path=self.path
+            )
+
+        return Generator_transformer_pathch4_844_48_3_nouplayer_server5()
+
+
+class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
+    ModelConfig
+):
+    name: Literal[
+        "Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton"
+    ]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton import (
+            Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton.from_path(
+                path=self.path
+            )
+
+        return (
+            Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton()
+        )
+
+
+class Generator_transformer_pathch4_8_3_48_3(ModelConfig):
+    name: Literal["Generator_transformer_pathch4_8_3_48_3"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch4_8_3_48_3 import (
+            Generator_transformer_pathch4_8_3_48_3,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch4_8_3_48_3.from_path(
+                path=self.path
+            )
+
+        return Generator_transformer_pathch4_8_3_48_3()
+
+
+class Generator_transformer_pathch4_6_3_48_3(ModelConfig):
+    name: Literal["Generator_transformer_pathch4_6_3_48_3"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch4_6_3_48_3 import (
+            Generator_transformer_pathch4_6_3_48_3,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch4_6_3_48_3.from_path(
+                path=self.path
+            )
+
+        return Generator_transformer_pathch4_6_3_48_3()
+
+
+class Generator_transformer_pathch4_1_1(ModelConfig):
+    name: Literal["Generator_transformer_pathch4_1_1"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch4_1_1 import (
+            Generator_transformer_pathch4_1_1,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch4_1_1.from_path(path=self.path)
+
+        return Generator_transformer_pathch4_1_1()
+
+
+class Generator_transformer_pathch2(ModelConfig):
+    name: Literal["Generator_transformer_pathch2"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch2 import (
+            Generator_transformer_pathch2,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch2.from_path(path=self.path)
+
+        return Generator_transformer_pathch2()
+
+
+class Generator_cnn_pathch4_844_48_3_nouplayer_server5(ModelConfig):
+    name: Literal["Generator_cnn_pathch4_844_48_3_nouplayer_server5"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_cnn_pathch4_844_48_3_nouplayer_server5 import (
+            Generator_cnn_pathch4_844_48_3_nouplayer_server5,
+        )
+
+        if self.path is not None:
+            return Generator_cnn_pathch4_844_48_3_nouplayer_server5.from_path(
+                path=self.path
+            )
+
+        return Generator_cnn_pathch4_844_48_3_nouplayer_server5()
+
+
+class Generator_transformer_pathch2_1_1(ModelConfig):
+    name: Literal["Generator_transformer_pathch2_1_1"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch2_1_1 import (
+            Generator_transformer_pathch2_1_1,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch2_1_1.from_path(path=self.path)
+
+        return Generator_transformer_pathch2_1_1()
+
+
+class Generator_transformer_pathch2_no_Unt(ModelConfig):
+    name: Literal["Generator_transformer_pathch2_no_Unt"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.Generator_transformer_pathch2_no_Unt import (
+            Generator_transformer_pathch2_no_Unt,
+        )
+
+        if self.path is not None:
+            return Generator_transformer_pathch2_no_Unt.from_path(
+                path=self.path
+            )
+
+        return Generator_transformer_pathch2_no_Unt()
+
+
 Model = Annotated[
     VDSR
     | VAE
@@ -184,6 +460,18 @@ Model = Annotated[
     | PrecompensationUSRNet
     | PrecompensationDWDN
     | CVDSwin3Channels
-    | CVDSwin1Channel,
+    | CVDSwin1Channel
+    | Generator_transformer_pathch4_8421_48_3_nouplayer_server5
+    | Generator_transformer_pathch4_844_48_3_server5
+    | Generator_transformer_pathch4_844_48_3
+    | Generator_transformer_pathch4_844_48_3_nouplayer_server5
+    | Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton
+    | Generator_transformer_pathch4_8_3_48_3
+    | Generator_transformer_pathch4_6_3_48_3
+    | Generator_transformer_pathch4_1_1
+    | Generator_transformer_pathch2
+    | Generator_cnn_pathch4_844_48_3_nouplayer_server5
+    | Generator_transformer_pathch2_1_1
+    | Generator_transformer_pathch2_no_Unt,
     Field(..., discriminator="name"),
 ]
