@@ -3,8 +3,6 @@ from . import (
     BasicLayer,
     PatchMerging,
     Upsample_promotion,
-    Upsample,
-    resi_connection_layer,
 )
 
 import torch
@@ -71,8 +69,6 @@ class Generator_transformer_pathch2_no_Unt(nn.Module):
         ]
         self.trans_compose1 = transforms.Compose(transform_val_list1)
         self.trans_compose2 = transforms.Compose(transform_val_list2)
-
-        # self.num_classes = num_classes
         self.num_layers = len(depths)
         self.embed_dim = embed_dim
         self.ape = ape
@@ -182,18 +178,9 @@ class Generator_transformer_pathch2_no_Unt(nn.Module):
                 dim=embed_dim,
                 norm_layer=norm_layer,
             ),
-            # Upsample_promotion(input_resolution=(patches_resolution[0] * 2, patches_resolution[1] * 2),
-            #                    dim=int(embed_dim // 2), norm_layer=norm_layer),
         )
 
         self.final = nn.Sequential(
-            # Upsample(x
-            # nn.ZeroPad2d((1, 0, 1, 0)),
-            # nn.Conv2d(embed_dim, 3, 4, padding=1),
-            # nn.Linear(int(embed_dim //2), 3, bias=False),
-            # nn.Conv2d(int(embed_dim/2), 3, 3, padding=1),
-            # nn.Conv2d()
-            # nn.ConvTranspose2d(embed_dim/4, 3, 4, 2, 1, bias=False),
             nn.Conv2d(int(embed_dim // 2), 3, 1, padding=0),
             nn.Tanh(),
         )
@@ -216,51 +203,32 @@ class Generator_transformer_pathch2_no_Unt(nn.Module):
         return {"relative_position_bias_table"}
 
     def forward_features(self, x):
-
         x = self.patch_embed(x)
         if self.ape:
             x = x + self.absolute_pos_embed
         x = self.pos_drop(x)
-
         self.downsample_result = [x]
+
         for layer in self.layers:
             x = layer(x)
-            # print(x.size())
             self.downsample_result.append(x)
-        i = 0
 
+        i = 0
         for xx in self.downsample_result:
             i = i + 1
+
         x1 = x
-
         i = 0
-        for uplayer in self.uplayers:
 
+        for uplayer in self.uplayers:
             x1 = uplayer(x1)
-            # print(x1.size())
-            # if i < 1:
-            #     x1 = torch.cat((x1, self.downsample_result[0-i]), -1)
             i = i + 1
 
         x = x1
-
-        # x = self.norm(x)  # B L C
-        # print(x.size())
         x = self.final_upsample(x)
-
-        # print(x.size())
-        # print(x1123)
-
-        # x = x.view(-1, C, H * W)
         x = x.permute(0, 2, 1)  # B C ,H*W
-        # print(x.size())
         x = x.view([-1, 48, 256, 256])
         x = self.final(x)
-
-        # x = self.final(x)
-
-        # x = self.avgpool(x.transpose(1, 2))  # B C 1
-        # x = torch.flatten(x, 1)
         return x
 
     def preprocess(self, tensor: torch.Tensor) -> torch.Tensor:
@@ -292,9 +260,7 @@ class Generator_transformer_pathch2_no_Unt(nn.Module):
         return model
 
     def forward(self, x):
-        # print('forward',x.size())
         x = self.forward_features(x)
-        # x = self.head(x)
         return (x,)
 
     def flops(self):
