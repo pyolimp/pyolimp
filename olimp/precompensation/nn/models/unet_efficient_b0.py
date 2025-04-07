@@ -10,7 +10,7 @@ from .download_path import download_path, PyOlimpHF
 
 class PrecompensationUNETB0(smp.Unet):
     """
-    .. image:: ../../../../_static/vdsr.svg
+    .. image:: ../../../../_static/unet_efficient_b0.svg
        :class: full-width
     """
 
