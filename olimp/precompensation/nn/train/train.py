@@ -453,7 +453,16 @@ def train(
             p.remove_task(test_task)
 
 
-def main():
+def dicts_merge(d: dict[str, Any], u: dict[str, Any]):
+    for k, v in u.items():
+        if isinstance(v, dict):
+            d[k] = dicts_merge(d[k], v)
+        else:
+            d[k] = u[k]
+    return d
+
+
+def parse_config() -> tuple[Config, bool]:
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -472,24 +481,36 @@ def main():
         action="store_true",
         help="don't show progress bar, helpful when debugging with pdb",
     )
+    parser.add_argument(
+        "--override",
+        type=json5.loads,
+        help=(
+            "Override values from --config, for example, to change "
+            'the number of epochs, pass {"epochs": 200}'
+        ),
+        default={},
+    )
     args = parser.parse_args()
 
     if args.update_schema:
         schema_path = Path(__file__).with_name("schema.json")
-        import json
-
         schema_path.write_text(
-            json.dumps(Config.model_json_schema(), ensure_ascii=False)
+            json5.dumps(Config.model_json_schema(), ensure_ascii=False)
         )
         ci.console.log(f"[green] {schema_path} [cyan]saved")
-        return
+        raise SystemExit(0)
     ci.console.log(f"Using [green]{args.config}")
 
     with args.config.open() as f:
-        data = json5.load(f)
+        data: dict[str, Any] = json5.load(f)
+    data = dicts_merge(data, args.override)
     ci.console.print_json(data=data)
     config = Config(**data)
+    return config, args.no_progress
 
+
+def main():
+    config, no_progress = parse_config()
     if torch.cuda.is_available():
         device_str = "cuda"
         ci.log("Current device: [bold green]GPU")
@@ -505,7 +526,7 @@ def main():
         yield progress_callback
 
     with torch.device(device_str) as device:
-        with Progress(disable=args.no_progress) as progress:
+        with Progress(disable=no_progress) as progress:
 
             task1 = progress.add_task("Dataset...", total=1.0)
             distortions_group = config.load_distortions(download_progress())
@@ -529,7 +550,7 @@ def main():
             create_optimizer=create_optimizer,
             loss_function=loss_function,
             distortions_group=distortions_group,
-            no_progress=args.no_progress,
+            no_progress=no_progress,
             patience=config.patience,
         )
 
