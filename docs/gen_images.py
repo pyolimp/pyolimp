@@ -28,14 +28,32 @@ def gen_images(force: bool = False) -> None:
     root.mkdir(exist_ok=True, parents=True)
 
     for module, name in (
+        # Distortions
+        (
+            "olimp.simulate.refraction_distortion",
+            "refraction_distortion",
+        ),
+        (
+            "olimp.simulate.color_blindness_distortion",
+            "color_blindness_distortion",
+        ),
+        # Basic
+        ("olimp.precompensation.basic.huang", "huang"),
+        # Analytics
+        ("olimp.precompensation.analytics.feng_xu", "feng_xu"),
+        # Optimization
         ("olimp.precompensation.optimization.montalto", "montalto"),
         ("olimp.precompensation.optimization.bregman_jumbo", "bregman_jumbo"),
         (
             "olimp.precompensation.optimization.tennenholtz_zachevsky",
             "tennenholtz_zachevsky",
         ),
-        ("olimp.precompensation.basic.huang", "huang"),
-        ("olimp.precompensation.analytics.feng_xu", "feng_xu"),
+        ("olimp.precompensation.optimization.ji", "ji"),
+        (
+            "olimp.precompensation.optimization.global_tone_mapping",
+            "global_tone_mapping",
+        ),
+        # NN
         ("olimp.precompensation.nn.models.vae", "vae"),
         ("olimp.precompensation.nn.models.cvae", "cvae"),
         ("olimp.precompensation.nn.models.vdsr", "vdsr"),
@@ -46,19 +64,13 @@ def gen_images(force: bool = False) -> None:
         ("olimp.precompensation.nn.models.unetvae", "unetvae"),
         ("olimp.precompensation.nn.models.usrnet.__main__", "usrnet"),
         ("olimp.precompensation.nn.models.dwdn.__main__", "dwdn"),
-        # ("olimp.precompensation.nn.models.cvd_swin", "cvd_swin"), not implemented yet
         (
-            "olimp.precompensation.optimization.global_tone_mapping",
-            "global_tone_mapping",
-        ),
-        ("olimp.precompensation.optimization.ji", "ji"),
-        (
-            "olimp.simulate.color_blindness_distortion",
-            "color_blindness_distortion",
+            "olimp.precompensation.nn.models.cvd_swin.cvd_swin_1channel",
+            "cvd_swin_1channel",
         ),
         (
-            "olimp.simulate.refraction_distortion",
-            "refraction_distortion",
+            "olimp.precompensation.nn.models.cvd_swin.cvd_swin_3channels",
+            "cvd_swin_3channels",
         ),
     ):
         save_demo(root, module, name, force)
