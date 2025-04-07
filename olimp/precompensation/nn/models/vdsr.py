@@ -8,7 +8,7 @@ from olimp.processing import fft_conv
 from .download_path import download_path, PyOlimpHF
 
 
-class ConvReLU(nn.Module):
+class _ConvReLU(nn.Module):
     def __init__(self, channels: int) -> None:
         super().__init__()
         self.conv = nn.Conv2d(
@@ -40,7 +40,7 @@ class VDSR(nn.Module):
         # Features trunk blocks
         trunk = []
         for _ in range(18):
-            trunk.append(ConvReLU(64))
+            trunk.append(_ConvReLU(64))
         self.trunk = nn.Sequential(*trunk)
 
         # Output layer
