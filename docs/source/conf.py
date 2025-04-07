@@ -26,14 +26,16 @@ module_version = release = __version__
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",  # Add links to highlighted source code
+    "sphinx.ext.napoleon",  # Support for NumPy and Google style docstrings
     "sphinx.ext.githubpages",
     "sphinx-jsonschema",
 ]
 
 templates_path = ["_templates"]
 exclude_patterns = []
+
+napoleon_use_param = False
 
 
 # -- Options for HTML output -------------------------------------------------
