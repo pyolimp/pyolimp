@@ -289,3 +289,19 @@ class TestRMSE(TestCase):
 
         self.assertTrue(loss.requires_grad)
         assert_close(loss, torch.tensor((311.4867553710, 313.534698486)))
+
+
+class TestContrastSimilarity(TestCase):
+    def test_empty_zero_images(self):
+        from olimp.evaluation.loss.contrast_similarity import ContrastSimLoss
+
+        loss = _check_zero_zero(ContrastSimLoss(reduction="none"))
+        self.assertTrue(loss.requires_grad)
+        self.assertEqual(loss.tolist(), [0.0, 0.0])
+
+    def test_empty_zero_and_ones_images(self):
+        from olimp.evaluation.loss.contrast_similarity import ContrastSimLoss
+
+        loss = _check_nonzero_nonzero(ContrastSimLoss(reduction="none"))
+        assert_close(loss, torch.tensor([float("inf"), 0.0]))
+        self.assertTrue(loss.requires_grad)
