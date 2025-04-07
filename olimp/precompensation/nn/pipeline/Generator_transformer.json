@@ -1,0 +1,39 @@
+{
+    "model": {
+        "name": "Generator_transformer_pathch2_no_Unt"
+    },
+    "img": {
+        "datasets": [
+            {
+                "name": "CVD",
+                "subsets": ["Color_cvd_D_experiment_100000"]
+            }
+        ],
+        "transforms": [
+            {
+                "name": "resize",
+                "width": 256,
+                "height": 256,
+                "interpolation": "bicubic"
+            },
+            {
+                "name": "float32"
+            },
+            {
+                "name": "divide",
+                "value": 255.0
+            }
+
+        ]
+    },
+    "distortion": [
+        {
+            "name": "cvd",
+            "hue_angle_deg": 120
+        }
+    ],
+    "loss_function": {
+        "name": "CVDSwinLoss"
+    },
+    "batch_size": 4
+}
