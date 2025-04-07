@@ -16,6 +16,7 @@
         "DWDN",
         "grayscale",
         "hdrnet",
+        "huggingface",
         "linalg",
         "lpips",
         "meshgrid",
