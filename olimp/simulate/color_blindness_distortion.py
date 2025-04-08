@@ -23,7 +23,7 @@ class ColorBlindnessDistortion:
         [0, 1, 0.5]
     )  # Anchor color for perpendicular plane
 
-    RGB_from_LMS = torch.tensor(
+    RGB_from_LMS = torch.Tensor(
         (
             (5.30329968, -4.49954803, 0.19624834),
             (-0.67146001, 1.86248629, -0.19102629),
