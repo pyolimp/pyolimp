@@ -67,12 +67,9 @@ def srgb2lab(srgb: Tensor) -> Tensor:
 
 
 def pixel_contrasts(
-    image: Tensor, pixel: tuple[int, int], neighbors: tuple[Tensor, ...]
+    image: Tensor, cy: Tensor, cx: Tensor, ny: Tensor, nx: Tensor
 ) -> Tensor:
-    pixel_value = image[:, pixel[0], pixel[1]]
-    neighbor_values = image[:, neighbors[0], neighbors[1]]
-    contrasts = torch.norm(pixel_value[:, None] - neighbor_values, dim=0)
-    return contrasts
+    return torch.norm(image[:, cy, cx] - image[:, ny, nx], dim=0)
 
 
 def RMS_map(
@@ -99,29 +96,27 @@ def RMS_map(
         lab1 = srgb2prolab(img1)
         lab2 = srgb2prolab(img2)
 
-    rms = torch.zeros((dst_height, dst_width))
+    valid_mask = (
+        (0 <= neighbors[:, :, 0, :])
+        & (neighbors[:, :, 0, :] < height)
+        & (0 <= neighbors[:, :, 1, :])
+        & (neighbors[:, :, 1, :] < width)
+    )
 
-    for i in torch.arange(dst_height):
-        for j in torch.arange(dst_width):
-            pixel_neighbors = neighbors[i, j, :, :]
-            filtered_neighbors = pixel_neighbors[
-                :,
-                torch.all(
-                    (pixel_neighbors >= 0)
-                    & (pixel_neighbors < torch.tensor([[height], [width]])),
-                    dim=0,
-                ),
-            ]
-            img1_contrasts = pixel_contrasts(
-                lab1, (int(i * step), int(j * step)), tuple(filtered_neighbors)
-            )
-            img2_contrasts = pixel_contrasts(
-                lab2, (int(i * step), int(j * step)), tuple(filtered_neighbors)
-            )
-            normalized_contrast_diffs = (img1_contrasts - img2_contrasts) / 1.6
-            rms[i, j] = torch.sqrt(torch.mean(normalized_contrast_diffs**2))
+    ny = neighbors[:, :, 0, :].clamp(0, height - 1)
+    nx = neighbors[:, :, 1, :].clamp(0, width - 1)
 
-    return rms
+    y_indices = torch.arange(0, dst_height) * step
+    x_indices = torch.arange(0, dst_width) * step
+    grid_y, grid_x = torch.meshgrid(y_indices, x_indices, indexing="ij")
+    cy = grid_y.unsqueeze(-1).expand(-1, -1, n_pixel_neighbors)
+    cx = grid_x.unsqueeze(-1).expand(-1, -1, n_pixel_neighbors)
+
+    image1_contrast = pixel_contrasts(lab1, cy, cx, ny, nx)
+    image2_contrast = pixel_contrasts(lab2, cy, cx, ny, nx)
+    contrast_diff = (image1_contrast - image2_contrast) / 1.6
+    mean = (contrast_diff**2 * valid_mask).sum(dim=-1) / valid_mask.sum(dim=-1)
+    return torch.sqrt(mean)
 
 
 class RMS(ReducibleLoss):
