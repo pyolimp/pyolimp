@@ -8,6 +8,8 @@ from olimp.evaluation.cs.srgb import sRGB
 
 from olimp.simulate import ApplyDistortion
 
+# from ballfish import DistributionParams
+
 
 class ColorBlindnessDistortion:
     """
@@ -31,9 +33,10 @@ class ColorBlindnessDistortion:
         ),
     )
 
-    def __init__(self, hue_angle_deg: float) -> None:
-        with torch.device("cpu"):
-            self.sim_matrix = self._get_simulation_matrix(hue_angle_deg)
+    def __init__(self, hue_angle_deg: float | None) -> None:
+        if hue_angle_deg is not None:  # is None, when angle is dynamic
+            with torch.device("cpu"):
+                self.sim_matrix = self._get_simulation_matrix(hue_angle_deg)
 
     @classmethod
     def from_type(cls, blindness_type: Literal["protan", "deutan", "tritan"]):
@@ -58,7 +61,7 @@ class ColorBlindnessDistortion:
         Code is based on Paul Maximov's <pmaximov@iitp.ru> work:
         https://github.com/PaulMaximov/general-dichromat-simulation
         """
-        anchor_W_ort = torch.ones(3) / 3**0.5
+        anchor_W_ort = torch.full((3,), 1 / 3**0.5)
         N_1plane_RGB_ort = cls._plane_normal_from_vectors(
             anchor_W_ort, cls.anchor_B
         )
@@ -121,12 +124,13 @@ class ColorBlindnessDistortion:
         )
         return cls._sRGB_from_linearRGB(dichromat_LMS).clip(0.0, 1.0)
 
-    def __call__(self) -> ApplyDistortion:
-        return self.apply
-
-    def apply(self, image: Tensor):
-        assert image.ndim == 4, image.ndim
-        return self._simulate(image, self.sim_matrix)
+    def __call__(self, hue_angle_deg: float | None = None) -> ApplyDistortion:
+        if hue_angle_deg is None:
+            assert self.sim_matrix is not None
+            sim_matrix = self.sim_matrix
+        else:
+            sim_matrix = self._get_simulation_matrix(hue_angle_deg)
+        return lambda image: self._simulate(image, sim_matrix)
 
 
 def _demo():

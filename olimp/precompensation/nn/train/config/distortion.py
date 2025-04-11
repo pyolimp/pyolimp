@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 from .base import StrictModel
 from pydantic import Field, model_validator
 from .dataset import PsfDataloaderConfig, ProgressContext
+from ballfish import DistributionParams
 
 
 class RefractionDistortionConfig(StrictModel):
@@ -19,7 +20,7 @@ class RefractionDistortionConfig(StrictModel):
 class ColorBlindnessDistortionConfig(StrictModel):
     name: Literal["cvd"]
     blindness_type: Literal["deutan", "protan", "tritan"] | None = None
-    hue_angle_deg: int | None = None
+    hue_angle_deg: DistributionParams | None = None
 
     @model_validator(mode="after")
     def check_only_one_is_set(self):
@@ -39,6 +40,11 @@ class ColorBlindnessDistortionConfig(StrictModel):
             ColorBlindnessDistortion,
         )
 
+        if isinstance(self.hue_angle_deg, dict):  # must be distortion
+            from ...dataset.value import ValueDataset
+
+            dataset = ValueDataset(self.hue_angle_deg)
+            return dataset, ColorBlindnessDistortion(None)
         if self.hue_angle_deg is not None:
             distortion = ColorBlindnessDistortion(self.hue_angle_deg)
         else:
