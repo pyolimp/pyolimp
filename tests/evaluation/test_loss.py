@@ -325,3 +325,12 @@ class TestVAELoss(TestCase):
         )
         assert_close(loss, torch.tensor(195584.14))
         self.assertTrue(loss.requires_grad)
+
+
+class TestWEScore(TestCase):
+    def test_empty_zero_images(self):
+        from olimp.evaluation.loss.wescore import WEscore
+
+        loss = _check_zero_zero(WEscore(color_space="lab"))
+        self.assertTrue(loss.requires_grad)
+        self.assertEqual(loss.tolist(), [0.0])
