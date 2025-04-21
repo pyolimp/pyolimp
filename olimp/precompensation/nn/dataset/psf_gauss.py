@@ -4,7 +4,7 @@ from random import Random
 from torch import Tensor
 from torch.utils.data import Dataset
 import torch
-from ballfish.distribution import DistributionParams, create_distribution
+from ballfish import DistributionParams, create_distribution
 from math import radians
 
 

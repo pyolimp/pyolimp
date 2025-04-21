@@ -203,8 +203,36 @@ class PSFGauss(DatasetConfig):
         )
 
 
+class PSFGeometric(DatasetConfig):
+    name: Literal["psf_geometric"]
+    width: int = 512
+    height: int = 512
+    sphere_dpt: DistributionParams = -1.0
+    cylinder_dpt: DistributionParams = 0.0
+    angle_deg: DistributionParams = 0.0
+    pupil_diameter_mm: DistributionParams = 4.0
+    am2px: float = 0.001
+    seed: int = 42
+    size: int = 10000
+
+    def load(self, progress_context: ProgressContext):
+        from ...dataset.psf_geometric import PsfGeometricDataset
+
+        return PsfGeometricDataset(
+            width=self.width,
+            height=self.height,
+            sphere_dpt=self.sphere_dpt,
+            cylinder_dpt=self.cylinder_dpt,
+            angle_deg=self.angle_deg,
+            pupil_diameter_mm=self.pupil_diameter_mm,
+            am2px=self.am2px,
+            seed=self.seed,
+            size=self.size,
+        )
+
+
 Dataset = Annotated[
-    SCA2023 | Olimp | CVD | Directory | PSFGauss,
+    SCA2023 | Olimp | CVD | Directory | PSFGauss | PSFGeometric,
     Field(..., discriminator="name"),
 ]
 
