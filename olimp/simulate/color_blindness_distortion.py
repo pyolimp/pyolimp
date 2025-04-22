@@ -6,12 +6,10 @@ from torch import Tensor
 from olimp.evaluation.cs.linrgb import linRGB
 from olimp.evaluation.cs.srgb import sRGB
 
-from olimp.simulate import ApplyDistortion
-
-# from ballfish import DistributionParams
+from olimp.simulate import ApplyDistortion, Distortion
 
 
-class ColorBlindnessDistortion:
+class ColorBlindnessDistortion(Distortion):
     """
     .. image:: ../_static/color_blindness_distortion.svg
        :class: full-width
