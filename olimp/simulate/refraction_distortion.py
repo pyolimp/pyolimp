@@ -1,10 +1,10 @@
 from __future__ import annotations
 from torch import Tensor
-from olimp.simulate import ApplyDistortion
+from olimp.simulate import ApplyDistortion, Distortion
 from olimp.processing import fft_conv
 
 
-class RefractionDistortion:
+class RefractionDistortion(Distortion):
     """
     .. image:: ../_static/refraction_distortion.svg
        :class: full-width
