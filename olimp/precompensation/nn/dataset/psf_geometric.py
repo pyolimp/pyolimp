@@ -8,6 +8,51 @@ from ballfish import DistributionParams, create_distribution
 from math import radians, pi, sin, cos
 
 
+def geometric_psf_generator(
+    sphere_dpt: float,
+    cylinder_dpt: float,
+    angle_rad: float,
+    pupil_diameter_mm: float,
+    x: Tensor,
+    y: Tensor,
+    am2px: float,
+) -> Tensor:
+    """
+    Create optic PSF for fixed viewing distance 400 cm and canvas size 50 cm.
+
+    Loosely based on https://github.com/scottmsul/EyeSimulator/blob/master/Geometric_Optics_2_Defocus.ipynb
+    """
+
+    blur_angle = pi * 0.5 + angle_rad
+
+    # Radius of pupil
+    r = pupil_diameter_mm * 0.5
+
+    cos_theta = cos(blur_angle)
+    sin_theta = sin(blur_angle)
+
+    x_rot = cos_theta * x - sin_theta * y
+    y_rot = sin_theta * x + cos_theta * y
+
+    # Convert radius to angle minutes
+    rad2am = 180.0 / pi * 60.0
+
+    # Ellips semi-axis
+    a = r * abs(sphere_dpt + cylinder_dpt) * rad2am * am2px
+    b = r * abs(sphere_dpt) * rad2am * am2px
+
+    # Distance map
+    dist = torch.square(x_rot / a) + torch.square(y_rot / b)
+
+    # Setting an ellips
+    kernel = (dist <= 1).float()
+
+    # Normalizing
+    kernel /= kernel.sum()
+
+    return kernel
+
+
 class PsfGeometricDataset(Dataset[Tensor]):
     def __init__(
         self,
@@ -44,42 +89,15 @@ class PsfGeometricDataset(Dataset[Tensor]):
         angle_rad: float,
         pupil_diameter_mm: float,
     ) -> Tensor:
-        """
-        Create optic PSF for fixed viewing distance 400 cm and canvas size 50 cm.
-
-        Loosely based on https://github.com/scottmsul/EyeSimulator/blob/master/Geometric_Optics_2_Defocus.ipynb
-        """
-
-        x, y, am2px = self._x, self._y, self._am2px
-
-        blur_angle = pi * 0.5 + angle_rad
-
-        # Radius of pupil
-        r = pupil_diameter_mm * 0.5
-
-        cos_theta = cos(blur_angle)
-        sin_theta = sin(blur_angle)
-
-        x_rot = cos_theta * x - sin_theta * y
-        y_rot = sin_theta * x + cos_theta * y
-
-        # Convert radius to angle minutes
-        rad2am = 180.0 / pi * 60.0
-
-        # Ellips semi-axis
-        a = r * abs(sphere_dpt + cylinder_dpt) * rad2am * am2px
-        b = r * abs(sphere_dpt) * rad2am * am2px
-
-        # Distance map
-        dist = torch.square(x_rot / a) + torch.square(y_rot / b)
-
-        # Setting an ellips
-        kernel = (dist <= 1).float()
-
-        # Normalizing
-        kernel /= kernel.sum()
-
-        return kernel
+        return geometric_psf_generator(
+            sphere_dpt,
+            cylinder_dpt,
+            angle_rad,
+            pupil_diameter_mm,
+            self._x,
+            self._y,
+            self._am2px,
+        )
 
     def __getitem__(self, index: int) -> Tensor:
         random = Random(f"{self._seed}|{index}")

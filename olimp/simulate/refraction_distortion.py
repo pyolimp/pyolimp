@@ -1,7 +1,11 @@
 from __future__ import annotations
+import torch
 from torch import Tensor
 from olimp.simulate import ApplyDistortion, Distortion
 from olimp.processing import fft_conv
+from olimp.precompensation.nn.dataset.psf_geometric import (
+    geometric_psf_generator,
+)
 
 
 class RefractionDistortion(Distortion):
@@ -14,8 +18,40 @@ class RefractionDistortion(Distortion):
        must be equal to 1.
     """
 
-    @staticmethod
-    def __call__(psf: Tensor) -> ApplyDistortion:
+    def __init__(self, psf: Tensor | None = None) -> None:
+        self.psf = psf
+
+    @classmethod
+    def from_sca_params(
+        cls,
+        width: int,
+        height: int,
+        sphere_dpt: float,
+        cylinder_dpt: float,
+        angle_rad: float,
+        pupil_diameter_mm: float,
+        am2px: float = 0.001,
+    ):
+        x = torch.arange(width, dtype=torch.float32)
+        y = torch.arange(height, dtype=torch.float32)
+        x = x - width * 0.5
+        y = y - height * 0.5
+        grid_y, grid_x = torch.meshgrid(y, x, indexing="ij")
+
+        return geometric_psf_generator(
+            sphere_dpt,
+            cylinder_dpt,
+            angle_rad,
+            pupil_diameter_mm,
+            x,
+            y,
+            am2px,
+        )
+
+    def __call__(self, psf: Tensor | None = None) -> ApplyDistortion:
+        if psf is None:
+            assert self.psf is not None
+            psf = self.psf
         return lambda image: fft_conv(image, psf)
 
 

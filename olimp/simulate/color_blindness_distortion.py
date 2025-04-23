@@ -31,7 +31,7 @@ class ColorBlindnessDistortion(Distortion):
         ),
     )
 
-    def __init__(self, hue_angle_deg: float | None) -> None:
+    def __init__(self, hue_angle_deg: float | None = None) -> None:
         if hue_angle_deg is not None:  # is None, when angle is dynamic
             with torch.device("cpu"):
                 self.sim_matrix = self._get_simulation_matrix(hue_angle_deg)
