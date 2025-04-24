@@ -203,8 +203,8 @@ class PSFGauss(DatasetConfig):
         )
 
 
-class PSFGeometric(DatasetConfig):
-    name: Literal["psf_geometric"]
+class PSFSCA(DatasetConfig):
+    name: Literal["psf_sca"]
     width: int = 512
     height: int = 512
     sphere_dpt: DistributionParams = -1.0
@@ -216,9 +216,9 @@ class PSFGeometric(DatasetConfig):
     size: int = 10000
 
     def load(self, progress_context: ProgressContext):
-        from ...dataset.psf_geometric import PsfGeometricDataset
+        from ...dataset.psf_sca import PSFSCADataset
 
-        return PsfGeometricDataset(
+        return PSFSCADataset(
             width=self.width,
             height=self.height,
             sphere_dpt=self.sphere_dpt,
@@ -232,7 +232,7 @@ class PSFGeometric(DatasetConfig):
 
 
 Dataset = Annotated[
-    SCA2023 | Olimp | CVD | Directory | PSFGauss | PSFGeometric,
+    SCA2023 | Olimp | CVD | Directory | PSFGauss | PSFSCA,
     Field(..., discriminator="name"),
 ]
 
