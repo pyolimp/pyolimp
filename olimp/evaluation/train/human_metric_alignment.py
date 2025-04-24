@@ -99,6 +99,9 @@ if __name__ == "__main__":
         Path(
             "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparervimetrics.csv"
         ),
+        Path(
+            "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparecorrmssim.csv"
+        ),
     ]
 
     image_paths = [
@@ -108,9 +111,14 @@ if __name__ == "__main__":
         Path(
             "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparervimetrics"
         ),
+        Path(
+            "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparecorrmssim"
+        ),
     ]
 
-    dataset = MetricDataset(answers_paths, image_paths, metrics=create_metrics())
+    dataset = MetricDataset(
+        answers_paths, image_paths, metrics=create_metrics()
+    )
 
     results = evaluate_directional_agreement(dataset)
     print("Directed consensus on metrics:")

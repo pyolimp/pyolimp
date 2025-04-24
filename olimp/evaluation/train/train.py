@@ -110,21 +110,18 @@ if __name__ == "__main__":
             acc = agree_count / total if total > 0 else 0.0
             epoch_loss = total_loss / len(dataloader)
 
-            # Печать и лог в файл
             print(
-                f"Epoch {epoch+1}: Loss = {epoch_loss:.4f}, Agree = {acc:.3f}"
+                f"Epoch {epoch+1}: Loss = {epoch_loss:.5f}, Agree = {acc:.5f}"
             )
             with open(loss_log_path, "a") as loss_log_file:
                 loss_log_file.write(
                     f"{epoch+1}\t{epoch_loss:.6f}\t{acc:.6f}\n"
                 )
 
-            # Сохраняем веса этой эпохи
             torch.save(
                 model.state_dict(), save_dir / f"epoch_{epoch+1:04d}.pt"
             )
 
-            # Сохраняем best веса при новом максимуме agree
             if acc > best_agree:
                 best_agree = acc
                 torch.save(model.state_dict(), save_dir / "best.pt")
