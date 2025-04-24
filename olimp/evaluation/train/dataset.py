@@ -35,7 +35,7 @@ class MetricItem(CSVRow):
     image2: Tensor
     metric_values: dict[str, float]
 
-    
+
 def _pixels_to_inches(
     img_px_w: int | None = None,
     diagonal_inch: float = 24.0,
@@ -64,13 +64,10 @@ def _pixels_to_inches(
 @dataclass
 class MetricInfo:
     name: str
-    create_metric: Callable[
-        [Tensor],
-        Callable[[Tensor, Tensor], Tensor]
-    ]
+    create_metric: Callable[[Tensor], Callable[[Tensor, Tensor], Tensor]]
 
 
-def create_metrics(device: str | device="cpu") -> list[MetricInfo]:
+def create_metrics(device: str | device = "cpu") -> list[MetricInfo]:
     ldr_flip_loss = LDRFLIPLoss().to(device)
     multi_scale_ssim_loss = MultiScaleSSIMLoss(reduction="mean").to(device)
     lpips = LPIPS(net="alex").to(device)
@@ -83,43 +80,42 @@ def create_metrics(device: str | device="cpu") -> list[MetricInfo]:
             soklab = soklab_cache[1]
             assert soklab is not None
         else:
-            soklab = SOkLab(dpi=img_dpi_w, distance_inch=19.685).to(device=device)
+            soklab = SOkLab(dpi=img_dpi_w, distance_inch=19.685).to(
+                device=device
+            )
             soklab_cache = (img_dpi_w, soklab)
 
         def soklab_metric(x: Tensor, y: Tensor) -> Tensor:
             return 1.0 - soklab(x, y)
+
         return soklab_metric
-    
+
     return [
         MetricInfo(
             name="stress",
             create_metric=lambda _target: (
                 STRESS(invert=True, reduction="mean")
-                ),
+            ),
         ),
         MetricInfo(
             name="corr",
-            create_metric=lambda _target: (
-                Correlation(invert=False)
-            ),
+            create_metric=lambda _target: (Correlation(invert=False)),
         ),
         MetricInfo(
             name="flip",
             create_metric=lambda _target: (
                 lambda x, y: 1.0 - ldr_flip_loss(x, y)
-                ),
+            ),
         ),
         MetricInfo(
             name="ms-ssim",
             create_metric=lambda _target: (
-            lambda x, y: 1.0 - multi_scale_ssim_loss(x, y)
+                lambda x, y: 1.0 - multi_scale_ssim_loss(x, y)
             ),
         ),
         MetricInfo(
             name="lpips",
-            create_metric=lambda _target: (
-                lambda x, y: 1.0 - lpips(x, y)
-                ),
+            create_metric=lambda _target: (lambda x, y: 1.0 - lpips(x, y)),
         ),
         MetricInfo(
             name="soklab",
@@ -127,7 +123,7 @@ def create_metrics(device: str | device="cpu") -> list[MetricInfo]:
         ),
         MetricInfo(
             name="nrmse",
-            create_metric=lambda _target: NormalizedRootMSE(invert=True)
+            create_metric=lambda _target: NormalizedRootMSE(invert=True),
         ),
     ]
 
@@ -200,9 +196,15 @@ class MetricDataset(Dataset[CSVRow]):
     def __getitem__(self, idx: int) -> MetricItem:
         item = self.data[idx]
 
-        img1 = (read_image(str(item["image1_path"])).float() / 255.0).unsqueeze(0)
-        img2 = (read_image(str(item["image2_path"])).float() / 255.0).unsqueeze(0)
-        target = (read_image(str(item["target_path"])).float() / 255.0).unsqueeze(0)
+        img1 = (
+            read_image(str(item["image1_path"])).float() / 255.0
+        ).unsqueeze(0)
+        img2 = (
+            read_image(str(item["image2_path"])).float() / 255.0
+        ).unsqueeze(0)
+        target = (
+            read_image(str(item["target_path"])).float() / 255.0
+        ).unsqueeze(0)
 
         metric_results = {}
         result: MetricItem = {
@@ -210,7 +212,7 @@ class MetricDataset(Dataset[CSVRow]):
             "target_image": target,
             "image1": img1,
             "image2": img2,
-            "metric_values": metric_results
+            "metric_values": metric_results,
         }
 
         for metric_info in self.metrics or ():
@@ -221,9 +223,7 @@ class MetricDataset(Dataset[CSVRow]):
                 metric_results[f"{metric_info.name}_1"] = float(value1.item())
                 metric_results[f"{metric_info.name}_2"] = float(value2.item())
             except Exception as e:
-                print(
-                    f"{metric_info.name} metric evaluation error: {e}"
-                )
+                print(f"{metric_info.name} metric evaluation error: {e}")
                 raise
 
         return result
@@ -237,6 +237,9 @@ if __name__ == "__main__":
         Path(
             "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparervimetrics.csv"
         ),
+        Path(
+            "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparecorrmssim.csv"
+        ),
     ]
 
     image_paths = [
@@ -246,9 +249,14 @@ if __name__ == "__main__":
         Path(
             "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparervimetrics"
         ),
+        Path(
+            "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparecorrmssim"
+        ),
     ]
 
-    dataset = MetricDataset(answers_paths, image_paths, metrics=create_metrics())
+    dataset = MetricDataset(
+        answers_paths, image_paths, metrics=create_metrics()
+    )
     sample = dataset[77]
 
     print(

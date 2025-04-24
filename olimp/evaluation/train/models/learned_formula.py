@@ -14,8 +14,7 @@ class LearnedMetricFromFormula(nn.Module):
         apply_sigmoid: bool = True,
     ):
         super().__init__()
-        self.formula = formula.replace(" ", "")
-        self.terms = self._parse_formula(self.formula)
+        self.formula = compile(formula, "<string>", "eval")
         self.learned_vars = learned_vars
         self.predictor_input_vars = predictor_input_vars
 
@@ -30,12 +29,6 @@ class LearnedMetricFromFormula(nn.Module):
                 for var in learned_vars
             }
         )
-
-    def _parse_formula(self, formula: str) -> list[tuple[str, str]]:
-        import re
-
-        pattern = r"([\w\.\+\-\*/\(\)]+)\*([a-zA-Z_][a-zA-Z0-9_]*)"
-        return re.findall(pattern, formula)
 
     def forward(self, input_vars: dict[str, Tensor]) -> Tensor:
         context = {
@@ -54,12 +47,7 @@ class LearnedMetricFromFormula(nn.Module):
                 else torch.tensor(v, dtype=torch.float32)
             )
 
-        try:
-            result = eval(self.formula, {"__builtins__": {}}, context)
-        except Exception as e:
-            raise RuntimeError(
-                f"Failed to evaluate formula: {self.formula}\n{e}"
-            )
+        result = eval(self.formula, {"__builtins__": __builtins__}, context)
 
         if not isinstance(result, Tensor):
             raise TypeError("Formula result must be a Tensor")
