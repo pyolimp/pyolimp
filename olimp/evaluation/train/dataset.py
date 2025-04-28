@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import torch
-
 from olimp.evaluation.loss.stress import STRESS
 from olimp.evaluation.loss.corr import Correlation
 from olimp.evaluation.loss.s_oklab import SOkLab
@@ -229,33 +227,14 @@ class MetricDataset(Dataset[CSVRow]):
         return result
 
 
-if __name__ == "__main__":
-    answers_paths = [
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparervimethods.csv"
-        ),
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparervimetrics.csv"
-        ),
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparecorrmssim.csv"
-        ),
-    ]
+def main():
+    from .human_studies_download import human_studies_download
 
-    image_paths = [
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparervimethods"
-        ),
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparervimetrics"
-        ),
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparecorrmssim"
-        ),
-    ]
-
+    human_studies = human_studies_download()
     dataset = MetricDataset(
-        answers_paths, image_paths, metrics=create_metrics()
+        human_studies.answers_paths,
+        human_studies.image_paths,
+        metrics=create_metrics(),
     )
     sample = dataset[77]
 
@@ -280,3 +259,7 @@ if __name__ == "__main__":
         sample["score2_norm"],
     )
     print(sample["metric_values"])
+
+
+if __name__ == "__main__":
+    main()

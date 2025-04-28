@@ -90,37 +90,21 @@ def evaluate_directional_agreement(
     }
 
 
-if __name__ == "__main__":
+def main():
+    from .human_studies_download import human_studies_download
 
-    answers_paths = [
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparervimethods.csv"
-        ),
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparervimetrics.csv"
-        ),
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/answers_datasets/testcomparecorrmssim.csv"
-        ),
-    ]
-
-    image_paths = [
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparervimethods"
-        ),
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparervimetrics"
-        ),
-        Path(
-            "/home/devel/olimp/pyolimp/olimp/evaluation/train/images_datasets/testcomparecorrmssim"
-        ),
-    ]
-
+    human_studies = human_studies_download()
     dataset = MetricDataset(
-        answers_paths, image_paths, metrics=create_metrics()
+        answers_dataset_paths=human_studies.answers_paths,
+        image_dataset_paths=human_studies.image_paths,
+        metrics=create_metrics(),
     )
 
     results = evaluate_directional_agreement(dataset)
     print("Directed consensus on metrics:")
     for metric, acc in results.items():
         print(f"{metric}: {acc}")
+
+
+if __name__ == "__main__":
+    main()
