@@ -20,7 +20,10 @@ from rich.progress import (
 
 def demo(
     name: Literal[
-        "Tennenholtz-Zachevsky", "CVD-SWIN", "CVD DIRECT OPTIMIZATION"
+        "Tennenholtz-Zachevsky",
+        "CVD-SWIN",
+        "CVD DIRECT OPTIMIZATION",
+        "Achromatic Daltonization",
     ],
     opt_function: Callable[
         [Tensor, ColorBlindnessDistortion, Callable[[float], None]],
