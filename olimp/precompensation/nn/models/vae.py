@@ -2,6 +2,8 @@ from __future__ import annotations
 import torch
 from torch import nn
 from torch import Tensor
+from typing import Tuple
+import math
 
 # import torchvision
 from olimp.processing import fft_conv
@@ -14,12 +16,21 @@ class VAE(nn.Module):
        :class: full-width
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        input_channel: int = 3,
+        output_channel: int = 1,
+        image_size: Tuple[int, int] = (512, 512),
+        latent_dimension: Tuple[int, int] = 128,
+    ):
         super().__init__()
+
+        # Image cast size
+        self.image_size = image_size
 
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 32, 3, stride=2, padding=1),
+            nn.Conv2d(input_channel, 32, 3, stride=2, padding=1),
             nn.ReLU(),
             nn.Conv2d(32, 64, 3, stride=2, padding=1),
             nn.ReLU(),
@@ -33,12 +44,27 @@ class VAE(nn.Module):
             nn.ReLU(),
         )
 
-        # Assuming input image size is 512x512
-        self.fc_mu = nn.Linear(1024 * 8 * 8, 128)
-        self.fc_logvar = nn.Linear(1024 * 8 * 8, 128)
+        # Assuming input image size is image_size
+        w, h = self.image_size[0] / 64, self.image_size[1] / 64
+        self.latent_shape = (math.ceil(w), math.ceil(h))
+        latent_size_multiplication = (
+            self.latent_shape[0] * self.latent_shape[1]
+        )
+
+        self.fc_mu = nn.Linear(
+            1024 * latent_size_multiplication,
+            latent_dimension,
+        )
+        self.fc_logvar = nn.Linear(
+            1024 * latent_size_multiplication,
+            latent_dimension,
+        )
 
         # Decoder
-        self.decoder_input = nn.Linear(128, 1024 * 8 * 8)
+        self.decoder_input = nn.Linear(
+            latent_dimension,
+            1024 * latent_size_multiplication,
+        )
 
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(
@@ -62,7 +88,7 @@ class VAE(nn.Module):
             ),
             nn.ReLU(),
             nn.ConvTranspose2d(
-                32, 1, 3, stride=2, padding=1, output_padding=1
+                32, output_channel, 3, stride=2, padding=1, output_padding=1
             ),
             nn.Sigmoid(),
         )
@@ -92,8 +118,13 @@ class VAE(nn.Module):
         z = self.reparameterize(mu, logvar)
 
         decoded = self.decoder_input(z)
-        decoded = decoded.view(-1, 1024, 8, 8)
+        decoded = decoded.view(
+            -1, 1024, self.latent_shape[0], self.latent_shape[1]
+        )
         decoded = self.decoder(decoded)
+        decoded = torch.nn.functional.interpolate(
+            decoded, size=self.image_size, mode="bilinear", align_corners=False
+        )
         return decoded, mu, logvar
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Tensor:
