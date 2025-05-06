@@ -166,7 +166,8 @@ class TrainStatistics:
             is_best = self.is_best_validation = (
                 validation_loss < self.best_validation_loss
             )
-            self.best_validation_loss = validation_loss
+            if self.is_best_validation:
+                self.best_validation_loss = validation_loss
         else:
             self.is_best_validation = False
 
