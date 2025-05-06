@@ -138,7 +138,7 @@ class CVDSwin3Channels(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
             "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
         ],
     )
@@ -201,7 +201,7 @@ class Generator_transformer_pathch4_8421_48_3_nouplayer_server5(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
             "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
         ],
     )
@@ -224,8 +224,8 @@ class Generator_transformer_pathch4_844_48_3_server5(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch4_844_48_3_server5.pth",
+            "~/.weights/Generator_transformer_pathch4_844_48_3_server5.pth",
         ],
     )
 
@@ -247,8 +247,8 @@ class Generator_transformer_pathch4_844_48_3(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch4_844_48_3.pth",
+            "~/.weights/Generator_transformer_pathch4_844_48_3.pth",
         ],
     )
 
@@ -270,8 +270,8 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch4_844_48_3_nouplayer_server5.pth",
+            "~/.weights/Generator_transformer_pathch4_844_48_3_nouplayer_server5.pth",
         ],
     )
 
@@ -297,8 +297,8 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton(
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton.pth",
+            "~/.weights/Generator_transformer_pathch4_844_48_3_nouplayer_server5_no_normalizaiton.pth",
         ],
     )
 
@@ -322,8 +322,8 @@ class Generator_transformer_pathch4_8_3_48_3(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch4_8_3_48_3.pth",
+            "~/.weights/Generator_transformer_pathch4_8_3_48_3.pth",
         ],
     )
 
@@ -345,8 +345,8 @@ class Generator_transformer_pathch4_6_3_48_3(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch4_6_3_48_3.pth",
+            "~/.weights/Generator_transformer_pathch4_6_3_48_3.pth",
         ],
     )
 
@@ -368,8 +368,8 @@ class Generator_transformer_pathch4_1_1(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch4_1_1.pth",
+            "~/.weights/Generator_transformer_pathch4_1_1.pth",
         ],
     )
 
@@ -389,8 +389,8 @@ class Generator_transformer_pathch2(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch2.pth",
+            "~/.weights/Generator_transformer_pathch2.pth",
         ],
     )
 
@@ -410,7 +410,7 @@ class Generator_cnn_pathch4_844_48_3_nouplayer_server5(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
             "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
         ],
     )
@@ -433,8 +433,8 @@ class Generator_transformer_pathch2_1_1(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch2_1_1.pth",
+            "~/.weights/Generator_transformer_pathch2_1_1.pth",
         ],
     )
 
@@ -454,8 +454,8 @@ class Generator_transformer_pathch2_no_Unt(ModelConfig):
     path: str | None = Field(
         None,
         examples=[
-            "hf://RVI/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
-            "~/.weights/Generator_cnn_pathch4_844_48_3_nouplayer_server5.pth",
+            "hf://CVD/Generator_transformer_pathch2_no_Unt.pth",
+            "~/.weights/Generator_transformer_pathch2_no_Unt.pth",
         ],
     )
 
