@@ -70,5 +70,4 @@ def quantile_clip(image: torch.Tensor, quantile: float = 0.98) -> torch.Tensor:
     divisor = torch.quantile(
         max_channel.view(image.shape[0], -1), quantile, dim=1
     )
-    divisor = divisor.view(image.shape[0], 1, 1, 1)
-    return torch.clip(image / divisor, 0, 1)
+    return (image / divisor.clip(min=1.0)[:, None, None, None]).clip(0.0, 1.0)
