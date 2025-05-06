@@ -21,15 +21,15 @@ classifiers = [
 dependencies = [
   "setuptools==69.0.3",    # for numpy
   "requests==2.28.2",
-  "pillow==10.3.0",
+  "pillow>=11.2.1",
   "numpy<2",
   "torch>=2.4.0,<3",
   "matplotlib==3.9.2",
   "rich==13.8.0",
-  "torchvision==0.19.0",
+  "torchvision>=0.19.0",
   "piq==0.8.0",
   "json5==0.9.24",
-  "pydantic==2.6.4",
+  "pydantic>=2.6.4",
   "segmentation_models_pytorch==0.3.4",
   "ballfish==0.4.0",
   "lpips==0.1.4",
@@ -46,13 +46,8 @@ build-backend = "setuptools.build_meta"
 [tool.black]
 line-length = 79
 target-version = ["py310"]
-# [tool.setuptools]
-# include-package-data = false
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["olimp", "olimp.*"]
-exclude = []
-namespaces = false
+[tool.setuptools]
+packages = ["olimp"]
 [tool.setuptools.dynamic]
 version = {attr = "olimp.__version__"}
 [tool.coverage.run]
