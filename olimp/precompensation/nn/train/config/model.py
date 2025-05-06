@@ -154,6 +154,27 @@ class CVDSwin3Channels(ModelConfig):
         return CVDSwin3Channels()
 
 
+class CVDSwin4Channels(ModelConfig):
+    name: Literal["cvd_swin_4channels"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://CVD/cvd_swin_4channels.pth",
+            "~/.weights/cvd_swin_4channels.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.cvd_swin_4channels import (
+            CVDSwin4Channels,
+        )
+
+        if self.path is not None:
+            return CVDSwin4Channels.from_path(path=self.path)
+
+        return CVDSwin4Channels()
+
+
 class CVDSwin1Channel(ModelConfig):
     name: Literal["cvd_swin_1channel"]
     path: str | None = Field(
@@ -460,6 +481,7 @@ Model = Annotated[
     | PrecompensationUSRNet
     | PrecompensationDWDN
     | CVDSwin3Channels
+    | CVDSwin4Channels
     | CVDSwin1Channel
     | Generator_transformer_pathch4_8421_48_3_nouplayer_server5
     | Generator_transformer_pathch4_844_48_3_server5
