@@ -10,7 +10,7 @@ def _demo():
     def demo_kerunc(
         image: Tensor, psf: Tensor, progress: Callable[[float], None]
     ) -> Tensor:
-        model = PrecompensationKERUNC.from_path(path="hf://RVI/kerunc.pt")
+        model = PrecompensationKERUNC.from_path(path="hf://RVI/KERUNC.pt")
 
         with torch.inference_mode():
             inputs = model.preprocess(image, psf.to(torch.float32))
@@ -23,4 +23,5 @@ def _demo():
 
 
 if __name__ == "__main__":
-    _demo()
+    # _demo()
+    print('Hello world!')

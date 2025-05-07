@@ -6,13 +6,13 @@ import torch
 from torch import nn, Tensor
 from typing import Any, TypeAlias
 
-from .model import KernelErrorModel
+from .model import kernel_error_model
 from ..download_path import download_path, PyOlimpHF
 
 Inputs: TypeAlias = tuple[Tensor, Tensor]
 
 
-class PrecompensationKERUNC(KernelErrorModel):
+class PrecompensationKERUNC(kernel_error_model):
     """
     .. image:: ../../../../_static/kerunc.svg
        :class: full-width

@@ -112,7 +112,7 @@ def wv_norm(Dec, dtype=np.float32):
 def for_fft(ker, shape):
     ker_mat = np.zeros(shape, dtype=np.float32)
     ker_shape = np.asarray(np.shape(ker))
-    circ = np.ndarray.astype(-np.floor((ker_shape) / 2), dtype=np.int64)
+    circ = np.ndarray.astype(-np.floor((ker_shape) / 2), dtype=np.int)
     ker_mat[:ker_shape[0], :ker_shape[1]] = ker
     ker_mat = np.roll(ker_mat, circ, axis=(0, 1))
     return ker_mat

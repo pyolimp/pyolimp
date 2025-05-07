@@ -3,7 +3,6 @@ from functools import partial
 import torch
 import torch.nn.functional as F
 
-
 class double_conv(nn.Module):
     '''(conv => BN => ReLU) * 2'''
     def __init__(self, in_ch, out_ch):
@@ -21,7 +20,6 @@ class double_conv(nn.Module):
         x = self.conv(x)
         return x
 
-
 class inconv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(inconv, self).__init__()
@@ -30,7 +28,6 @@ class inconv(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         return x
-
 
 class down(nn.Module):
     def __init__(self, in_ch, out_ch):
@@ -72,7 +69,6 @@ class outconv(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         return x
-
 
 class dual_path_unet(nn.Module):
     def __init__(self, in_chan = 1, out_chan = 1, chn = 64):

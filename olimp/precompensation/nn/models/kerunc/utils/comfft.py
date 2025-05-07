@@ -24,7 +24,6 @@ def image(x):
 
 
 def mul(x, y):
-    x = x.to(y.device)
     dim = len(x.size()) - 1
     real = x[..., 0] * y[..., 0] - x[..., 1] * y[..., 1]
     image = x[..., 0] * y[..., 1] + x[..., 1] * y[..., 0]
@@ -65,3 +64,4 @@ def ifft(Fx):
         for i in range(im_num):
             x[i,] = torch.irfft(Fx[i,], signal_ndim=2, onesided=False)
         return x
+  
