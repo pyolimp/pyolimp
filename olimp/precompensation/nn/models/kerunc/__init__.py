@@ -19,9 +19,9 @@ class PrecompensationKERUNC(kernel_error_model):
     """
 
     def __init__(self,
-                 lmds: tp.List[float],
-                 layers: int,
-                 deep: int,):
+                 lmds: tp.List[float] = [0.005, 0.1, 0.1, 0.1, 0.1],
+                 layers: int = 4,
+                 deep: int = 17,):
         super().__init__(lmds=lmds, layers=layers, deep=deep)
         self.sigmoid = nn.Sigmoid()
 

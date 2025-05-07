@@ -1,45 +1,50 @@
 import torch
 from torch import nn
+import typing as tp
+
 from .utils import comfft as cf
 from .dual_path_unet import dual_path_unet
 from .utils.wavelet import generate_wavelet, wv_norm, Fwv
 
 
 class kernel_error_model(nn.Module):
-    def __init__(self, args):
+    def __init__(self,
+                 lmds: tp.List[float] = [0.005, 0.1, 0.1, 0.1, 0.1],
+                 layers: int = 4,
+                 deep: int = 17,):
         super(kernel_error_model,self).__init__()
-        self.args = args
 
+        self.layers = layers
         self.dec2d, _ = generate_wavelet(1, dim=2)
         norm = torch.from_numpy(wv_norm(self.dec2d))
         lmd = []
-        for i in range(len(args.lmd)):
-            lmd.append(torch.ones(len(self.dec2d)) * args.lmd[i] / norm)
+        for i in range(len(lmds)):
+            lmd.append(torch.ones(len(self.dec2d)) * lmds[i] / norm)
 
         self.net = nn.ModuleList()
         self.net = self.net.append(Db_Inv(lmd = lmd[0]))
-        for i in range(args.layers):
+        for i in range(layers):
             self.net = self.net.append(DP_Unet())
-            self.net = self.net.append(Dn_CNN(depth = args.deep, in_chan=(i+1)))
+            self.net = self.net.append(Dn_CNN(depth = deep, in_chan=(i+1)))
             self.net = self.net.append(Db_Inv(lmd = lmd[i+1]))
 
     def forward(self, y, Fker):
         # intermediate results stored in xhat and z by lists.
-        xhat = [None] * (self.args.layers+1)
-        z = [None] * (self.args.layers)
-        u =  [None] * (self.args.layers)
+        xhat = [None] * (self.layers+1)
+        z = [None] * (self.layers)
+        u =  [None] * (self.layers)
 
         xhat[0] = self.net[0](y, Fker, None, None)
         u[0]  = self.net[1](xhat[0], y, Fker)
         z[0] = self.net[2](xhat[0])
 
-        for i in range(self.args.layers-1):
+        for i in range(self.layers-1):
             xhat[i+1] = self.net[3*i+3](y,  Fker, z[i], u[i])
             u[i+1] = self.net[3*i+4](xhat[i], y, Fker)
             input = torch.cat([xhat[j] for j in range(0,i+2)], dim = 1)
             z[i+1] = self.net[3*i+5](input)
 
-        i = self.args.layers - 1
+        i = self.layers - 1
         xhat[i+1] = self.net[3*i+3](y, Fker, z[i], u[i])
         return xhat
 
@@ -154,3 +159,10 @@ class DP_Unet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 init.constant_(m.weight, 1)
                 init.constant_(m.bias, 0)
+
+
+
+
+
+
+
