@@ -3,7 +3,6 @@ from torch import Tensor
 from . import PrecompensationKERUNC
 
 
-
 def _demo():
     from ...._demo import demo
     from typing import Callable
@@ -11,7 +10,9 @@ def _demo():
     def demo_kerunc(
         image: Tensor, psf: Tensor, progress: Callable[[float], None]
     ) -> Tensor:
-        model = PrecompensationKERUNC() # .from_path(path="hf://RVI/KERUNC.pt")
+        model = (
+            PrecompensationKERUNC()
+        )  # .from_path(path="hf://RVI/KERUNC.pt")
 
         with torch.inference_mode():
             inputs = model.preprocess(image, psf.to(torch.float32))
