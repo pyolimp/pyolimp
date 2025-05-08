@@ -112,7 +112,7 @@ def wv_norm(Dec, dtype=np.float32):
 def for_fft(ker, shape):
     ker_mat = np.zeros(shape, dtype=np.float32)
     ker_shape = np.asarray(np.shape(ker))
-    circ = np.ndarray.astype(-np.floor((ker_shape) / 2), dtype=np.int)
+    circ = np.ndarray.astype(-np.floor((ker_shape) / 2), dtype=np.int64)
     ker_mat[:ker_shape[0], :ker_shape[1]] = ker
     ker_mat = np.roll(ker_mat, circ, axis=(0, 1))
     return ker_mat
@@ -128,5 +128,6 @@ def Fwv(Dec, shape=(256,256)):
     W = torch.from_numpy(W)
     Fw = torch.zeros((chan_num, *shape, 2))
     for i in range(chan_num):
-        Fw[i,] = torch.rfft(W[i,], signal_ndim = 2, onesided = False)
+        # Fw[i,] = torch.rfft(W[i,], signal_ndim = 2, onesided = False)
+        Fw[i,] = torch.view_as_real(torch.fft.fft2(W[i,], dim=(-2, -1), norm='backward'))
     return Fw

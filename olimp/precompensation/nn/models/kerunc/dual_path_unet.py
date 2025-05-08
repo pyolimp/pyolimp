@@ -71,7 +71,7 @@ class outconv(nn.Module):
         return x
 
 class dual_path_unet(nn.Module):
-    def __init__(self, in_chan = 1, out_chan = 1, chn = 64):
+    def __init__(self, in_chan = 3, out_chan = 3, chn = 64):
         super(dual_path_unet, self).__init__()
         self.inc = inconv(in_chan, chn)
         self.down1 = down(chn, 2*chn)

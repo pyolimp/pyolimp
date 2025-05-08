@@ -16,7 +16,7 @@ class kernel_error_model(nn.Module):
 
         self.layers = layers
         self.dec2d, _ = generate_wavelet(1, dim=2)
-        norm = torch.from_numpy(wv_norm(self.dec2d))
+        norm = torch.from_numpy(wv_norm(self.dec2d)).cuda()
         lmd = []
         for i in range(len(lmds)):
             lmd.append(torch.ones(len(self.dec2d)) * lmds[i] / norm)
@@ -25,7 +25,7 @@ class kernel_error_model(nn.Module):
         self.net = self.net.append(Db_Inv(lmd = lmd[0]))
         for i in range(layers):
             self.net = self.net.append(DP_Unet())
-            self.net = self.net.append(Dn_CNN(depth = deep, in_chan=(i+1)))
+            self.net = self.net.append(Dn_CNN(depth = deep, in_chan=(i+3)))
             self.net = self.net.append(Db_Inv(lmd = lmd[i+1]))
 
     def forward(self, y, Fker):
@@ -37,7 +37,6 @@ class kernel_error_model(nn.Module):
         xhat[0] = self.net[0](y, Fker, None, None)
         u[0]  = self.net[1](xhat[0], y, Fker)
         z[0] = self.net[2](xhat[0])
-
         for i in range(self.layers-1):
             xhat[i+1] = self.net[3*i+3](y,  Fker, z[i], u[i])
             u[i+1] = self.net[3*i+4](xhat[i], y, Fker)
