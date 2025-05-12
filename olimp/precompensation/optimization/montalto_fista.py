@@ -12,8 +12,6 @@ class DebugInfo(TypedDict):
 class MontaltoParameters(NamedTuple):
     lr: float = 20
     theta: float = 1e-6
-    tau: float = 2e-5
-    Lambda: float = 65.0
     c_high: float = 1.0
     c_low: float = 1 - c_high
     gap: float = 0.001
@@ -22,12 +20,11 @@ class MontaltoParameters(NamedTuple):
 
 
 def _tv_prox(
-    z: torch.Tensor, lambda_: float, num_iter: int = 10
+    z: torch.Tensor, lambda_: float, lr: float, num_iter: int = 10
 ) -> torch.Tensor:
     """Proximal operator for anisotropic TV (method of dual functions)."""
     p1 = torch.zeros_like(z[..., :-1])  # Horizontal differences
     p2 = torch.zeros_like(z[..., :-1, :])  # Vertical differences
-    L = 0.25  # Step, according to Beck & Teboullee
 
     div_p = torch.zeros_like(z)
     for _ in range(num_iter):
@@ -36,12 +33,12 @@ def _tv_prox(
 
         # Updating Dual Variables
         grad_p1 = grad[..., :-1] - grad[..., 1:]
-        grad_p1 *= L
+        grad_p1 *= 1 / lr
         p1 += grad_p1
         p1 = torch.clamp(p1, -lambda_, lambda_, out=p1)
 
         grad_p2 = grad[..., :-1, :] - grad[..., 1:, :]
-        grad_p2 *= L
+        grad_p2 *= 1 / lr
         p2 += grad_p2
         p2 = torch.clamp(p2, -lambda_, lambda_, out=p2)
 
@@ -55,7 +52,7 @@ def _tv_prox(
         div_p[..., 1:, :] -= p2
 
     x = z - lambda_ * div_p
-    return x
+    return x.clamp(0, 1)
 
 
 def FISTA(
@@ -139,8 +136,6 @@ def montalto(
     Montalto image deconvolution using FISTA and TV regularization.
     """
     theta = parameters.theta
-    tau = parameters.tau
-    Lambda = parameters.Lambda
     c_high, c_low = parameters.c_high, parameters.c_low
 
     # Initial approximation (scaled image)
@@ -150,10 +145,7 @@ def montalto(
     def fx(x: torch.Tensor) -> torch.Tensor:
         e = fft_conv(x, psf) - t_init
         func_l2 = torch.linalg.norm(e.flatten())
-        func_borders = torch.sum(
-            torch.exp(-Lambda * x) + torch.exp(-Lambda * (1 - x))
-        )
-        return func_l2 + tau * func_borders
+        return func_l2
 
     # Gradient f(x) is calculated using autogradd
     def gradf(x: torch.Tensor) -> torch.Tensor:
@@ -171,7 +163,7 @@ def montalto(
     # Proximal operator for g: solves
     # proxg(z, lr) = argminₓ { ½∥x - z∥² + lr * theta * TV(x) }
     def proxg(z: torch.Tensor, step: float) -> torch.Tensor:
-        return _tv_prox(z, step * theta)
+        return _tv_prox(z, step * theta, step).clamp(0, 1)
 
     # Running the universal FISTA algorithm
     x_opt = FISTA(
