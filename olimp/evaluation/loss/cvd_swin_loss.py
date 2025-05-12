@@ -38,7 +38,7 @@ def _global_contrast_img_l1(
     return img1_diff, img2_diff
 
 
-class CVDSwinLoss:
+class CVDSwinLossBase:
     def __init__(
         self,
         lambda_ssim: float = 0.5,
@@ -67,8 +67,7 @@ class CVDSwinLoss:
 
     def __call__(
         self, image: Tensor, precompensated: Tensor, sim_f: ApplyDistortion
-    ) -> Tensor:
-
+    ) -> tuple[Tensor, Tensor, Tensor]:
         cvd_output = sim_f(precompensated)
 
         target_image_lab = self.lab_norm_tf(self._srgb2lab(image))
@@ -95,8 +94,16 @@ class CVDSwinLoss:
             self.rgb_norm_tf(target_image_lab),
             self.rgb_norm_tf(output_image_lab),
         )
-
-        return (
+        loss = (
             loss_contrast * (1 - self._lambda_ssim)
             + self._lambda_ssim * loss_ssim
         )
+
+        return loss, loss_contrast, loss_ssim
+
+
+class CVDSwinLoss(CVDSwinLossBase):
+    def __call__(
+        self, image: Tensor, precompensated: Tensor, sim_f: ApplyDistortion
+    ):
+        return super()(image, precompensated, sim_f)[0]
