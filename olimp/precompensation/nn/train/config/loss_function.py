@@ -72,7 +72,7 @@ class CVDSwinLossFunction(StrictModel):
         return f
 
 
-class MSELossFucntion(StrictModel):
+class MSELossFunction(StrictModel):
     name: Literal["MSE"]
 
     def load(self, _model: Any):
@@ -96,7 +96,7 @@ class RMSELossFunction(StrictModel):
         return _create_simple_loss(rmse)
 
 
-class ProlabLossFucntion(StrictModel):
+class ProlabLossFunction(StrictModel):
     name: Literal["Prolab"]
 
     def load(self, _model: Any):
@@ -118,7 +118,7 @@ class PSNRLossFunction(StrictModel):
         return _create_simple_loss(psrn)
 
 
-class NRMSELossFuction(StrictModel):
+class NRMSELossFunction(StrictModel):
     name: Literal["NRMSE"]
 
     invert: bool = False
@@ -145,7 +145,7 @@ class StressLossFunction(StrictModel):
 class CorrLossFunction(StrictModel):
     name: Literal["CORR"]
 
-    def laod(self, _model: Any):
+    def load(self, _model: Any):
         from .....evaluation.loss.corr import Correlation
 
         corr = Correlation()
@@ -318,12 +318,40 @@ class SOkLabLossFunction(StrictModel):
         return _create_simple_loss(s_oklab)
 
 
+class HDRFLIPLossFunction(StrictModel):
+    name: Literal["HDRFLIP"]
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.flip import HDRFLIPLoss
+
+        return HDRFLIPLoss()
+
+
+class LDRFLIPLossFunction(StrictModel):
+    name: Literal["LDRFLIP"]
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.flip import LDRFLIPLoss
+
+        return LDRFLIPLoss()
+
+
 LossFunction = Annotated[
-    VaeLossFunction
-    | ChromaticityDifferenceLossFunction
+    ChromaticityDifferenceLossFunction
+    | CorrLossFunction
     | CVDSwinLossFunction
+    | FSIMLossFunction
+    | HDRFLIPLossFunction
+    | LDRFLIPLossFunction
     | MultiScaleSSIMLossFunction
+    | NRMSELossFunction
+    | ProlabLossFunction
+    | PSNRLossFunction
     | RMSLossFunction
+    | SOkLabLossFunction
+    | SSIMLossFunction
+    | StressLossFunction
+    | VaeLossFunction
     | VSILossFunction,
     Field(..., discriminator="name"),
 ]
