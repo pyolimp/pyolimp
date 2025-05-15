@@ -24,6 +24,7 @@ def demo(
         "Half-Quadratic",
         "CVAE",
         "DWDN",
+        "KERUNC",
         "Feng Xu",
         "Global Tone Mapping",
         "Huang",
