@@ -32,6 +32,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import init
+from .download_path import download_path, PyOlimpHF
 
 
 @torch.no_grad()
@@ -286,6 +287,17 @@ class UDCUNet(nn.Module):
         self.deconv_layer0 = make_layer(basic_block, depths[6])
 
         self.conv_last = nn.Conv2d(nf, out_nc, 3, 1, 1, bias=True)
+
+    @classmethod
+    def from_path(cls, path: PyOlimpHF, **kwargs: Any):
+        model = cls(**kwargs).cuda()
+        path = download_path(path)
+        state_dict = torch.load(
+            path, map_location=torch.get_default_device(), weights_only=True
+        )
+        # to run on original `net_g_600000.pth`, load state_dict["state"]
+        model.load_state_dict(state_dict)
+        return model
 
     def preprocess(self, image: Tensor, psf: Tensor) -> tuple[Tensor, Tensor]:
         return image, psf
