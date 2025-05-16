@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Literal, Callable
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -46,6 +47,7 @@ def demo(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         TimeElapsedColumn(),
+        disable="--no-progress" in sys.argv,
     ) as progress:
         task_l = progress.add_task("Load data", total=3)
         task_p = progress.add_task(name, total=1.0)
