@@ -294,6 +294,15 @@ class ChromaticityDifferenceLossFunction(StrictModel):
         return loss_func
 
 
+class ContrastSimilarityLossFunction(StrictModel):
+    name: Literal["contrast_similarity"]
+
+    def load(self, _model: Any):
+        from .....evaluation.loss.contrast_similarity import ContrastSimLoss
+
+        return _create_simple_loss(ContrastSimLoss())
+
+
 class VSILossFunction(StrictModel):
     name: Literal["VSI"]
 
@@ -338,6 +347,7 @@ class LDRFLIPLossFunction(StrictModel):
 
 LossFunction = Annotated[
     ChromaticityDifferenceLossFunction
+    | ContrastSimilarityLossFunction
     | CorrLossFunction
     | CVDSwinLossFunction
     | FSIMLossFunction
