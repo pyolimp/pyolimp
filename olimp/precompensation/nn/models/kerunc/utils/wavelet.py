@@ -128,8 +128,7 @@ def Fwv(Dec, shape=(256,256)):
     W = torch.from_numpy(W)
     Fw = torch.zeros((chan_num, *shape, 2))
     for i in range(chan_num):
-        # Fw[i,] = torch.rfft(W[i,], signal_ndim = 2, onesided = False)
-        Fw[i,] = torch.view_as_real(torch.fft.fft2(W[i,]))
+        Fw[i,] = torch.view_as_real(torch.fft.fft2(W[i,], dim=(-2, -1), norm='backward'))
     return Fw
 
 

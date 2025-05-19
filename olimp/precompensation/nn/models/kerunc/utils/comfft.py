@@ -43,28 +43,24 @@ def div(x, y):
 def fft(x):
     dim = len(x.size())
     if dim == 2:
-        # Fx = torch.rfft(x, signal_ndim=2, onesided=False)
-        Fx = torch.view_as_real(torch.fft.fft2(x))
+        Fx = torch.view_as_real(torch.fft.fft2(x, dim=(-2, -1), norm='backward'))
         return Fx
     elif dim == 3:
         chan_num = x.size()[0]
         Fx = torch.zeros(*x.size(), 2).cuda()
         for i in range(chan_num):
-            # Fx[i,] = torch.rfft(x[i,], signal_ndim=2, onesided=False)
-            Fx[i,] = torch.view_as_real(torch.fft.fft2(x[i,]))
+            Fx[i,] = torch.view_as_real(torch.fft.fft2(x[i,], dim=(-2, -1), norm='backward'))
         return Fx
 
 
 def ifft(Fx):
     dim = len(Fx.size())
     if dim == 3:
-        # x = torch.irfft(Fx, signal_ndim=2, onesided=False)
         x = torch.fft.ifft2(torch.view_as_complex(Fx.contiguous()), dim=(-2, -1), norm="backward").real
         return x
     elif dim == 4:
         im_num = Fx.size()[0]
         x = torch.zeros(*Fx.size()[:-1])
         for i in range(im_num):
-            # x[i,] = torch.irfft(Fx[i,], signal_ndim=2, onesided=False)
-            x[i] = torch.fft.ifft2(torch.view_as_complex(Fx[i,].contiguous()), dim=(-2, -1), norm="backward").real
+            x[i,] = torch.fft.ifft2(torch.view_as_complex(Fx[i,].contiguous()), dim=(-2, -1), norm="backward").real
         return x
