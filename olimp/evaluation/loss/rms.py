@@ -120,6 +120,11 @@ def RMS_map(
 
 
 class RMS(ReducibleLoss):
+    """
+    Root-mean-square metric based on
+    https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_PCA/Machado_Oliveira_EuroVis2010.pdf
+    """
+
     _color_space: Literal["lab", "prolab"]
 
     def __init__(
