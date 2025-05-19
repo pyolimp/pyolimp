@@ -8,6 +8,10 @@ from torch import Tensor
 
 
 def _create_simple_loss(loss: Callable[[Tensor, Tensor], Tensor]):
+    """
+    Wrap loss function, that does not know about `Distortion`
+    """
+
     def f(
         precompensated: Tensor,
         original_image: Tensor,
