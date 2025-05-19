@@ -45,6 +45,7 @@ class LossFunction(Protocol):
         """
         extra - extra arguments for loss function, for example, for VAE loss
         """
+        ...
 
 
 class ShuffeledDataset(Dataset[Tensor]):
