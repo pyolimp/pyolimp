@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import NamedTuple, TypedDict, Callable
 import torch
 from torch import Tensor
-from olimp.evaluation.loss.piq import MultiScaleSSIMLoss
 from olimp.evaluation.loss.mse import MSE
 from olimp.precompensation.basic.huang import huang
 
@@ -225,6 +224,7 @@ def ji(image: Tensor, psf: Tensor, params: JiParameters) -> Tensor:
 
 def _demo():
     from .._demo import demo
+    from olimp.evaluation.loss.piq import MultiScaleSSIMLoss
 
     def demo_ji(
         image: Tensor,
