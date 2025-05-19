@@ -1,9 +1,8 @@
 from __future__ import annotations
+from typing import Any
 import torch
 from torch import Tensor
 import segmentation_models_pytorch as smp
-
-# import torchvision
 from olimp.processing import fft_conv
 from .download_path import download_path, PyOlimpHF
 
@@ -31,7 +30,7 @@ class PrecompensationUNETB0(smp.Unet):
         )
 
     @classmethod
-    def from_path(cls, path: PyOlimpHF, **kwargs):
+    def from_path(cls, path: PyOlimpHF, **kwargs: Any):
         model = cls(**kwargs)
         path = download_path(path)
         state_dict = torch.load(

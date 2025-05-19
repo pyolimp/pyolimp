@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, Any
 import torch
 from torch import nn, Tensor
 from .model import USRNet
@@ -83,7 +83,7 @@ class PrecompensationUSRNet(USRNet):
         return tensors
 
     @classmethod
-    def from_path(cls, path: PyOlimpHF, **kwargs):
+    def from_path(cls, path: PyOlimpHF, **kwargs: Any):
         model = cls(**kwargs)
         path = download_path(path)
         state_dict = torch.load(
