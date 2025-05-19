@@ -16,6 +16,7 @@ Welcome to PyOlimp's documentation!
    olimp/simulate
    olimp/train_configuration
    olimp/precompensation/index
+   notebooks
 
 
 Indices and tables

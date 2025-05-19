@@ -30,6 +30,7 @@ extensions = [
     "sphinx.ext.napoleon",  # Support for NumPy and Google style docstrings
     "sphinx.ext.githubpages",
     "sphinx-jsonschema",
+    "nbsphinx",
 ]
 
 templates_path = ["_templates"]
