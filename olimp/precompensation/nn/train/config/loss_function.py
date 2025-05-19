@@ -333,7 +333,7 @@ class HDRFLIPLossFunction(StrictModel):
     def load(self, _model: Any):
         from .....evaluation.loss.flip import HDRFLIPLoss
 
-        return HDRFLIPLoss()
+        return _create_simple_loss(HDRFLIPLoss())
 
 
 class LDRFLIPLossFunction(StrictModel):
@@ -342,7 +342,7 @@ class LDRFLIPLossFunction(StrictModel):
     def load(self, _model: Any):
         from .....evaluation.loss.flip import LDRFLIPLoss
 
-        return LDRFLIPLoss()
+        return _create_simple_loss(LDRFLIPLoss())
 
 
 LossFunction = Annotated[
