@@ -2,7 +2,7 @@
 name = "olimp"
 dynamic = ["version"]
 authors = [
-  { name="Nafanail", email="nafe93@windowslive.com" },
+  { name="Nafe Alkzir", email="nafe93@windowslive.com" },
   { name="Arseniy Terekhin", email="senyai@gmail.com" },
   { name="Sergey Gladilin", email="gladilin@gmail.com" },
   { name="Dmitry Nikolaev", email="d.p.nikolaev@gmail.com" },
