@@ -106,4 +106,4 @@ class CVDSwinLoss(CVDSwinLossBase):
     def __call__(
         self, image: Tensor, precompensated: Tensor, sim_f: ApplyDistortion
     ):
-        return super()(image, precompensated, sim_f)[0]
+        return super().__call__(image, precompensated, sim_f)[0]
