@@ -29,6 +29,7 @@ def demo(
         "Half-Quadratic",
         "Huang",
         "Ji",
+        "KerUnc",
         "Montalto (FISTA)",
         "Montalto",
         "UNET_UDC",
