@@ -46,8 +46,8 @@ build-backend = "setuptools.build_meta"
 [tool.black]
 line-length = 79
 target-version = ["py310"]
-[tool.setuptools]
-packages = ["olimp"]
+[tool.setuptools.packages.find]
+include = ["olimp*"]
 [tool.setuptools.dynamic]
 version = {attr = "olimp.__version__"}
 [tool.coverage.run]
