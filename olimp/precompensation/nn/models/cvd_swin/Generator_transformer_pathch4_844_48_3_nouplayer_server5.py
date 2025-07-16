@@ -340,7 +340,7 @@ class Generator_transformer_pathch4_844_48_3_nouplayer_server5(nn.Module):
         # return tensor
 
     def postprocess(self, tensor: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
-        return (self.trans_compose1(tensor[0]),)
+        return self.trans_compose1(tensor[0])
         # return tensor
 
     def arguments(self, *args, **kwargs):
@@ -359,14 +359,16 @@ def _demo():
         distortion: ColorBlindnessDistortion,
         progress: Callable[[float], None],
     ) -> torch.Tensor:
-        swd_swin = Generator_transformer_pathch4_844_48_3_nouplayer_server5.from_path(
-            "/home/pavlova_m/Projects/olimp/pyolimp/epoch_saved/Generator_transformer_pathch4_844_48_3_nouplayer_server5_best_train.pth"
+        swd_swin = (
+            Generator_transformer_pathch4_844_48_3_nouplayer_server5.from_path(
+                "hf://CVD/cvd_swin.pth"
+            )
         )
         image = swd_swin.preprocess(image)
         progress(0.1)
         precompensation = swd_swin(image)
         progress(1.0)
-        return (swd_swin.postprocess(precompensation[0]),)
+        return (swd_swin.postprocess(precompensation[0].unsqueeze(0)),)
 
     distortion = ColorBlindnessDistortion(120)
     demo(

@@ -405,7 +405,8 @@ def _demo():
         progress: Callable[[float], None],
     ) -> torch.Tensor:
         svd_swin = CVDSwin4Channels.from_path()
-        image = svd_swin.preprocess(image)
+        hue_angle_deg = torch.tensor([0.0])
+        image = svd_swin.preprocess(image, hue_angle_deg)
         progress(0.1)
         precompensation = svd_swin(image)
         progress(1.0)
