@@ -64,12 +64,12 @@ and `olimp.precompensation.analytics` as in the examples given.
 
 ### 2. Neural Network Modules for CVD and RVI Precompensation
 
-To run the RVI nn model for precompensation using the USRNET method, execute:
+To run the NN model for RVI precompensation using the USRNET method, execute:
 ```
 python3 -m olimp.precompensation.nn.models.usrnet
 ```
 
-To run the CVD neural network model for precompensation based on the Swin Transformer architecture, execute:
+To run the NN model for CVD precompensation based on the Swin transformers, execute:
 ```
 python3 -m olimp.precompensation.nn.models.cvd_swin.Generator_transformer_pathch4_844_48_3_nouplayer_server5
 ```
