@@ -20,12 +20,22 @@ and non-neural network (non-NN) methods to restore image quality for those affec
 Compensates for color blindness (e.g., protanopia, deuteranopia).
 * Refractive Visual Impairments (RVI):
 Addresses distortions caused by refractive errors, improving clarity and sharpness.
+* Another Visual Impairments:
+This project could be used for precompensation different visual impairments, but, for example, this project provides only methods for CVD and RVI precompensation.
 
 ## Requirements
 
 * Python 3.10+
 * Pytorch 2.4+
 * Additional dependencies listed in pyproject.toml
+
+PC Technical Specifications:
+* a hardware platform with OS Ubuntu 64-bit version 22.04 LTS or higher or Windows version 10 or higher;
+* at least 16 GB RAM;
+* 8-core processor x86 2.5 GHz or higher or similar one;
+* GPU with cuda 12.+ support, and at least 12 GB of video memory;
+* at least 100 GB of free hard disk space;
+* keyboard and mouse (or touchpad).
 
 ## Installation
 
@@ -89,7 +99,7 @@ python3 -m olimp.precompensation.nn.train.train --update-schema
 
 ### Examples
 #### CVD demo example
-<img src="https://github.com/user-attachments/assets/fa2a1c76-b381-4bd1-a242-b447b9b14f5e">
+<img src="https://github.com/user-attachments/assets/42f54054-dba1-4204-957e-29b1a44a690c">
 
 #### RVI demo example
 <img src="https://github.com/user-attachments/assets/7e35fe3b-7667-4530-8c79-a1263749eeff">
