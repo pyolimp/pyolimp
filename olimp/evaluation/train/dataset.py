@@ -174,6 +174,17 @@ class MetricDataset(Dataset[CSVRow]):
                     score1_norm = float(score1_norm_str)
                     score2_norm = float(score2_norm_str)
 
+                    target_path = image_base_path / path1.parent / "target.png"
+                    image1_path = image_base_path / path1
+                    image2_path = image_base_path / path2
+
+                    if not (
+                        target_path.exists()
+                        and image1_path.exists()
+                        and image2_path.exists()
+                    ):
+                        continue
+
                     self.data.append(
                         {
                             "target_path": image_base_path
