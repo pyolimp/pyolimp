@@ -1,14 +1,19 @@
 from __future__ import annotations
 from random import Random
 
+import torch
 from torch import Tensor
-from torch.utils.data import Dataset
+from typing import Callable, Generator
 from ballfish import DistributionParams, create_distribution
 from math import radians
 from olimp.simulate.psf_gauss import PSFGauss
+from olimp.precompensation.nn.dataset.distortion_dataset import (
+    DistortionDataset,
+)
+from olimp.simulate.refraction_distortion import RefractionDistortion
 
 
-class PsfGaussDataset(Dataset[Tensor]):
+class PsfGaussDataset(DistortionDataset):
     def __init__(
         self,
         width: int,
@@ -21,14 +26,15 @@ class PsfGaussDataset(Dataset[Tensor]):
         seed: int = 42,
         size: int = 10000,
     ):
-        self._seed = seed
-        self._size = size
+        super().__init__(
+            seed, size, generator=PSFGauss(width=width, height=height)
+        )
         self._theta = create_distribution(theta)
         self._center_x = create_distribution(center_x)
         self._center_y = create_distribution(center_y)
         self._sigma_x = create_distribution(sigma_x)
         self._sigma_y = create_distribution(sigma_y)
-        self._generator = PSFGauss(width=width, height=height)
+        self.refraction_distorion = RefractionDistortion()
 
     def __getitem__(self, index: int) -> Tensor:
         random = Random(f"{self._seed}|{index}")
@@ -41,5 +47,11 @@ class PsfGaussDataset(Dataset[Tensor]):
         )
         return gaussian[None]
 
-    def __len__(self):
-        return self._size
+    def apply(self) -> Callable[[Tensor], Generator[Tensor, None, None]]:
+        def _apply(image: Tensor) -> Generator[Tensor, None, None]:
+            for index in range(self._size):
+                psf = self.__getitem__(index).to(image.device)
+                psf = torch.fft.fftshift(psf)
+                yield self.refraction_distorion(psf)(image)
+
+        return _apply
