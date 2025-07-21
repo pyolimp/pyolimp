@@ -349,7 +349,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     test_data = np.load(
-        "/home/devel/olimp/pyolimp/tests/test_data/test.npy", allow_pickle=True
+        "../pyolimp/tests/test_data/test.npy", allow_pickle=True
     )
 
     test = test_data[3]
@@ -357,8 +357,7 @@ if __name__ == "__main__":
     test_t = torch.tensor(test).unsqueeze(0)
 
     swd_swin = Generator_transformer_pathch4_8421_48_3_nouplayer_server5()
-    output = swd_swin(test_t)
+    (output,) = swd_swin(test_t)
 
     plt.imshow(output.detach().cpu().numpy().transpose([0, 2, 3, 1])[0])
-    plt.savefig("fig3.png")
     plt.show()
