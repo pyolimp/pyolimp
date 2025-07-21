@@ -37,14 +37,14 @@ def _snapshot_download(name: str, local_files_only: bool = False) -> Path:
 
 def download_answers(csv_filename: str) -> Path:
     try:
-        return _download_answers(csv_filename, local_files_only=True)
+        return _download_answers(csv_filename, local_files_only=False)
     except LocalEntryNotFoundError:
         return _download_answers(csv_filename)
 
 
 def download_dataset(name: str) -> Path:
     try:
-        path = _snapshot_download(name, local_files_only=True)
+        path = _snapshot_download(name, local_files_only=False)
     except LocalEntryNotFoundError:
         path = _snapshot_download(name)
     return path / "images_datasets" / name
