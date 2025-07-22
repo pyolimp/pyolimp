@@ -21,7 +21,7 @@ Compensates for color blindness (e.g., protanopia, deuteranopia).
 * Refractive Visual Impairments (RVI):
 Addresses distortions caused by refractive errors, improving clarity and sharpness.
 * Another Visual Impairments:
-This project could be used for precompensation different visual impairments, but, for example, this project provides only methods for CVD and RVI precompensation.
+This project could be used to train and apply trained neural network architectures for precompensation different visual impairments other than CVD and RVI.
 
 ## Requirements
 
