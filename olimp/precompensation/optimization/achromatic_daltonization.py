@@ -68,9 +68,6 @@ class M2Loss:
         D_pt1 = 2 * torch.sum(a * b, dim=1)
         D = D_pt1**2 - D_pt2
 
-        print(f"D < 0: {(D < 0).sum()}")
-        print(f"DMax: {(D[D <= 0]).min()}")
-
         D[D < 0] = 0
 
         dw1 = (-D_pt1 + torch.sqrt(D)) / (2 * torch.sum(a**2, dim=1) + 1e-10)
