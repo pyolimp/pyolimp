@@ -78,6 +78,9 @@ class Config(StrictModel):
         description="The number of epochs the model "
         "is allowed to go without improving",
     )
+    device: str | None = Field(
+        None, description="Override default device detection"
+    )
 
     def load_distortions(
         self, progress_context: ProgressContext

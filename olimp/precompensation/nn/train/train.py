@@ -513,12 +513,11 @@ def parse_config() -> tuple[Config, bool]:
 
 def main():
     config, no_progress = parse_config()
-    if torch.cuda.is_available():
-        device_str = "cuda"
-        ci.log("Current device: [bold green]GPU")
-    else:
-        device_str = "cpu"
-        ci.log("Current device: [bold red]CPU")
+    device_str = config.device or (
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )
+    color = "green" if "cuda" in device_str else "red"
+    ci.log(f"Current device: [bold {color}]{device_str.upper()}")
 
     @contextmanager
     def download_progress():
