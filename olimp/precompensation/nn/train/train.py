@@ -398,8 +398,6 @@ def train(
     _log_size("Validation", dls_validation)
     _log_size("Test", dls_test)
 
-    optimizer = create_optimizer(model)
-
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
@@ -411,6 +409,7 @@ def train(
         epoch_task = p.add_task("Epoch...", total=epochs, loss="?")
 
         if dls_train is not None:  # allow "test only" mode
+            optimizer = create_optimizer(model)
             try:
                 _train_loop(
                     p,
