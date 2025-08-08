@@ -8,18 +8,14 @@ from itertools import islice
 
 
 def read_path(root: Path, matches: Sequence[str]) -> Iterator[ImgPath]:
-    from glob import iglob
-    from fnmatch import fnmatch
-
     if not matches:
         raise ValueError("Matches must not be empty")
 
-    for str_path in iglob(f"{root}/**", recursive=True):
+    for path in root.rglob("*"):
         for match in matches:
-            if fnmatch(str_path, match):
-                path = Path(str_path)
-                if path.is_file():
-                    yield ImgPath(path)
+            if path.match(match) and path.is_file():
+                yield ImgPath(path)
+                break
 
 
 class DirectoryDataset(Dataset[Tensor]):
