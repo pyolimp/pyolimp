@@ -111,7 +111,7 @@ def tennenholtz_zachevsky(
         params_range = [torch.arange(0, 1, 0.1), torch.arange(0, 1, 0.1)]
 
     regularization_coef = 0.1
-    optimal_error = 1000
+    optimal_error = 1e900
     sim_map_curr = sim_map_base.clone()
     for params in params_range:
         for param in params:
