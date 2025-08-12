@@ -22,6 +22,7 @@ def demo(
     name: Literal[
         "Tennenholtz-Zachevsky",
         "CVD-SWIN",
+        "P-CVD-SWIN",
         "CVD DIRECT OPTIMIZATION",
         "Achromatic Daltonization",
     ],
