@@ -1,0 +1,56 @@
+{
+    "model": {
+        "name": "p_cvd_swin",
+    },
+    "img": {
+        "datasets": [
+            {
+                "name": "CVD",
+                "subsets": [
+                    "Color_cvd_D_experiment_100000",
+                    "Color_cvd_P_experiment_100000"
+                ]
+            }
+        ],
+        "transforms": [
+            {
+                "name": "resize",
+                "width": 256,
+                "height": 256,
+                "interpolation": "bilinear"
+            },
+            {
+                "name": "float32"
+            },
+            {
+                "name": "divide",
+                "value": 255.0
+            }
+
+        ]
+    },
+    "distortion": [
+        {
+            "name": "cvd",
+            "hue_angle_deg": {
+                "name": "choice",
+                // "values": [0, 120]
+                "values": [0, 120, 240]
+            }
+        }
+    ],
+    "optimizer": {
+        "name": "Adam",
+        "learning_rate": 0.0002
+    },
+    "loss_function": {
+        "name": "CVDSwinLoss",
+        "lambda_ssim": 0.5
+    },
+    "epochs": 50,
+    "patience": 20,
+    "batch_size": 4,
+    "sample_size": 3000,
+    "train_frac": 0.8,
+    "validation_frac": 0.2
+}
