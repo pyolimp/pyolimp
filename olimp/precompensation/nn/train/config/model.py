@@ -472,6 +472,27 @@ class Generator_transformer_pathch2_no_Unt(ModelConfig):
         return Generator_transformer_pathch2_no_Unt()
 
 
+class PCVDSwin(ModelConfig):
+    name: Literal["p_cvd_swin"]
+    path: str | None = Field(
+        None,
+        examples=[
+            "hf://CVD/PCVDSwin_all.pth",
+            "~/.weights/PCVDSwin_all.pth",
+        ],
+    )
+
+    def get_instance(self):
+        from ...models.cvd_swin.p_cvd_swin import (
+            PCVDSwin,
+        )
+
+        if self.path is not None:
+            return PCVDSwin.from_path(path=self.path)
+
+        return PCVDSwin()
+
+
 Model = Annotated[
     VDSR
     | VAE
@@ -494,6 +515,7 @@ Model = Annotated[
     | Generator_transformer_pathch2
     | Generator_cnn_pathch4_844_48_3_nouplayer_server5
     | Generator_transformer_pathch2_1_1
-    | Generator_transformer_pathch2_no_Unt,
+    | Generator_transformer_pathch2_no_Unt
+    | PCVDSwin,
     Field(..., discriminator="name"),
 ]
