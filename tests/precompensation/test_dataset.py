@@ -4,14 +4,14 @@ from pathlib import Path
 
 
 class TestDirectory(TestCase):
-    path = Path(__file__).parents[1] / "test_data"
+    path = Path(__file__).parents[2] / "olimp" / "demo_data"
 
     def test_load(self):
-        dataset = DirectoryDataset(self.path, ["*.jpg"])
+        dataset = DirectoryDataset(self.path, ["*.jpg", "*.png"])
         self.assertEqual(len(dataset), 2)
 
     def test_limit(self):
-        dataset = DirectoryDataset(self.path, ["*.jpg"], limit=1)
+        dataset = DirectoryDataset(self.path, ["*.jpg", "*.png"], limit=1)
         self.assertEqual(len(dataset), 1)
 
     def test_no_matches(self):
