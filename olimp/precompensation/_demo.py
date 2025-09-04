@@ -1,12 +1,13 @@
 from __future__ import annotations
 from typing import Literal, Callable
 import sys
-import numpy as np
+from math import degrees
 import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
 import torchvision
 from olimp.processing import fft_conv, resize_kernel
+from olimp.simulate.psf_sca import PSFSCA
 from torchvision.transforms.v2 import Resize, Grayscale
 from pathlib import Path
 
@@ -54,7 +55,15 @@ def demo(
         task_l = progress.add_task("Load data", total=3)
         task_p = progress.add_task(name, total=1.0)
 
-        psf_info = np.load(root / "tests/test_data/psf.npz")
+        S, C, A = -2.269, -1.019, 2.8099800957108707
+        psf_sca = PSFSCA(512, 512)(
+            sphere_dpt=S,
+            cylinder_dpt=C,
+            angle_rad=A,
+            pupil_diameter_mm=4.0,
+            am2px=0.001,
+        )
+
         progress.advance(task_l)
         img = torchvision.io.read_image(root / "tests/test_data/horse.jpg")
         progress.advance(task_l)
@@ -70,7 +79,7 @@ def demo(
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         with torch.device(device):
-            psf = torch.tensor(psf_info["psf"]).to(torch.float32)
+            psf = psf_sca.to(torch.float32).to(device)
             psf = resize_kernel(psf[None, None, ...], img.shape[-2:])
             psf /= psf.sum()
             psf_shifted = torch.fft.fftshift(psf)
@@ -86,10 +95,9 @@ def demo(
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(
         dpi=72, figsize=(12, 9), ncols=2, nrows=2
     )
-    ax1.imshow(psf_info["psf"])
+    ax1.imshow(psf_sca)
     ax1.set_title(
-        f"PSF (S={psf_info['S']}, C={psf_info['C']}, "
-        f"A={psf_info['A']}, sum={psf_info['psf'].sum():g})"
+        f"PSF (S={S}, C={C}, " f"A={degrees(A):g}°, sum={psf_sca.sum():g})"
     )
     assert img.shape[0] == 1
     img = img[0]
