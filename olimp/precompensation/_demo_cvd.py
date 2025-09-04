@@ -4,10 +4,9 @@ import sys
 import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
-import torchvision
 from ..simulate.color_blindness_distortion import ColorBlindnessDistortion
 from torchvision.transforms.v2 import Resize
-from pathlib import Path
+from olimp.demo_data import ishihara
 
 from rich.progress import (
     Progress,
@@ -32,7 +31,6 @@ def demo(
     ],
     distortion: ColorBlindnessDistortion,
 ):
-    root = Path(__file__).parents[2]
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -44,7 +42,7 @@ def demo(
         task_p = progress.add_task(name, total=1.0)
 
         progress.advance(task_l)
-        img = torchvision.io.read_image(root / "tests/test_data/73.png")[None]
+        img = ishihara()[None]
         progress.advance(task_l)
         img = img / 255.0
         img = Resize((256, 256))(img)

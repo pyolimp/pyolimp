@@ -2,23 +2,21 @@ from __future__ import annotations
 from typing import Literal, Callable, Iterable
 import matplotlib.pyplot as plt
 import torch
-import torchvision
 from torchvision.transforms.v2 import Resize
-from pathlib import Path
 
 from olimp.simulate import ApplyDistortion
+from olimp import demo_data
 
 
 def demo(
     name: Literal["ColorBlindnessDistortion", "RefractionDistortion"],
     sim_functions: Callable[[], Iterable[tuple[ApplyDistortion, str]]],
-    on: Literal["73.png", "horse.jpg"] = "73.png",
+    on: Literal["ishihara", "horse"] = "ishihara",
     size: tuple[int, int] = (256, 256),
 ):
-    root = Path(__file__).parents[2]
-
-    img = torchvision.io.read_image(str(root / f"tests/test_data/{on}"))[None]
-    img = img / 255.0
+    assert on in ["ishihara", "horse"], on
+    img = demo_data.ishihara() if on == "ishihara" else demo_data.horse()
+    img = img[None] / 255.0
     img = Resize(size)(img)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"

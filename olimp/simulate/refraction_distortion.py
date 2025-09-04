@@ -23,22 +23,18 @@ def _demo():
     from ._demo_distortion import demo
 
     def demo_simulate():
-        from pathlib import Path
         import torch
-        import numpy as np
+        from olimp.demo_data import psf as demo_psf, psf2 as demo_psf2
 
-        root = Path(__file__).parents[2]
-        for suffix in ("2", ""):
-            psf_info = np.load(root / f"tests/test_data/psf{suffix}.npz")
+        for psf_gen in demo_psf, demo_psf2:
+            psf_info = psf_gen()
             psf = torch.fft.fftshift(
                 torch.tensor(psf_info["psf"]).to(torch.float32)
             )
 
-            yield RefractionDistortion()(psf), f"psf{suffix}.npz"
+            yield RefractionDistortion()(psf), f"{psf_gen.__name__}"
 
-    demo(
-        "RefractionDistortion", demo_simulate, on="horse.jpg", size=(512, 512)
-    )
+    demo("RefractionDistortion", demo_simulate, on="horse", size=(512, 512))
 
 
 if __name__ == "__main__":
