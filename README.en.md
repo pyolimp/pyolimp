@@ -103,3 +103,15 @@ python3 -m olimp.precompensation.nn.train.train --update-schema
 
 #### RVI demo example
 <img src="https://github.com/user-attachments/assets/7e35fe3b-7667-4530-8c79-a1263749eeff">
+
+
+## Examples and additional documentation
+
+<span style="color:#e74c3c;">Jupiter notebooks are added **only** for review; running their cells is not a result.</span>
+
+| Section | File | Description |
+|--------|-------|----------|
+| Basic (non-neural network) methods when saving | [docs/source/notebooks/precompensation.ipynb](docs/source/notebooks/precompensation.ipynb) | All current non-neural network algorithms with step-by-step demo runs (Bregman-Jumbo, Montalto, Tennenholz-Zachevsky, etc.) |
+| Neural network precompensation methods | [docs/source/notebooks/precompensation_nn.ipynb](docs/source/notebooks/precompensation_nn.ipynb) | All current neural network algorithms with step-by-step demo runs (USRNet, DWDN, CVD-SWIN, etc.) |
+| Modeling | [docs/source/notebooks/simulate.ipynb](docs/source/notebooks/simulate.ipynb) | All types of simulations and how to make them cheaper |
+| Model training | [docs/source/notebooks/pyolimp_train.ipynb](docs/source/notebooks/pyolimp_train.ipynb) | Step-by-step training **outside** the standard pipeline; suitable for working in third-party projects and for advanced users confident in PyTorch |
