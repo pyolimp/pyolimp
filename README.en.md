@@ -109,7 +109,7 @@ python3 -m olimp.precompensation.nn.train.train --update-schema
 
 ### Examples
 
-> 📖 См. также [Примеры использования](./olimp/examples/README.md)
+> 📖 See also [Usage Examples](./olimp/examples/README.md)
 
 #### CVD demo example
 <img src="https://github.com/user-attachments/assets/42f54054-dba1-4204-957e-29b1a44a690c">
