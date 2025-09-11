@@ -107,6 +107,9 @@ python3 -m olimp.precompensation.nn.train.train --update-schema
 В `docs/source/notebooks/pyolimp_train.ipynb` представлено пошаговое описание процесса обучения нейронной сети на примере нейросети USRNET.
 
 ### Примеры
+
+> 📖 См. также [Примеры использования](./olimp/examples/README.md)
+
 #### Демонстрационный пример ДЦЗ
 <img src="https://github.com/user-attachments/assets/42f54054-dba1-4204-957e-29b1a44a690c">
 
