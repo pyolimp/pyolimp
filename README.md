@@ -42,6 +42,16 @@ pip install olimp
 pip install git+https://github.com/pyolimp/pyolimp.git
 ```
 
+## Обновление фреймворка до последней версии 
+
+```
+pip install -U olimp
+```
+или
+```
+pip install -U git+https://github.com/pyolimp/pyolimp.git
+```
+
 ## Использование
 
 ### 1. Не нейросетевые модули для предкомпенсации ДЦЗ и РИЗ
@@ -104,16 +114,4 @@ python3 -m olimp.precompensation.nn.train.train --update-schema
 <img src="https://github.com/user-attachments/assets/7e35fe3b-7667-4530-8c79-a1263749eeff">
 
 
-
-## Примеры и дополнительная документация
-
-<span style="color:#e74c3c;">Jupyter-ноутбуки добавлены **только** для ознакомления; запуск их ячеек не поддерживается.</span>
-
-
-| Раздел | Файл | Описание |
-|--------|------|----------|
-| Базовые (не нейросетевые) методы при компенсации | [docs/source/notebooks/precompensation.ipynb](docs/source/notebooks/precompensation.ipynb) |  Все актуальные не нейросетевые алгоритмы с пошаговыми демо-запусками (Брегман-Джамбо, Монталто, Тенненхольц-Зачевский и др.) |
-| Нейросетевые методы предкомпенсации | [docs/source/notebooks/precompensation_nn.ipynb](docs/source/notebooks/precompensation_nn.ipynb) | Все актуальные не нейросетевые алгоритмы с пошаговыми демо-запусками (USRNet, DWDN, CVD-SWIN и др.) |
-| Симуляции | [docs/source/notebooks/simulate.ipynb](docs/source/notebooks/simulate.ipynb) | Все виды симуляций и как их генерировать |
-| Обучение моделей | [docs/source/notebooks/pyolimp_train.ipynb](docs/source/notebooks/pyolimp_train.ipynb) | Пошаговое обучение **вне** стандартного пайплайна; подойдёт для интеграции в сторонние проекты и для продвинутых пользователей, уверенно владеющих PyTorch |
 
