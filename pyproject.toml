@@ -51,6 +51,6 @@ include = ["olimp*"]
 [tool.setuptools.dynamic]
 version = {attr = "olimp.__version__"}
 [tool.setuptools.package-data]
-olimp = ["demo_data/*.jpg", "demo_data/*.png"]
+olimp = ["demo_data/*.jpg", "demo_data/*.png", "examples/*.md"]
 [tool.coverage.run]
 source = ["."]
