@@ -105,6 +105,13 @@ def mapping_function(
 
 
 def ji(image: Tensor, psf: Tensor, params: JiParameters) -> Tensor:
+    """
+    Implementation of:
+      Y. Ji, J. Ye, S. B. Kang and J. Yu, "Image Pre-compensation: Balancing
+      Contrast and Ringing," 2014 IEEE Conference on Computer Vision and
+      Pattern Recognition, Columbus, OH, USA, 2014, pp. 3350-3357,
+      doi: 10.1109/CVPR.2014.428.
+    """
     partition = torch.arange(0, 1, params.partition_step)
     ibf = huang(image, psf, params.ibf_param)
     ibf = linear_normalise(ibf)
