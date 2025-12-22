@@ -496,7 +496,9 @@ def parse_config() -> tuple[Config, bool]:
     if args.update_schema:
         schema_path = Path(__file__).with_name("schema.json")
         schema_path.write_text(
-            json5.dumps(Config.model_json_schema(), ensure_ascii=False)
+            json5.dumps(
+                Config.model_json_schema(), ensure_ascii=False, quote_keys=True
+            )
         )
         ci.console.log(f"[green] {schema_path} [cyan]saved")
         raise SystemExit(0)
