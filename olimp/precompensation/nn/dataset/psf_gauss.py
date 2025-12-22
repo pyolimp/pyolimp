@@ -10,6 +10,7 @@ from olimp.simulate.psf_gauss import PSFGauss
 from olimp.precompensation.nn.dataset.distortion_dataset import (
     DistortionDataset,
 )
+from olimp.processing import fftshift
 from olimp.simulate.refraction_distortion import RefractionDistortion
 
 
@@ -51,7 +52,7 @@ class PsfGaussDataset(DistortionDataset):
         def _apply(image: Tensor) -> Generator[Tensor, None, None]:
             for index in range(self._size):
                 psf = self.__getitem__(index).to(image.device)
-                psf = torch.fft.fftshift(psf)
+                psf = fftshift(psf)
                 yield self.refraction_distorion(psf)(image)
 
         return _apply

@@ -4,6 +4,7 @@ import torch
 from torch import nn, Tensor
 from .model import USRNet
 from ..download_path import download_path, PyOlimpHF
+from olimp.processing import fftshift
 
 Input: TypeAlias = tuple[Tensor, Tensor, int, Tensor]
 
@@ -76,7 +77,7 @@ class PrecompensationUSRNet(USRNet):
     ) -> Input:
         sigma = torch.tensor(noise_level).float().view([1, 1, 1, 1])
         sigma = sigma.repeat([image.shape[0], 1, 1, 1])
-        psf = torch.fft.fftshift(psf)
+        psf = fftshift(psf)
         return image, psf, scale_factor, sigma
 
     def postprocess(self, tensors: tuple[Tensor]) -> tuple[Tensor]:

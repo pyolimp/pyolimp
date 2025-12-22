@@ -5,6 +5,7 @@ from typing import Any, TypeAlias
 
 from .model import DWDN
 from ..download_path import download_path, PyOlimpHF
+from olimp.processing import fftshift
 
 Inputs: TypeAlias = tuple[Tensor, Tensor]
 
@@ -38,7 +39,7 @@ class PrecompensationDWDN(DWDN):
         return model
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Inputs:
-        psf = torch.fft.fftshift(psf)
+        psf = fftshift(psf)
         return image, psf
 
     def postprocess(self, tensors: tuple[Tensor]) -> tuple[Tensor]:

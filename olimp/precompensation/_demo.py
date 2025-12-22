@@ -5,7 +5,7 @@ from math import degrees
 import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
-from olimp.processing import fft_conv, resize_kernel
+from olimp.processing import fft_conv, fftshift, resize_kernel
 from olimp.demo_data import horse, psf as demo_psf
 from torchvision.transforms.v2 import Resize, Grayscale
 
@@ -70,7 +70,7 @@ def demo(
             psf = psf_sca["psf"].to(torch.float32).to(device)
             psf = resize_kernel(psf[None, None, ...], img.shape[-2:])
             psf /= psf.sum()
-            psf_shifted = torch.fft.fftshift(psf)
+            psf_shifted = fftshift(psf)
 
             callback: Callable[[float], None] = lambda c: progress.update(
                 task_p, completed=c

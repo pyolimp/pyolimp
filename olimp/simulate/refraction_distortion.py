@@ -1,7 +1,7 @@
 from __future__ import annotations
 from torch import Tensor
 from olimp.simulate import ApplyDistortion, Distortion
-from olimp.processing import fft_conv
+from olimp.processing import fft_conv, fftshift
 
 
 class RefractionDistortion(Distortion):
@@ -10,7 +10,7 @@ class RefractionDistortion(Distortion):
        :class: full-width
 
     .. important::
-       psf must be shifted with `torch.fft.fftshift` and its sum
+       psf must be shifted with `olimp.processing.fftshift` and its sum
        must be equal to 1.
     """
 
@@ -28,9 +28,7 @@ def _demo():
 
         for psf_gen in demo_psf, demo_psf2:
             psf_info = psf_gen()
-            psf = torch.fft.fftshift(
-                torch.tensor(psf_info["psf"]).to(torch.float32)
-            )
+            psf = fftshift(torch.tensor(psf_info["psf"]).to(torch.float32))
 
             yield RefractionDistortion()(psf), f"{psf_gen.__name__}"
 
