@@ -5,6 +5,7 @@ from typing import Any, TypeAlias
 
 from .model import kernel_error_model, KerUncArgs
 from ..download_path import download_path, PyOlimpHF
+from olimp.processing import fftshift
 
 Inputs: TypeAlias = tuple[Tensor, Tensor]
 
@@ -46,7 +47,7 @@ class PrecompensationKerUnc(kernel_error_model):
         return model
 
     def preprocess(self, image: Tensor, psf: Tensor) -> Inputs:
-        psf = torch.fft.fftshift(psf)
+        psf = fftshift(psf)
         return image, psf
 
     def postprocess(self, tensors: tuple[Tensor]) -> tuple[Tensor]:
