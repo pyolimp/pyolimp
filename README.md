@@ -1,4 +1,4 @@
-> 🌐 This page is also available in [Russian 🇷🇺](./README.md)
+> 🌐 This page is also available in [Russian 🇷🇺](./README.ru.md)
 
 # Pyolimp
 
