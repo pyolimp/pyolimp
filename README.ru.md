@@ -1,120 +1,118 @@
-> 🌐 Эта страница также доступна на [English 🇬🇧](./README.en.md)
+> 🌐 This page is also available in [Russian 🇷🇺](./README.md)
 
 # Pyolimp
 
-Данный проект представляет собой фреймворк на основе методов машинного обучения для предкомпенсации изображений с целью коррекции нарушений зрения — в частности, дефектов цветового зрения (ДЦЗ) и рефракционных искажений (РИЗ).
-Фреймворк включает в себя как нейросетевые, так и не нейросетевые модули, что позволяет эффективно решать задачу предкомпенсации различными методами.
+This project provides a machine learning-based framework for
+image precompensation targeting vision defects,
+specifically color vision deficiencies (CVD) and
+refractive visual impairments (RVI).
+The framework incorporates both neural network and non-neural network modules
+to address precompensation effectively across different approaches.
 
-## Обзор проекта
+## Project Overview
 
-Данный проект направлен на предкомпенсацию визуальных нарушений с использованием методов машинного обучения.
-Он представляет собой универсальный фреймворк, поддерживающий как нейросетевые (NN), так и не нейросетевые (non-NN) подходы для восстановления качества изображения у пользователей с различными нарушениями зрения. Направления прикладного использования следующие:
+This project focuses on precompensating for visual
+impairments using machine learning techniques.
+It includes a comprehensive framework that supports both neural network (NN)
+and non-neural network (non-NN) methods to restore image quality for those affected by:
 
-* Предкомпенсация дефектов цветового зрения (ДЦЗ):
-Компенсация цветовой слепоты (например, протанопия, дейтеранопия).
-* Предкомпенсация рефракционных искажений зрения (РИЗ):
-Коррекция искажений, вызванных нарушениями рефракции, с улучшением чёткости и резкости изображения.
-* Предкомпенсация других типов искажений:
-Фреймворк может быть использован для обучения и применения обученных нейросетевых архитектур предкомпенсации искажений, отличных от ДЦЗ и РИЗ.
+* Color Vision Deficiencies (CVD):
+Compensates for color blindness (e.g., protanopia, deuteranopia).
+* Refractive Visual Impairments (RVI):
+Addresses distortions caused by refractive errors, improving clarity and sharpness.
+* Another Visual Impairments:
+This project could be used to train and apply trained neural network architectures for precompensation different visual impairments other than CVD and RVI.
 
-## Требования к проекту
+## Requirements
 
 * Python 3.10+
 * Pytorch 2.4+
-* Дополнительные зависимости, перечисленные в pyproject.toml
+* Additional dependencies listed in pyproject.toml
 
-Технические характеристики ПК:
-* аппаратная платформа, на которой может быть запущена 64-разрядная ОС Ubuntu версии 22.04 LTS или выше или Windows версии 10 и выше;
-* не менее 16 ГБ оперативной памяти;
-* восьмиядерный процессор x86 2.5 ГГц и выше или аналогичный ему;
-* видеокарта с поддержкой cuda 12.+, и не менее 12 ГБ видеопамяти;
-* не менее 100 ГБ свободного места на жёстком диске;
-* клавиатура и мышь (или тачпад).
+PC Technical Specifications:
+* a hardware platform with OS Ubuntu 64-bit version 22.04 LTS or higher or Windows version 10 or higher;
+* at least 16 GB RAM;
+* 8-core processor x86 2.5 GHz or higher or similar one;
+* GPU with cuda 12.+ support, and at least 12 GB of video memory;
+* at least 100 GB of free hard disk space;
+* keyboard and mouse (or touchpad).
 
-
-## Установка
+## Installation
 
 ```
 pip install olimp
 ```
-или
+or
 ```
 pip install git+https://github.com/pyolimp/pyolimp.git
 ```
 
-## Обновление фреймворка до последней версии 
+## Upgrade to last version
 
 ```
 pip install -U olimp
 ```
-или
+or
 ```
 pip install -U git+https://github.com/pyolimp/pyolimp.git
 ```
 
-## Использование
+## Usage
 
-### 1. Не нейросетевые модули для предкомпенсации ДЦЗ и РИЗ
+### 1. Non-Neural Network Modules for CVD and RVI Precompensation
 
-Чтобы запустить алгоритм оптимизации для предкомпенсации РИЗ с использованием метода Брегмана-Джамбо, выполните:
+To run the RVI optimization algorithm for precompensation using the
+Bregman-Jumbo method, execute:
 ```
 python3 -m olimp.precompensation.optimization.bregman_jumbo
 ```
 
-Чтобы запустить алгоритм оптимизации для предкомпенсации РИЗ с использованием метода Монталто, выполните:
+To run the RVI optimization algorithm for precompensation using the
+Montalto method, execute:
 ```
 python3 -m olimp.precompensation.optimization.montalto
 ```
-Чтобы запустить алгоритм оптимизации для предкомпенсации ДЦЗ с использованием метода Тенненхольца-Зачевского, выполните:
+To run the CVD optimization algorithm for precompensation using the
+Tennenholtz Zachevsky method, execute:
 
 ```
 python3 -m olimp.precompensation.optimization.tennenholtz_zachevsky
 ```
 
-Вы также можете вызывать примеры из каталога `olimp.precompensation.basic` и `olimp.precompensation.analytics`, как в приведенных примерах.
+You can also call examples from the directory `olimp.precompensation.basic`
+and `olimp.precompensation.analytics` as in the examples given.
 
-В `docs/source/notebooks/precompensation.ipynb` представлены дополнительные примеры запуска различных не нейросетевых методов предкомпенсации РИЗ и ДЦЗ с краткими описаниями представленных методов и примерами результатов их работы. 
-Для запуска необходимо последовательно запустить сначала первые ячейки с импортом общих библиотек, затем ячейку с интересующим методом.
+### 2. Neural Network Modules for CVD and RVI Precompensation
 
-### 2. Нейросетевые модули для предкомпенсации ДЦЗ и РИЗ
-
-Чтобы запустить нейросетевую модель для предкомпенсации РИЗ с использованием метода USRNET, выполните:
+To run the NN model for RVI precompensation using the USRNET method, execute:
 ```
 python3 -m olimp.precompensation.nn.models.usrnet
 ```
 
-Чтобы запустить нейросетевую модель для предкомпенсации ДЦЗ на основе архитектуры с использованием SWIN-трансформеров, выполните
+To run the NN model for CVD precompensation based on the Swin transformers, execute:
 ```
 python3 -m olimp.precompensation.nn.models.cvd_swin.Generator_transformer_pathch4_844_48_3_nouplayer_server5
 ```
 
-В `docs/source/notebooks/precompensation_nn.ipynb` представлены дополнительные примеры запуска различных нейросетевых методов предкомпенсации РИЗ и ДЦЗ с краткими описаниями представленных методов и примерами результатов их работы. 
-Для запуска необходимо последовательно запустить сначала первые ячейки с импортом общих библиотек, затем ячейку с интересующим методом.
+### 3. Training models
 
-### 3. Обучение моделей
-
-Для обучения нейросетевых моделей предкомпенсации используйте следующую команду:
+To train neural network models for precompensation, use the following command:
 
 ```
 python3 -m olimp.precompensation.nn.train.train --config ./olimp/precompensation/nn/pipeline/usrnet.json
 ```
-Вы также можете обучить другие модели, см. `olimp/precompensation/nn/pipeline`. Также у нас есть **json-схема**, которую можно сгенерировать, используя следующую команду:
+you can also train other models, please see `olimp/precompensation/nn/pipeline`. Also we have **json schema** and you can generate it, use the following command:
 
 ```
 python3 -m olimp.precompensation.nn.train.train --update-schema
 ```
 
-В `docs/source/notebooks/pyolimp_train.ipynb` представлено пошаговое описание процесса обучения нейронной сети на примере нейросети USRNET.
+### Examples
 
-### Примеры
+> 📖 See also [Usage Examples](./olimp/examples/README.md)
 
-> 📖 См. также [Примеры использования](./olimp/examples/README.md)
-
-#### Демонстрационный пример ДЦЗ
+#### CVD demo example
 <img src="https://github.com/user-attachments/assets/42f54054-dba1-4204-957e-29b1a44a690c">
 
-#### Демонстрационный пример РИЗ
+#### RVI demo example
 <img src="https://github.com/user-attachments/assets/7e35fe3b-7667-4530-8c79-a1263749eeff">
-
-
-
