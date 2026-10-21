@@ -37,6 +37,7 @@ def demo(
         "USRNET",
         "VAE",
         "VDSR",
+        "HQS PC",
     ],
     opt_function: Callable[[Tensor, Tensor, Callable[[float], None]], Tensor],
     mono: bool = False,
@@ -112,5 +113,4 @@ def demo(
     if rp_arr.ndim == 3:
         rp_arr = rp_arr.transpose(1, 2, 0)
     ax4.imshow(rp_arr, vmin=0.0, vmax=1.0, cmap="gray")
-
     plt.show()
